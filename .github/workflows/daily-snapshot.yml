@@ -1,0 +1,176 @@
+name: Daily snapshot
+
+# Once a day: copy the latest koala73/worldmonitor into worldmonitor/, build
+# it, run its self-hosted backend and seeders inside the runner, record what
+# the dashboard loads, and publish the frozen result to GitHub Pages.
+# See README.md. The pipeline itself is snapshot/build.sh.
+#
+# Privilege split: only `sync` can write to this repository and it never runs
+# upstream code (git archive + tar). `snapshot` runs upstream code (npm
+# install scripts, seeders, the build) with a read-only token that is not left
+# in the checkout. `deploy` only publishes the artifact `snapshot` produced.
+
+on:
+  schedule:
+    # 05:23 UTC daily. Off the hour: GitHub queues on-the-hour crons late.
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+    inputs:
+      sync_upstream:
+        description: Pull the latest koala73/worldmonitor before building
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: daily-snapshot
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync upstream code
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    outputs:
+      ref: ${{ steps.head.outputs.ref }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 1
+
+      - name: Copy koala73/worldmonitor into worldmonitor/
+        if: github.event_name == 'schedule' || inputs.sync_upstream
+        env:
+          UPSTREAM: https://github.com/koala73/worldmonitor.git
+        run: |
+          set -euo pipefail
+          git clone --quiet --depth 1 "$UPSTREAM" "$RUNNER_TEMP/upstream"
+          sha="$(git -C "$RUNNER_TEMP/upstream" rev-parse HEAD)"
+          # Exactly upstream's tracked files; upstream's own .github/ lands
+          # inside worldmonitor/, where GitHub never runs it.
+          rm -rf worldmonitor
+          mkdir worldmonitor
+          git -C "$RUNNER_TEMP/upstream" archive --format=tar HEAD | tar -x -C worldmonitor
+          echo "$sha" > worldmonitor.upstream-sha
+          git add -A -f worldmonitor worldmonitor.upstream-sha
+          if git diff --cached --quiet; then
+            echo "Already at koala73/worldmonitor@${sha:0:7}"
+          else
+            git -c user.name='github-actions[bot]' \
+                -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+                commit --quiet -m "Sync koala73/worldmonitor@${sha:0:7}"
+            git push --quiet
+            echo "Synced to koala73/worldmonitor@${sha:0:7}" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - id: head
+        run: echo "ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  snapshot:
+    name: Build and record snapshot
+    needs: sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ needs.sync.outputs.ref }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: worldmonitor/.nvmrc
+          cache: npm
+          cache-dependency-path: worldmonitor/package-lock.json
+
+      - name: Install redis-server
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq redis-server
+          sudo systemctl stop redis-server || true
+
+      - name: Install worldmonitor dependencies
+        working-directory: worldmonitor
+        run: npm ci --no-audit --no-fund
+
+      - name: Install Chromium for Playwright
+        working-directory: worldmonitor
+        run: npx playwright install --with-deps chromium
+
+      - name: Build, seed, record and verify
+        env:
+          SKIP_INSTALL: '1'
+          WORK: ${{ runner.temp }}/work
+          OUT_SITE: ${{ runner.temp }}/site
+          # Project sites live under /<repo>/; a <user>.github.io repo or a
+          # custom domain is served from "/". Override with a SITE_BASE
+          # repository variable if needed.
+          SITE_BASE: ${{ vars.SITE_BASE || (endsWith(github.event.repository.name, '.github.io') && '/' || format('/{0}/', github.event.repository.name)) }}
+          SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
+          # Record and verify as if on the real host (set a SITE_ORIGIN
+          # repository variable for a custom domain).
+          SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
+          # Optional free data-source keys (Settings -> Secrets and variables
+          # -> Actions). Each one unlocks more panels; see README.md.
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          NASA_FIRMS_API_KEY: ${{ secrets.NASA_FIRMS_API_KEY }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          AVIATIONSTACK_API: ${{ secrets.AVIATIONSTACK_API }}
+          WAQI_API_KEY: ${{ secrets.WAQI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          export SITE_ORIGIN="${SITE_ORIGIN:-https://${GITHUB_REPOSITORY_OWNER,,}.github.io}"
+          ./snapshot/build.sh
+
+      - name: Summary
+        if: always()
+        env:
+          WORK: ${{ runner.temp }}/work
+          SITE: ${{ runner.temp }}/site
+        run: |
+          {
+            echo '### Snapshot'
+            if [ -f "$SITE/snapshot/status.json" ]; then
+              echo '```json'; cat "$SITE/snapshot/status.json"; echo '```'
+            fi
+            if [ -f "$WORK/reports/verify-report.json" ]; then
+              node -e 'const r=require(process.argv[1]); console.log(`Replay hit rate: ${(r.hitRate*100).toFixed(1)}% (${r.shim.hits} exact, ${r.shim.fuzzy} fuzzy, ${r.shim.misses} missed); page errors: ${r.pageErrors.length}`)' "$WORK/reports/verify-report.json"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ runner.temp }}/site
+
+      - name: Upload reports and logs
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: snapshot-reports
+          path: |
+            ${{ runner.temp }}/work/reports
+            ${{ runner.temp }}/work/logs
+          retention-days: 14
+          if-no-files-found: ignore
+
+  deploy:
+    name: Publish to GitHub Pages
+    needs: snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

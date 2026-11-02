@@ -1,0 +1,3 @@
+# Local snapshot builds (snapshot/build.sh)
+.snapshot-work/
+/node_modules/
