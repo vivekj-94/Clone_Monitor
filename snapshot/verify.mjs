@@ -35,6 +35,12 @@ function loadPlaywright() {
   throw new Error('playwright not found: run npm ci in worldmonitor/ first');
 }
 const { chromium } = loadPlaywright();
+
+// A frozen page must fail fast, not hang the CI step.
+setTimeout(() => {
+  console.error('verify: FAILED: no result after 10 minutes');
+  process.exit(1);
+}, 10 * 60_000).unref();
 // Same WebGL forcing as record.mjs, so the DeckGL map path is what gets verified.
 const WEBGL_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
 function hideSoftwareRenderer() {
@@ -107,7 +113,13 @@ const snap = () => page.evaluate(() => (window.__cmSnapshot ? JSON.parse(JSON.st
 
 await page.goto(PAGE_URL, { waitUntil: 'load', timeout: 120_000 });
 await page.waitForTimeout(Number(opts.seconds) * 1000);
-await page.screenshot({ path: path.join(REPORT_DIR, 'verify.png') });
+// Screenshots are diagnostics only: software WebGL on a busy runner can
+// make them time out, which must not fail the publish.
+const shot = (name) =>
+  page.screenshot({ path: path.join(REPORT_DIR, name), timeout: 20_000 }).catch((err) => {
+    console.warn(`verify: screenshot ${name} skipped: ${err.message.split('\n')[0]}`);
+  });
+await shot('verify.png');
 const initial = await snap();
 const banner = await page.evaluate(() => !!document.getElementById('cm-snapshot-banner'));
 const mapMode = await page
@@ -126,7 +138,7 @@ if (opts['fast-forward'] && initial) {
   await page.clock.fastForward(opts['fast-forward']);
   await page.waitForTimeout(15_000);
   later = await snap();
-  await page.screenshot({ path: path.join(REPORT_DIR, 'verify-later.png') });
+  await shot('verify-later.png');
 }
 await browser.close();
 
