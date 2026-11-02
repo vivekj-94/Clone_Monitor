@@ -13,10 +13,22 @@
 //     a precaching SW would pin visitors to yesterday's snapshot.
 //   * Brotli twins (*.br) are dropped (GitHub Pages compresses on its own).
 //   * .nojekyll, and a 404.html that sends deep links back to the dashboard.
+//   * Branding, per upstream's trademark policy for forks
+//     (worldmonitor/docs/trademark-policy.mdx): distinct name ("Clone
+//     Monitor") in the title, manifest and header (the header text is set by
+//     cm-snapshot.js), no Open Graph / Twitter / JSON-LD identity claiming to
+//     be World Monitor, and "Based on World Monitor" attribution in the
+//     snapshot notice. Copyright and author notices are kept. Upsell, sign-in
+//     and locked "Pro" panels are hidden: this copy has no accounts.
+//
+// After recording, `--stamp` writes the capture time into every page
+// (data-captured-at on the shim tag) so the shim can show the snapshot as of
+// that moment.
 //
 // Usage:
 //   node snapshot/assemble.mjs --dist worldmonitor/dist --out site \
 //     [--base /Clone_Monitor/] [--source https://github.com/<owner>/<repo>]
+//   node snapshot/assemble.mjs --stamp --out site
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -31,8 +43,40 @@ const { values: opts } = parseArgs({
     base: { type: 'string', default: '/Clone_Monitor/' },
     source: { type: 'string', default: '' },
     entry: { type: 'string', default: 'dashboard.html' },
+    stamp: { type: 'boolean', default: false },
   },
 });
+
+function htmlFiles(dir, acc = []) {
+  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, ent.name);
+    if (ent.isDirectory()) htmlFiles(p, acc);
+    else if (ent.name.endsWith('.html')) acc.push(p);
+  }
+  return acc;
+}
+
+if (opts.stamp) {
+  const OUT_DIR = path.resolve(opts.out || '');
+  const manifest = JSON.parse(fs.readFileSync(path.join(OUT_DIR, 'snapshot', 'manifest.json'), 'utf8'));
+  const at = String(manifest.generatedAt || '');
+  if (!/^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(at)) {
+    console.error(`assemble --stamp: bad generatedAt ${JSON.stringify(at)}`);
+    process.exit(1);
+  }
+  let n = 0;
+  for (const file of htmlFiles(OUT_DIR)) {
+    const html = fs.readFileSync(file, 'utf8');
+    const out = html.replace('data-captured-at=""', `data-captured-at="${at}"`);
+    if (out !== html) {
+      fs.writeFileSync(file, out);
+      n++;
+    }
+  }
+  console.log(`assemble: stamped capture time ${at} into ${n} pages`);
+  process.exit(0);
+}
+
 if (!opts.dist || !opts.out) {
   console.error('assemble.mjs: --dist and --out are required');
   process.exit(2);
@@ -58,8 +102,26 @@ const escapeAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 const shimTag =
   `<script src="${BASE}cm-snapshot.js" nonce="wm-static-bootstrap" data-base="${escapeAttr(BASE)}"` +
   (opts.source ? ` data-source="${escapeAttr(opts.source)}"` : '') +
-  '></script>';
+  ' data-captured-at=""></script>';
 const robotsTag = '<meta name="robots" content="noindex, nofollow">';
+const TITLE = 'Clone Monitor \u00b7 daily snapshot, based on World Monitor';
+const brandCss = `<style nonce="wm-static-bootstrap" id="cm-snapshot-style">
+      .pro-banner, .pro-banner-slot, .auth-signin-btn, .auth-signup-link, .variant-switcher { display: none !important; }
+      html.wm-pro-banner-reserved #app::before { display: none !important; height: 0 !important; }
+      .panel.panel-is-locked { display: none !important; }
+    </style>`;
+
+// Identity tags that would present this copy as World Monitor itself.
+function rebrandHead(html) {
+  return html
+    .replace(/<title>[^<]*<\/title>/i, `<title>${TITLE}</title>`)
+    .replace(/<meta name="title" content="[^"]*"\s*\/?>/i, `<meta name="title" content="${TITLE}" />`)
+    .replace(/<meta name="application-name" content="[^"]*"\s*\/?>/i, '<meta name="application-name" content="Clone Monitor" />')
+    .replace(/<meta name="apple-mobile-web-app-title" content="[^"]*"\s*\/?>/i, '<meta name="apple-mobile-web-app-title" content="Clone Monitor" />')
+    .replace(/[ \t]*<meta (?:property="og:|name="twitter:)[^>]*>\r?\n?/gi, '')
+    .replace(/[ \t]*<script type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>\r?\n?/gi, '')
+    .replace(/[ \t]*<link rel="(?:preconnect|dns-prefetch)" href="https:\/\/[^"]*worldmonitor\.app[^"]*"[^>]*>\r?\n?/gi, '');
+}
 
 function injectHead(html) {
   if (html.includes('cm-snapshot.js')) return html;
@@ -70,7 +132,7 @@ function injectHead(html) {
   const rest = html.slice(at);
   const charset = rest.match(/^\s*<meta\s+charset=[^>]*>/i);
   const insertAt = charset ? at + charset[0].length : at;
-  return `${html.slice(0, insertAt)}\n    ${shimTag}\n    ${robotsTag}${html.slice(insertAt)}`;
+  return rebrandHead(`${html.slice(0, insertAt)}\n    ${shimTag}\n    ${robotsTag}\n    ${brandCss}${html.slice(insertAt)}`);
 }
 
 let injected = 0;
@@ -148,6 +210,18 @@ self.addEventListener('activate', (event) => {
 for (const name of ['sw.js', 'service-worker.js', 'registerSW.js']) {
   const p = path.join(OUT, name);
   if (fs.existsSync(p)) fs.writeFileSync(p, name === 'registerSW.js' ? '/* disabled */\n' : killSw);
+}
+
+const webManifest = path.join(OUT, 'manifest.webmanifest');
+if (fs.existsSync(webManifest)) {
+  try {
+    const m = JSON.parse(fs.readFileSync(webManifest, 'utf8'));
+    m.name = 'Clone Monitor (snapshot of World Monitor)';
+    m.short_name = 'Clone Monitor';
+    fs.writeFileSync(webManifest, JSON.stringify(m));
+  } catch (err) {
+    console.warn(`assemble: manifest.webmanifest not rebranded: ${err.message}`);
+  }
 }
 
 fs.writeFileSync(path.join(OUT, '.nojekyll'), '');

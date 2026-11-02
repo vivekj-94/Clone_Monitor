@@ -9,6 +9,10 @@ name: Daily snapshot
 # upstream code (git archive + tar). `snapshot` runs upstream code (npm
 # install scripts, seeders, the build) with a read-only token that is not left
 # in the checkout. `deploy` only publishes the artifact `snapshot` produced.
+#
+# If the newest upstream code fails to build, record or verify, `snapshot`
+# rebuilds the code of the snapshot currently online (its status.json names
+# the commit) with fresh data, so the page keeps refreshing daily.
 
 on:
   schedule:
@@ -57,13 +61,13 @@ jobs:
           echo "$sha" > worldmonitor.upstream-sha
           git add -A -f worldmonitor worldmonitor.upstream-sha
           if git diff --cached --quiet; then
-            echo "Already at koala73/worldmonitor@${sha:0:7}"
+            echo "Already at koala73/worldmonitor@${sha:0:7}" | tee -a "$GITHUB_STEP_SUMMARY"
           else
             git -c user.name='github-actions[bot]' \
                 -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
                 commit --quiet -m "Sync koala73/worldmonitor@${sha:0:7}"
             git push --quiet
-            echo "Synced to koala73/worldmonitor@${sha:0:7}" >> "$GITHUB_STEP_SUMMARY"
+            echo "Synced to koala73/worldmonitor@${sha:0:7}" | tee -a "$GITHUB_STEP_SUMMARY"
           fi
 
       - id: head
@@ -73,14 +77,50 @@ jobs:
     name: Build and record snapshot
     needs: sync
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
     permissions:
       contents: read
+    env:
+      SKIP_INSTALL: '1'
+      WORK: ${{ runner.temp }}/work
+      OUT_SITE: ${{ runner.temp }}/site
+      # Project sites live under /<repo>/; a <user>.github.io repo or a
+      # custom domain is served from "/". Override with SITE_BASE /
+      # SITE_ORIGIN repository variables if needed.
+      SITE_BASE: ${{ vars.SITE_BASE || (endsWith(github.event.repository.name, '.github.io') && '/' || format('/{0}/', github.event.repository.name)) }}
+      SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
+      SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
+      # Optional free data-source keys (Settings -> Secrets and variables ->
+      # Actions). Each one unlocks more panels; see README.md.
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+      NASA_FIRMS_API_KEY: ${{ secrets.NASA_FIRMS_API_KEY }}
+      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+      AVIATIONSTACK_API: ${{ secrets.AVIATIONSTACK_API }}
+      WAQI_API_KEY: ${{ secrets.WAQI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ needs.sync.outputs.ref }}
           persist-credentials: false
+
+      # The snapshot must never use World Monitor's hosted service: its EULA
+      # forbids redistributing that data, and a few upstream scripts call it
+      # with a worldmonitor.app Origin. Resolve every hostname the code
+      # references to nowhere for the rest of this job.
+      - name: Block World Monitor's hosted services
+        run: |
+          for h in worldmonitor.app www api proxy maps abacus clerk status analytics-canary \
+                   tech finance commodity happy energy; do
+            [ "$h" = worldmonitor.app ] && host=$h || host="$h.worldmonitor.app"
+            printf '0.0.0.0 %s\n:: %s\n' "$host" "$host"
+          done | sudo tee -a /etc/hosts >/dev/null
+          if curl -s -m 5 -o /dev/null https://api.worldmonitor.app/; then
+            echo "api.worldmonitor.app is still reachable" >&2; exit 1
+          fi
+          echo "SITE_ORIGIN=${SITE_ORIGIN:-https://${GITHUB_REPOSITORY_OWNER,,}.github.io}" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -103,47 +143,75 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Build, seed, record and verify
-        env:
-          SKIP_INSTALL: '1'
-          WORK: ${{ runner.temp }}/work
-          OUT_SITE: ${{ runner.temp }}/site
-          # Project sites live under /<repo>/; a <user>.github.io repo or a
-          # custom domain is served from "/". Override with a SITE_BASE
-          # repository variable if needed.
-          SITE_BASE: ${{ vars.SITE_BASE || (endsWith(github.event.repository.name, '.github.io') && '/' || format('/{0}/', github.event.repository.name)) }}
-          SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
-          # Record and verify as if on the real host (set a SITE_ORIGIN
-          # repository variable for a custom domain).
-          SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
-          # Optional free data-source keys (Settings -> Secrets and variables
-          # -> Actions). Each one unlocks more panels; see README.md.
-          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
-          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
-          NASA_FIRMS_API_KEY: ${{ secrets.NASA_FIRMS_API_KEY }}
-          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
-          AVIATIONSTACK_API: ${{ secrets.AVIATIONSTACK_API }}
-          WAQI_API_KEY: ${{ secrets.WAQI_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        id: latest
+        continue-on-error: true
+        run: ./snapshot/build.sh
+
+      # ---- fallback: newest upstream code failed; rebuild what is online ----
+      - name: Find the code of the snapshot that is online
+        id: lastgood
+        if: steps.latest.outcome != 'success'
         run: |
-          export SITE_ORIGIN="${SITE_ORIGIN:-https://${GITHUB_REPOSITORY_OWNER,,}.github.io}"
-          ./snapshot/build.sh
+          url="${SITE_ORIGIN%/}${SITE_BASE}snapshot/status.json"
+          sha="$(curl -sf -m 20 "$url" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const v=JSON.parse(s).repoSha||"";if(/^[0-9a-f]{40}$/.test(v))process.stdout.write(v)}catch{}})' || true)"
+          if [ -z "$sha" ]; then
+            echo "::error::Latest code failed and no previous snapshot is online to fall back to ($url)."
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "::warning::Latest upstream code failed; rebuilding last-good commit ${sha:0:7} with today's data."
+
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        if: steps.lastgood.outputs.sha
+        with:
+          ref: ${{ steps.lastgood.outputs.sha }}
+          path: lastgood
+          persist-credentials: false
+
+      - name: Build, seed, record and verify (last-good code)
+        id: fallback
+        if: steps.lastgood.outputs.sha
+        env:
+          SKIP_INSTALL: '0'
+          REPO_SHA: ${{ steps.lastgood.outputs.sha }}
+        run: |
+          rm -rf "$WORK"
+          (cd lastgood/worldmonitor && npm ci --no-audit --no-fund && npx playwright install chromium)
+          ./lastgood/snapshot/build.sh
 
       - name: Summary
         if: always()
         env:
-          WORK: ${{ runner.temp }}/work
-          SITE: ${{ runner.temp }}/site
+          LATEST: ${{ steps.latest.outcome }}
+          FALLBACK: ${{ steps.fallback.outcome }}
+          LATEST_REF: ${{ needs.sync.outputs.ref }}
+          LASTGOOD: ${{ steps.lastgood.outputs.sha }}
         run: |
           {
             echo '### Snapshot'
-            if [ -f "$SITE/snapshot/status.json" ]; then
-              echo '```json'; cat "$SITE/snapshot/status.json"; echo '```'
+            if [ "$LATEST" = success ]; then
+              echo "Built from the latest code ($LATEST_REF)."
+            elif [ "$FALLBACK" = success ]; then
+              echo "**Latest upstream code failed**; published last-good code $LASTGOOD with fresh data."
+            else
+              echo "**No snapshot published today**; the site keeps the previous one."
+            fi
+            if [ -f "$OUT_SITE/snapshot/status.json" ]; then
+              echo '```json'; cat "$OUT_SITE/snapshot/status.json"; echo '```'
             fi
             if [ -f "$WORK/reports/verify-report.json" ]; then
-              node -e 'const r=require(process.argv[1]); console.log(`Replay hit rate: ${(r.hitRate*100).toFixed(1)}% (${r.shim.hits} exact, ${r.shim.fuzzy} fuzzy, ${r.shim.misses} missed); page errors: ${r.pageErrors.length}`)' "$WORK/reports/verify-report.json"
+              node -e 'const r=require(process.argv[1]); console.log(`Replay: ${(r.hitRate*100).toFixed(1)}% of API requests served (${r.shim.hits} exact, ${r.shim.fuzzy} fuzzy, ${r.shim.misses} missed); map: ${r.mapMode}; page errors: ${r.pageErrors.length}`)' "$WORK/reports/verify-report.json"
+            fi
+            if [ -f "$WORK/reports/seed-summary.tsv" ]; then
+              echo; echo '<details><summary>Seeders that failed or timed out</summary>'; echo
+              awk -F'\t' '$2=="FAIL" || $2=="TIMEOUT" {printf "- `%s` %s: %s\n", $1, $2, substr($5,1,140)}' "$WORK/reports/seed-summary.tsv"
+              echo; echo '</details>'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if nothing was built
+        if: steps.latest.outcome != 'success' && steps.fallback.outcome != 'success'
+        run: exit 1
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

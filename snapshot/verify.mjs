@@ -35,6 +35,17 @@ function loadPlaywright() {
   throw new Error('playwright not found: run npm ci in worldmonitor/ first');
 }
 const { chromium } = loadPlaywright();
+// Same WebGL forcing as record.mjs, so the DeckGL map path is what gets verified.
+const WEBGL_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
+function hideSoftwareRenderer() {
+  for (const Ctx of [window.WebGL2RenderingContext, window.WebGLRenderingContext]) {
+    if (!Ctx) continue;
+    const getExtension = Ctx.prototype.getExtension;
+    Ctx.prototype.getExtension = function (name) {
+      return name === 'WEBGL_debug_renderer_info' ? null : Reflect.apply(getExtension, this, [name]);
+    };
+  }
+}
 
 const { values: opts } = parseArgs({
   options: {
@@ -60,7 +71,7 @@ const [vw, vh] = opts.viewport.split('x').map(Number);
 const REPORT_DIR = path.resolve(opts['report-dir']);
 fs.mkdirSync(REPORT_DIR, { recursive: true });
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({ args: WEBGL_ARGS });
 const context = await browser.newContext({
   viewport: { width: vw, height: vh },
   locale: 'en-US',
@@ -78,6 +89,7 @@ if (SITE_ORIGIN) {
     }
   });
 }
+await context.addInitScript(hideSoftwareRenderer);
 const page = await context.newPage();
 if (opts['fast-forward']) await page.clock.install();
 const pageErrors = [];
@@ -98,6 +110,16 @@ await page.waitForTimeout(Number(opts.seconds) * 1000);
 await page.screenshot({ path: path.join(REPORT_DIR, 'verify.png') });
 const initial = await snap();
 const banner = await page.evaluate(() => !!document.getElementById('cm-snapshot-banner'));
+const mapMode = await page
+  .evaluate(() => ['deckgl-mode', 'globe-mode', 'svg-mode'].find((c) => document.querySelector(`.${c}`)) || 'none')
+  .catch(() => 'unknown');
+const branding = await page
+  .evaluate(() => ({
+    title: document.title,
+    logo: document.querySelector('.logo')?.textContent || null,
+    clockShifted: !!window.__cmSnapshot?.clockShifted,
+  }))
+  .catch(() => null);
 
 let later = null;
 if (opts['fast-forward'] && initial) {
@@ -119,6 +141,8 @@ const report = {
   url: PAGE_URL,
   shim: initial,
   banner,
+  mapMode,
+  branding,
   hitRate: Number(r0.hitRate.toFixed(3)),
   afterFastForward: later && {
     by: opts['fast-forward'],
@@ -133,7 +157,7 @@ const report = {
 fs.writeFileSync(path.join(REPORT_DIR, 'verify-report.json'), JSON.stringify(report, null, 2));
 console.log(
   `verify: ${r0.served}/${r0.asked} API requests served from snapshot (exact ${initial?.hits ?? 0}, fuzzy ${initial?.fuzzy ?? 0}, miss ${initial?.misses ?? 0}); ` +
-    `hit rate ${(r0.hitRate * 100).toFixed(1)}%; banner ${banner}; page errors ${pageErrors.length}; ` +
+    `hit rate ${(r0.hitRate * 100).toFixed(1)}%; banner ${banner}; map ${mapMode}; page errors ${pageErrors.length}; ` +
     `outside-base requests ${outside.size}; api on network ${apiOnNetwork.size}` +
     (report.afterFastForward
       ? `; after +${opts['fast-forward']}: ${report.afterFastForward.newRequests} more requests, ${report.afterFastForward.newMisses} missed`

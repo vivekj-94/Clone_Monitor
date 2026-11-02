@@ -46,6 +46,7 @@ LOGS="$WORK/logs"
 REDIS_PORT="${REDIS_PORT:-6380}"
 REDIS_REST_PORT="${REDIS_REST_PORT:-8079}"
 API_PORT="${API_PORT:-46123}"
+API_PROXY_PORT="${API_PROXY_PORT:-8089}"
 RECORD_PORT="${RECORD_PORT:-8090}"
 VERIFY_PORT="${VERIFY_PORT:-8091}"
 
@@ -109,6 +110,9 @@ wait_http() { # url, seconds, [curl args...]
 rand() { openssl rand -hex 32; }
 export REDIS_PASSWORD="$(rand)" REDIS_TOKEN="$(rand)" WM_SESSION_SECRET="$(rand)"
 export RELAY_SHARED_SECRET="$(rand)" LOCAL_API_TOKEN="$(rand)"
+# Operator key for this run's own API, so seeders that call "the World
+# Monitor API" can be pointed at the local one instead of the hosted service.
+export WM_OPERATOR_KEY="wm_$(openssl rand -hex 20)"
 
 # Values of these env vars are scrubbed from anything recorded.
 KEY_VARS=(FRED_API_KEY EIA_API_KEY FINNHUB_API_KEY NASA_FIRMS_API_KEY ALPHA_VANTAGE_API_KEY
@@ -116,7 +120,7 @@ KEY_VARS=(FRED_API_KEY EIA_API_KEY FINNHUB_API_KEY NASA_FIRMS_API_KEY ALPHA_VANT
   CLOUDFLARE_API_TOKEN OPENROUTER_API_KEY LLM_API_KEY WAQI_API_KEY OPENAQ_API_KEY
   EXA_API_KEY ESTAT_APPID IMF_API_KEY COMTRADE_API_KEYS USDA_FAS_PSD_API_KEY
   GOOGLE_FACT_CHECK_API_KEY TRAVELPAYOUTS_API_TOKEN UCDP_ACCESS_TOKEN)
-export CM_SECRET_ENV_NAMES="REDIS_PASSWORD REDIS_TOKEN WM_SESSION_SECRET RELAY_SHARED_SECRET LOCAL_API_TOKEN ${KEY_VARS[*]}"
+export CM_SECRET_ENV_NAMES="REDIS_PASSWORD REDIS_TOKEN WM_SESSION_SECRET RELAY_SHARED_SECRET LOCAL_API_TOKEN WM_OPERATOR_KEY ${KEY_VARS[*]}"
 configured=()
 for v in "${KEY_VARS[@]}"; do [ -n "${!v:-}" ] && configured+=("$v"); done
 echo "data-source keys configured: ${configured[*]:-none}"
@@ -124,7 +128,10 @@ echo "data-source keys configured: ${configured[*]:-none}"
 # ------------------------------------------------------------------ build
 cd "$WM_DIR"
 UPSTREAM_SHA="$(cat "$REPO_ROOT/worldmonitor.upstream-sha" 2>/dev/null || echo unknown)"
-export UPSTREAM_SHA
+# Commit of this repository being built; published in status.json so a later
+# run whose upstream code fails can rebuild this last-good version instead.
+REPO_SHA="${REPO_SHA:-$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo unknown)}"
+export UPSTREAM_SHA REPO_SHA
 
 if [ "${SKIP_INSTALL:-0}" != "1" ]; then
   log "npm ci (worldmonitor @ ${UPSTREAM_SHA:0:7})"
@@ -135,8 +142,15 @@ if [ "${SKIP_BUILD:-0}" != "1" ]; then
   log "vite build (variant=full, base=$SITE_BASE)"
   # No Sentry DSN / Clerk / Convex: the copy must not report into upstream's
   # accounts and has no sign-in backend.
+  # No PMTiles / API base / RSS relay overrides either: the defaults use
+  # same-origin /api and OpenFreeMap tiles. The country-boundary overrides
+  # default to maps.worldmonitor.app, which is CORS-locked to upstream's
+  # sites, so point them at the copy this site ships in data/.
   env -u VITE_SENTRY_DSN -u SENTRY_AUTH_TOKEN -u VITE_CLERK_PUBLISHABLE_KEY -u VITE_CONVEX_URL \
-    VITE_VARIANT=full NODE_OPTIONS="--max-old-space-size=8192" \
+    -u VITE_PMTILES_URL -u VITE_PMTILES_URL_PUBLIC -u VITE_WS_API_URL -u VITE_WS_RELAY_URL \
+    -u VITE_RSS_DIRECT_TO_RELAY -u VITE_DESKTOP_RUNTIME -u VERCEL_GIT_COMMIT_SHA -u VERCEL_ENV \
+    VITE_VARIANT=full VITE_COUNTRY_OVERRIDES_URL="${SITE_BASE}data/country-boundary-overrides.geojson" \
+    NODE_OPTIONS="--max-old-space-size=8192" \
     npx vite build --base "$SITE_BASE"
   log "compile API handlers for the Node API server"
   node docker/build-handlers.mjs
@@ -172,17 +186,39 @@ log "start API server on :$API_PORT"
 node docker/validate-session-secret.mjs
 # NODE_ENV stays unset, as in the upstream image: the API only trusts the
 # proxy's "Origin: http://localhost" outside production mode.
-(exec env -u NODE_ENV LOCAL_API_MODE=docker LOCAL_API_PORT="$API_PORT" LOCAL_API_RESOURCE_DIR="$WM_DIR" \
-  LOCAL_API_TOKEN="$LOCAL_API_TOKEN" LOCAL_API_CLOUD_FALLBACK=false WM_SESSION_SECRET="$WM_SESSION_SECRET" \
-  RELAY_SHARED_SECRET="$RELAY_SHARED_SECRET" WS_RELAY_URL="http://127.0.0.1:3004" \
+# VERCEL_ENV unset too, or Redis keys get a preview prefix. No WS_RELAY_URL:
+# the AIS relay is not run (its loops warm-ping upstream's production API).
+(exec env -u NODE_ENV -u VERCEL_ENV -u WS_RELAY_URL LOCAL_API_MODE=docker LOCAL_API_PORT="$API_PORT" \
+  LOCAL_API_RESOURCE_DIR="$WM_DIR" LOCAL_API_TOKEN="$LOCAL_API_TOKEN" LOCAL_API_CLOUD_FALLBACK=false \
+  WM_SESSION_SECRET="$WM_SESSION_SECRET" RELAY_SHARED_SECRET="$RELAY_SHARED_SECRET" \
+  WORLDMONITOR_VALID_KEYS="$WM_OPERATOR_KEY" \
   node src-tauri/sidecar/local-api-server.mjs) > "$LOGS/api.log" 2>&1 &
 PIDS+=($!)
 wait_http "http://127.0.0.1:$API_PORT/api/sidecar-health" 120
 
+# Same-origin /api proxy (what nginx does in upstream's image). Used by the
+# seeders below and, with the site behind it, by the recorder.
+node "$HERE/serve.mjs" --root "$RT" --base "$SITE_BASE" --port "$API_PROXY_PORT" --quiet \
+  --api "http://127.0.0.1:$API_PORT" \
+  --api-header "Origin: http://localhost" \
+  --api-header "X-WorldMonitor-Local-Token: $LOCAL_API_TOKEN" > "$LOGS/serve-api.log" 2>&1 &
+PIDS+=($!)
+wait_http "http://127.0.0.1:$API_PROXY_PORT/api/sidecar-health" 30
+
 # ------------------------------------------------------------------- seed
 if [ "${SKIP_SEED:-0}" != "1" ]; then
   log "seed Redis from public data sources"
-  WM_DIR="$WM_DIR" SEED_LOG_DIR="$LOGS/seed" "$HERE/run-seeders.sh"
+  # Never touch World Monitor's hosted service: seeders that read an API
+  # base from the environment get this run's own API; the three that
+  # hard-code api.worldmonitor.app (and send a worldmonitor.app Origin) and
+  # the digest notifier are excluded. Bundles only re-run individual
+  # seeders, so they are excluded as duplicates.
+  WM_DIR="$WM_DIR" SEED_LOG_DIR="$LOGS/seed" \
+    SEED_INCLUDE_BUNDLES="${SEED_INCLUDE_BUNDLES:-0}" \
+    SEED_EXCLUDE="${SEED_EXCLUDE:-^seed-(infra|military-maritime-news|service-statuses|digest-notifications)\.mjs\$}" \
+    API_BASE_URL="http://127.0.0.1:$API_PROXY_PORT" WM_API_BASE_URL="http://127.0.0.1:$API_PROXY_PORT" \
+    WORLDMONITOR_API_KEY="$WM_OPERATOR_KEY" RELAY_URL="http://127.0.0.1:9" \
+    "$HERE/run-seeders.sh"
   cp "$LOGS/seed/summary.tsv" "$REPORTS/seed-summary.tsv"
 fi
 
@@ -219,10 +255,20 @@ node -e '
     }
   } catch {}
   fs.writeFileSync(site + "/snapshot/status.json", JSON.stringify({
-    generatedAt: m.generatedAt, upstreamSha: m.upstreamSha,
+    generatedAt: m.generatedAt, upstreamSha: m.upstreamSha, repoSha: process.env.REPO_SHA,
     responses: rep.summary.entries, statuses: rep.summary.statusHist, seeders: seed,
   }, null, 2));
+  // Quality gate: never replace a good snapshot with a mostly empty one.
+  const ok = Object.entries(rep.summary.statusHist)
+    .filter(([s]) => Number(s) >= 200 && Number(s) < 300)
+    .reduce((n, [, c]) => n + c, 0);
+  const min = Number(process.env.MIN_OK_RESPONSES || 60);
+  console.log(`snapshot: ${ok} successful API responses recorded (minimum ${min})`);
+  if (ok < min) { console.error("snapshot: too few successful responses"); process.exit(1); }
 ' "$OUT_SITE" "$REPORTS"
+
+log "stamp capture time into the pages"
+node "$HERE/assemble.mjs" --stamp --out "$OUT_SITE"
 
 log "check the site for leaked secret values"
 secret_files scan "$OUT_SITE"

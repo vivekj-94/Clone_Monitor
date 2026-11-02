@@ -47,6 +47,21 @@ function loadPlaywright() {
 }
 const { chromium } = loadPlaywright();
 
+// GPU-less runners only have SwiftShader WebGL, which the app rejects by
+// renderer name and falls back to its SVG map. Real visitors get the
+// DeckGL/MapLibre map, which loads different data, so force it the same way
+// upstream's own e2e tests do (worldmonitor/e2e/mcp-news-map.spec.ts).
+export const WEBGL_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
+export function hideSoftwareRenderer() {
+  for (const Ctx of [window.WebGL2RenderingContext, window.WebGLRenderingContext]) {
+    if (!Ctx) continue;
+    const getExtension = Ctx.prototype.getExtension;
+    Ctx.prototype.getExtension = function (name) {
+      return name === 'WEBGL_debug_renderer_info' ? null : Reflect.apply(getExtension, this, [name]);
+    };
+  }
+}
+
 const { values: opts } = parseArgs({
   options: {
     url: { type: 'string' },
@@ -99,7 +114,8 @@ const PASSES = {
 // Not stored: the session is synthesized at replay time, and 401/403 would
 // push the app into auth recovery (see cm-snapshot.js).
 const NEVER_STORE_PATHS = new Set(['/api/wm-session']);
-const NEVER_STORE_STATUS = new Set([401, 403]);
+// 429 is a rate limit of the recording run itself, never worth replaying.
+const NEVER_STORE_STATUS = new Set([401, 403, 429]);
 
 const entries = new Map(); // key -> entry
 const report = { pageUrl: PAGE_URL, passes: {}, redactions: 0, skipped: {}, consoleErrors: [], pageErrors: [], notFound: [] };
@@ -153,16 +169,17 @@ function onRecord(e) {
   });
 }
 
-// Every bootstrap key the app may request lazily, from upstream's registry.
+// Every bootstrap key the app may request lazily, from upstream's registry,
+// as the public single-key read (?keys=<k>&public=1). Credentialed
+// single-key reads (no public=1) fall back to these by fuzzy match at
+// replay time; the one multi-key credentialed read is requested as such.
 async function onDemandBootstrapUrls() {
   try {
     const mod = await import(pathToFileURL(path.join(WM_DIR, 'shared', 'bootstrap-tier-keys.js')).href);
-    const names = Object.keys(mod.BOOTSTRAP_TIERS || {});
-    const urls = [];
-    for (const k of names) {
-      urls.push(`/api/bootstrap?keys=${encodeURIComponent(k)}&public=1`);
-      urls.push(`/api/bootstrap?keys=${encodeURIComponent(k)}`);
-    }
+    const names = new Set(Object.keys(mod.BOOTSTRAP_TIERS || {}));
+    if (mod.PUBLIC_WEATHER_BOOTSTRAP_KEY) names.add(mod.PUBLIC_WEATHER_BOOTSTRAP_KEY);
+    const urls = [...names].map((k) => `/api/bootstrap?keys=${encodeURIComponent(k)}&public=1`);
+    urls.push('/api/bootstrap?keys=bisDsr,bisPropertyResidential,bisPropertyCommercial');
     return urls;
   } catch (err) {
     console.warn(`record: bootstrap key registry unavailable (${err.message}); skipping on-demand keys`);
@@ -218,6 +235,7 @@ async function runPass(browser, name, extraUrls) {
     serviceWorkers: 'block',
   });
   await routeSiteOrigin(context);
+  await context.addInitScript(hideSoftwareRenderer);
   await context.addInitScript(() => {
     window.__CM_MODE__ = 'record';
   });
@@ -260,22 +278,36 @@ async function runPass(browser, name, extraUrls) {
   if (extraUrls.length) {
     // Through window.fetch, i.e. the app's own wrapper chain (session header
     // included) and the shim, so keys match what the app would ask for.
+    // Paced: the API allows 120 requests per minute per client, and the
+    // page's own refresh traffic shares that budget.
     const done = await page
       .evaluate(async (urls) => {
+        const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         let ok = 0;
-        for (let i = 0; i < urls.length; i += 6) {
-          const batch = urls.slice(i, i + 6).map((u) =>
-            fetch(u).then(
-              (r) => { if (r.ok) ok++; return r.arrayBuffer(); },
-              () => null,
-            ),
-          );
-          await Promise.all(batch);
+        let limited = 0;
+        for (const u of urls) {
+          for (let attempt = 0; attempt < 3; attempt++) {
+            let r;
+            try {
+              r = await fetch(u);
+              await r.arrayBuffer();
+            } catch {
+              break;
+            }
+            if (r.status === 429) {
+              limited++;
+              await sleep(Math.min(65, Number(r.headers.get('retry-after')) || 30) * 1000);
+              continue;
+            }
+            if (r.ok) ok++;
+            break;
+          }
+          await sleep(650);
         }
-        return ok;
+        return { ok, limited };
       }, extraUrls)
-      .catch(() => 0);
-    passReport.onDemandBootstrap = { requested: extraUrls.length, ok: done };
+      .catch(() => ({ ok: 0, limited: 0 }));
+    passReport.onDemandBootstrap = { requested: extraUrls.length, ...done };
   }
 
   for (const step of FAST_FORWARDS) {
@@ -293,21 +325,45 @@ async function runPass(browser, name, extraUrls) {
   passReport.fastForwards = FAST_FORWARDS;
   passReport.recordedAfter = entries.size;
   passReport.shim = await page.evaluate(() => window.__cmSnapshot && { ...window.__cmSnapshot, missed: undefined }).catch(() => null);
+  passReport.mapMode = await page
+    .evaluate(() => ['deckgl-mode', 'globe-mode', 'svg-mode'].find((c) => document.querySelector(`.${c}`)) || 'none')
+    .catch(() => 'unknown');
   report.passes[name] = passReport;
   await context.close();
   console.log(`record: pass ${name}: ${entries.size} unique API responses so far (${sweeps} sweeps, ${FAST_FORWARDS.length} clock jumps)`);
 }
 
-const browser = await chromium.launch();
+// Warm the API's caches so the page's first bootstrap fetch fits the app's
+// 1.2 s budget (a cold local API can exceed it).
+for (const p of [
+  '/api/bootstrap?tier=fast&public=1',
+  '/api/bootstrap?tier=slow&public=1',
+  '/api/news/v1/list-feed-digest?variant=full&lang=en&public=1',
+]) {
+  await fetch(new URL(p, LOCAL.origin), { signal: AbortSignal.timeout(60_000) }).then((r) => r.arrayBuffer()).catch(() => {});
+}
+
+let browser = await chromium.launch({ args: WEBGL_ARGS });
 try {
   const extra = await onDemandBootstrapUrls();
   let first = true;
   for (const name of opts.passes.split(',').map((s) => s.trim()).filter(Boolean)) {
-    await runPass(browser, name, first ? extra : []);
+    // One retry per pass: headless Chromium occasionally crashes on runners.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await runPass(browser, name, first ? extra : []);
+        break;
+      } catch (err) {
+        console.warn(`record: pass ${name} attempt ${attempt} failed: ${err.message}`);
+        if (attempt >= 2) throw err;
+        await browser.close().catch(() => {});
+        browser = await chromium.launch({ args: WEBGL_ARGS });
+      }
+    }
     first = false;
   }
 } finally {
-  await browser.close();
+  await browser.close().catch(() => {});
 }
 
 const manifest = {

@@ -40,9 +40,33 @@
   var SOURCE_URL = /^https:\/\//.test(ds.source || '') ? ds.source : 'https://github.com/koala73/worldmonitor';
   var ORIGIN = location.origin;
   var nativeFetch = window.fetch.bind(window);
-  var NOW = Date.now();
+  var RealDate = Date;
+  var NOW = RealDate.now();
 
-  var stats = { mode: MODE, hits: 0, fuzzy: 0, misses: 0, recorded: 0, rewritten: 0, missed: [] };
+  // Show the dashboard as of the capture time. The app judges freshness
+  // against the clock (sources older than 6 h read "No data", vessels older
+  // than 1 h are dropped, ...), so with the real clock a day-old snapshot
+  // would hide data it actually has. Date.now() and new Date() are moved
+  // back to the capture instant; time still advances from there. The notice
+  // shows the real age. Dates built from explicit values are untouched.
+  var CAPTURED_MS = RealDate.parse(ds.capturedAt || '');
+  if (MODE === 'replay' && isFinite(CAPTURED_MS) && typeof Reflect !== 'undefined') {
+    (function (offset) {
+      var ShiftedDate = function Date() {
+        if (!new.target) return new RealDate(RealDate.now() + offset).toString();
+        var args = arguments.length ? Array.prototype.slice.call(arguments) : [RealDate.now() + offset];
+        return Reflect.construct(RealDate, args, new.target);
+      };
+      Object.setPrototypeOf(ShiftedDate, RealDate);
+      ShiftedDate.prototype = RealDate.prototype;
+      ShiftedDate.now = function now() { return RealDate.now() + offset; };
+      ShiftedDate.parse = RealDate.parse;
+      ShiftedDate.UTC = RealDate.UTC;
+      window.Date = ShiftedDate;
+    })(CAPTURED_MS - NOW);
+  }
+
+  var stats = { mode: MODE, hits: 0, fuzzy: 0, misses: 0, recorded: 0, rewritten: 0, missed: [], clockShifted: window.Date !== RealDate };
   window.__cmSnapshot = stats;
 
   // ---------------------------------------------------------------- helpers
@@ -305,7 +329,8 @@
   var NULL_BODY = { 101: 1, 204: 1, 205: 1, 304: 1 };
   // Replaying these would start the app's auth recovery (and can end in a
   // 15-minute "session blackout"), or its billing-verification retry.
-  var NEVER_REPLAY_STATUS = { 401: 1, 403: 1 };
+  // (429 is only a rate limit of the recording run.)
+  var NEVER_REPLAY_STATUS = { 401: 1, 403: 1, 429: 1 };
 
   function buildResponse(entry, body, url) {
     var headers = new Headers(entry.h || {});
@@ -410,6 +435,15 @@
       target = ORIGIN + d.path + d.info.url.search;
       if (typeof Request !== 'undefined' && input instanceof Request) target = new Request(target, input);
     }
+    // The app aborts bootstrap tiers after 1.2 s / 3 s. Let the recording
+    // finish anyway: the response is what the published snapshot needs.
+    if (d.path === '/api/bootstrap') {
+      if (typeof Request !== 'undefined' && target instanceof Request) target = new Request(target, { signal: null });
+      if (init && init.signal) {
+        init = Object.assign({}, init);
+        delete init.signal;
+      }
+    }
     return nativeFetch(target, init).then(function (res) {
       var copy = res.clone();
       copy.arrayBuffer().then(
@@ -449,6 +483,13 @@
       }
       if (MODE === 'record') return record(d, input, init);
       var signal = (init && init.signal) || (typeof Request !== 'undefined' && input instanceof Request ? input.signal : null);
+      // Bootstrap hydration is guarded only by an abort timer (1.2 s fast
+      // tier); on a slow connection let it complete instead of losing the
+      // panels' first data. An already-aborted call still rejects.
+      if (d.path === '/api/bootstrap') {
+        if (signal && signal.aborted) return Promise.reject(abortError());
+        return replay(d);
+      }
       return withAbort(signal, replay(d));
     });
   };
@@ -516,6 +557,58 @@
   if (MODE === 'replay') {
     loadManifest();
 
+    // The app's service worker would pin visitors to an old snapshot.
+    try {
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.register = function () {
+          return Promise.reject(new Error('Service workers are disabled in the snapshot'));
+        };
+      }
+    } catch (e) {}
+
+    // Distinct branding for this copy (upstream's trademark policy for
+    // forks); copyright, author credit and the link to the original stay.
+    var REF_ORIGIN = 'https://www.worldmonitor.app';
+    var setText = function (sel, text) {
+      var els = document.querySelectorAll(sel);
+      for (var i = 0; i < els.length; i++) if (els[i].textContent !== text) els[i].textContent = text;
+    };
+    var brand = function () {
+      setText('.logo', 'CLONE MONITOR');
+      setText('.logo-mobile', 'Clone Monitor');
+      setText('.site-footer-name', 'CLONE MONITOR');
+      var st = document.querySelectorAll('.status-indicator');
+      for (var i = 0; i < st.length; i++) {
+        var walker = document.createTreeWalker(st[i], NodeFilter.SHOW_TEXT);
+        for (var n = walker.nextNode(); n; n = walker.nextNode()) {
+          if (/^\s*LIVE\s*$/i.test(n.nodeValue)) n.nodeValue = 'SNAPSHOT';
+        }
+      }
+      // Footer reference pages live on the original site, not under this one.
+      var links = document.querySelectorAll('.site-footer a[href^="/"]');
+      for (var j = 0; j < links.length; j++) {
+        var href = links[j].getAttribute('href');
+        if (href.indexOf(BASE) !== 0) links[j].setAttribute('href', REF_ORIGIN + href);
+      }
+      // The app retitles the page at runtime ("World Monitor \u2014 ...",
+      // "<country> \u2014 World Monitor").
+      if (/World Monitor/.test(document.title) && !/based on World Monitor/.test(document.title)) {
+        document.title = document.title.replace(/World Monitor/g, 'Clone Monitor');
+      }
+    };
+    var brandQueued = false;
+    var queueBrand = function () {
+      if (brandQueued) return;
+      brandQueued = true;
+      setTimeout(function () { brandQueued = false; brand(); }, 250);
+    };
+    var startBranding = function () {
+      brand();
+      new MutationObserver(queueBrand).observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startBranding);
+    else startBranding();
+
     // Pick up the next daily snapshot in tabs left open.
     setInterval(function () {
       nativeFetch(SNAPSHOT_DIR + 'manifest.json', { cache: 'no-store' })
@@ -542,13 +635,19 @@
           'border-radius:6px', 'padding:6px 30px 6px 10px', 'box-shadow:0 2px 10px rgba(0,0,0,.4)',
           'pointer-events:auto',
         ].join(';');
-        var age = when ? Math.max(0, Math.round((Date.now() - when.getTime()) / 3600000)) : null;
+        var age = when ? Math.max(0, Math.round((RealDate.now() - when.getTime()) / 3600000)) : null;
+        // The daily refresh failed if the data is this old: say so.
+        if (age !== null && age >= 36) {
+          bar.style.background = 'rgba(120,20,20,.95)';
+          bar.style.borderColor = 'rgba(255,120,120,.6)';
+        }
         var link = 'color:#8ab4f8;text-decoration:underline';
         bar.innerHTML =
-          '<strong>Daily snapshot</strong>' +
-          (when ? ' &middot; captured ' + when.toISOString().slice(0, 16).replace('T', ' ') + ' UTC' + (age !== null ? ' (' + age + 'h ago)' : '') : '') +
-          ' &middot; not live &middot; <a style="' + link + '" href="https://www.worldmonitor.app/" target="_blank" rel="noopener">live original</a>' +
-          ' &middot; <a style="' + link + '" href="' + SOURCE_URL + '" target="_blank" rel="noopener">source (AGPL-3.0)</a>';
+          '<strong>Clone Monitor</strong>: unofficial daily snapshot' +
+          (when ? ', captured ' + when.toISOString().slice(0, 16).replace('T', ' ') + ' UTC' + (age !== null ? ' (' + age + 'h ago)' : '') : '') +
+          '. Not live. Based on <a style="' + link + '" href="https://github.com/koala73/worldmonitor" target="_blank" rel="noopener">World Monitor</a>' +
+          ' &copy; Elie Habib (AGPL-3.0) &middot; <a style="' + link + '" href="https://www.worldmonitor.app/" target="_blank" rel="noopener">live original</a>' +
+          ' &middot; <a style="' + link + '" href="' + SOURCE_URL + '" target="_blank" rel="noopener">source of this copy</a>';
         var close = document.createElement('button');
         close.type = 'button';
         close.setAttribute('aria-label', 'Hide snapshot notice');
