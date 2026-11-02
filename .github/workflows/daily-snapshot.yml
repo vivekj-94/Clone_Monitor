@@ -80,27 +80,22 @@ jobs:
     # code already in the repository instead.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 180
     permissions:
       contents: read
     env:
       SKIP_INSTALL: '1'
       # Project sites live under /<repo>/; a <user>.github.io repo or a
-      # custom domain is served from "/". Override with SITE_BASE /
-      # SITE_ORIGIN repository variables if needed.
-      SITE_BASE: ${{ vars.SITE_BASE || (endsWith(github.event.repository.name, '.github.io') && '/' || format('/{0}/', github.event.repository.name)) }}
+      # custom domain is served from "/" (set SITE_BASE / SITE_ORIGIN
+      # repository variables to override). Defaults are filled in below.
+      SITE_BASE: ${{ vars.SITE_BASE }}
       SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
       SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
-      # Optional free data-source keys (Settings -> Secrets and variables ->
-      # Actions). Each one unlocks more panels; see README.md.
-      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-      EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
-      FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
-      NASA_FIRMS_API_KEY: ${{ secrets.NASA_FIRMS_API_KEY }}
-      ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
-      AVIATIONSTACK_API: ${{ secrets.AVIATIONSTACK_API }}
-      WAQI_API_KEY: ${{ secrets.WAQI_API_KEY }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      # Data-source keys are given only to the build steps, and hidden from
+      # npm install scripts there.
+      CM_KEY_NAMES: >-
+        FRED_API_KEY EIA_API_KEY FINNHUB_API_KEY NASA_FIRMS_API_KEY ALPHA_VANTAGE_API_KEY
+        AVIATIONSTACK_API WAQI_API_KEY OPENROUTER_API_KEY
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
@@ -109,8 +104,8 @@ jobs:
 
       # The snapshot must never use World Monitor's hosted service: its EULA
       # forbids redistributing that data, and a few upstream scripts call it
-      # with a worldmonitor.app Origin. Resolve every hostname the code
-      # references to nowhere for the rest of this job.
+      # with a worldmonitor.app Origin. Resolve every worldmonitor.app
+      # hostname the code references to nowhere for the rest of this job.
       - name: Block World Monitor's hosted services
         run: |
           for h in worldmonitor.app www api proxy maps abacus clerk status analytics-canary \
@@ -121,17 +116,31 @@ jobs:
           if curl -s -m 5 -o /dev/null https://api.worldmonitor.app/; then
             echo "api.worldmonitor.app is still reachable" >&2; exit 1
           fi
+          repo="${GITHUB_REPOSITORY#*/}"
+          if [ -z "$SITE_BASE" ]; then
+            case "$repo" in *.github.io) SITE_BASE=/ ;; *) SITE_BASE="/$repo/" ;; esac
+          fi
           {
+            echo "SITE_BASE=$SITE_BASE"
             echo "SITE_ORIGIN=${SITE_ORIGIN:-https://${GITHUB_REPOSITORY_OWNER,,}.github.io}"
             echo "WORK=$RUNNER_TEMP/work"
             echo "OUT_SITE=$RUNNER_TEMP/site"
           } >> "$GITHUB_ENV"
 
+      # Upstream controls .nvmrc and the lockfile; if they break, fall back
+      # to Node 24 so the last-good rebuild below can still run.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        id: node
+        continue-on-error: true
         with:
           node-version-file: worldmonitor/.nvmrc
           cache: npm
           cache-dependency-path: worldmonitor/package-lock.json
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.node.outcome != 'success'
+        with:
+          node-version: '24'
 
       - name: Install redis-server
         run: |
@@ -139,18 +148,27 @@ jobs:
           sudo apt-get install -y -qq redis-server
           sudo systemctl stop redis-server || true
 
-      - name: Install worldmonitor dependencies
-        working-directory: worldmonitor
-        run: npm ci --no-audit --no-fund
-
-      - name: Install Chromium for Playwright
-        working-directory: worldmonitor
-        run: npx playwright install --with-deps chromium
-
-      - name: Build, seed, record and verify
+      # Everything that depends on the newest upstream code is in this one
+      # step, so any failure (install, build, seed, record, verify) or hang
+      # leads to the last-good rebuild instead of a skipped day.
+      - name: Install, build, seed, record and verify
         id: latest
         continue-on-error: true
-        run: ./snapshot/build.sh
+        timeout-minutes: 80
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          NASA_FIRMS_API_KEY: ${{ secrets.NASA_FIRMS_API_KEY }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          AVIATIONSTACK_API: ${{ secrets.AVIATIONSTACK_API }}
+          WAQI_API_KEY: ${{ secrets.WAQI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2086
+          (unset $CM_KEY_NAMES; cd worldmonitor && npm ci --no-audit --no-fund && npx playwright install --with-deps chromium)
+          timeout -k 2m 70m ./snapshot/build.sh
 
       # ---- fallback: newest upstream code failed; rebuild what is online ----
       - name: Find the code of the snapshot that is online
@@ -173,16 +191,30 @@ jobs:
           path: lastgood
           persist-credentials: false
 
-      - name: Build, seed, record and verify (last-good code)
+      - name: Install, build, seed, record and verify (last-good code)
         id: fallback
         if: steps.lastgood.outputs.sha
+        timeout-minutes: 80
         env:
-          SKIP_INSTALL: '0'
           REPO_SHA: ${{ steps.lastgood.outputs.sha }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          NASA_FIRMS_API_KEY: ${{ secrets.NASA_FIRMS_API_KEY }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          AVIATIONSTACK_API: ${{ secrets.AVIATIONSTACK_API }}
+          WAQI_API_KEY: ${{ secrets.WAQI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          rm -rf "$WORK"
-          (cd lastgood/worldmonitor && npm ci --no-audit --no-fund && npx playwright install chromium)
-          ./lastgood/snapshot/build.sh
+          set -euo pipefail
+          # Keep the failed attempt's (already scrubbed) logs for the artifact.
+          if [ -d "$WORK" ]; then
+            rm -rf "$RUNNER_TEMP/work-latest" "$WORK/runtime"
+            mv "$WORK" "$RUNNER_TEMP/work-latest"
+          fi
+          # shellcheck disable=SC2086
+          (unset $CM_KEY_NAMES; cd lastgood/worldmonitor && npm ci --no-audit --no-fund && npx playwright install --with-deps chromium)
+          timeout -k 2m 70m ./lastgood/snapshot/build.sh
 
       - name: Summary
         if: always()
@@ -231,6 +263,8 @@ jobs:
           path: |
             ${{ runner.temp }}/work/reports
             ${{ runner.temp }}/work/logs
+            ${{ runner.temp }}/work-latest/reports
+            ${{ runner.temp }}/work-latest/logs
           retention-days: 14
           if-no-files-found: ignore
 

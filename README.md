@@ -100,9 +100,10 @@ old. Each run page has a summary and a `snapshot-reports` artifact with logs.
 ## Relationship to World Monitor
 
 - Built only from the open-source code and public data sources. The run
-  never uses World Monitor's hosted service: every `*.worldmonitor.app` host
-  is blocked inside the job, the few upstream data jobs that call it are
-  skipped, and the others are pointed at the job's own API.
+  never uses World Monitor's hosted service: every worldmonitor.app hostname
+  the code references is blocked inside the job, the few upstream data jobs
+  that call the hosted API are skipped, and the others are pointed at the
+  job's own API.
 - No reporting to World Monitor's analytics or error tracking. Pages are
   `noindex`, so the copy does not compete with the original in search.
 - Branded "Clone Monitor" with "Based on World Monitor" attribution, as

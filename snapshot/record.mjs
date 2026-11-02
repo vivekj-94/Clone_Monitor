@@ -141,6 +141,28 @@ function redact(buf) {
   return Buffer.from(text, 'latin1');
 }
 
+// Bodies are stored per run (r/<run><id>): a tab still holding yesterday's
+// manifest after a deploy gets clean misses, never today's bodies under
+// yesterday's status and headers.
+const RUN_ID = Date.now().toString(36);
+
+// Two successful answers for the same request (passes, refresh loops): a
+// later one may be degraded (a seed key expired meanwhile). Bootstrap
+// payloads are merged per data key; other bodies are only replaced by one
+// at least half as large.
+function mergeBootstrap(prevBuf, nextBuf) {
+  try {
+    const a = JSON.parse(prevBuf.toString('utf8'));
+    const b = JSON.parse(nextBuf.toString('utf8'));
+    if (!a || !b || typeof a.data !== 'object' || typeof b.data !== 'object') return nextBuf;
+    const data = { ...a.data, ...b.data };
+    const missing = [...new Set([...(a.missing || []), ...(b.missing || [])])].filter((k) => !(k in data));
+    return Buffer.from(JSON.stringify({ ...b, data, missing }), 'utf8');
+  } catch {
+    return nextBuf;
+  }
+}
+
 function onRecord(e) {
   if (NEVER_STORE_PATHS.has(e.path) || NEVER_STORE_STATUS.has(e.status)) {
     const why = NEVER_STORE_PATHS.has(e.path) ? e.path : `HTTP ${e.status}`;
@@ -148,16 +170,25 @@ function onRecord(e) {
     return;
   }
   const prev = entries.get(e.key);
-  // Keep the newest successful response; never let an error overwrite data.
+  // Never let an error overwrite data.
   if (prev && isOk(prev.s) && !isOk(e.status)) return;
   const headers = {};
   for (const [k, v] of Object.entries(e.headers || {})) {
     headers[k] = secrets.some((s) => v.includes(s)) ? '[redacted]' : v;
   }
-  const body = redact(Buffer.from(e.data, 'base64'));
-  fs.writeFileSync(path.join(OUT, 'r', e.file), body);
+  let body = redact(Buffer.from(e.data, 'base64'));
+  if (prev && isOk(prev.s) && isOk(e.status)) {
+    const prevBody = fs.readFileSync(path.join(OUT, 'r', prev.f));
+    if (e.path === '/api/bootstrap') body = mergeBootstrap(prevBody, body);
+    else if (body.length < prevBody.length / 2) {
+      report.keptLarger = (report.keptLarger || 0) + 1;
+      return;
+    }
+  }
+  const file = `${RUN_ID}${e.file}`;
+  fs.writeFileSync(path.join(OUT, 'r', file), body);
   entries.set(e.key, {
-    f: e.file,
+    f: file,
     m: e.method,
     p: e.path,
     q: e.query,

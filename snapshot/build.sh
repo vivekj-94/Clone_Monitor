@@ -22,7 +22,8 @@
 #   SITE_ORIGIN   public origin, e.g. https://<user>.github.io: record and
 #                 verify in a browser that believes it is on that host
 #   SKIP_INSTALL=1, SKIP_BUILD=1, SKIP_SEED=1         reuse earlier steps when iterating
-#   RECORD_SECONDS, RECORD_PASSES, SEED_PARALLEL, SEED_TIMEOUT, MIN_HIT_RATE
+#   RECORD_SECONDS, RECORD_PASSES, SEED_PARALLEL, SEED_TIMEOUT, MIN_HIT_RATE,
+#   MIN_BOOTSTRAP_KEYS, MIN_OK_RESPONSES (publish gate)
 #   Data-source API keys (FRED_API_KEY, EIA_API_KEY, ...) are passed through
 #   to the seeders and the API server when set; see README.md.
 
@@ -37,6 +38,8 @@ WM_DIR="$(cd "${WM_DIR:-$REPO_ROOT/worldmonitor}" && pwd)"
 WORK="${WORK:-$REPO_ROOT/.snapshot-work}"
 OUT_SITE="${OUT_SITE:-$WORK/site}"
 SITE_BASE="${SITE_BASE:-/Clone_Monitor/}"
+case "$SITE_BASE" in /*) ;; *) SITE_BASE="/$SITE_BASE" ;; esac
+case "$SITE_BASE" in */) ;; *) SITE_BASE="$SITE_BASE/" ;; esac
 SOURCE_URL="${SOURCE_URL:-}"
 SITE_ORIGIN="${SITE_ORIGIN:-}"
 REPORTS="$WORK/reports"
@@ -94,6 +97,10 @@ cleanup() {
   if [ -n "${REDIS_CONTAINER:-}" ]; then docker rm -f "$REDIS_CONTAINER" >/dev/null 2>&1 || true; fi
 }
 trap cleanup EXIT
+# A timeout/cancel sends TERM: exit through the EXIT trap so secrets are
+# scrubbed from the logs and the servers and redis are stopped.
+trap 'exit 143' TERM
+trap 'exit 130' INT
 
 wait_http() { # url, seconds, [curl args...]
   local url="$1" secs="$2"; shift 2
@@ -259,12 +266,23 @@ node -e '
     responses: rep.summary.entries, statuses: rep.summary.statusHist, seeders: seed,
   }, null, 2));
   // Quality gate: never replace a good snapshot with a mostly empty one.
-  const ok = Object.entries(rep.summary.statusHist)
-    .filter(([s]) => Number(s) >= 200 && Number(s) < 300)
-    .reduce((n, [, c]) => n + c, 0);
-  const min = Number(process.env.MIN_OK_RESPONSES || 60);
-  console.log(`snapshot: ${ok} successful API responses recorded (minimum ${min})`);
-  if (ok < min) { console.error("snapshot: too few successful responses"); process.exit(1); }
+  // Count real data: keys present in the bootstrap tiers, and successful
+  // answers from other endpoints. (Per-key bootstrap reads return 200 even
+  // when the key is missing, so they do not count.)
+  let dataKeys = 0, ok = 0;
+  for (const e of Object.values(m.entries)) {
+    if (e.s < 200 || e.s >= 300) continue;
+    if (e.p === "/api/bootstrap") {
+      if (!/(^|&)tier=(fast|slow)(&|$)/.test(e.q || "")) continue;
+      try { dataKeys += Object.keys(JSON.parse(fs.readFileSync(site + "/snapshot/r/" + e.f, "utf8")).data || {}).length; } catch {}
+      continue;
+    }
+    ok++;
+  }
+  const minKeys = Number(process.env.MIN_BOOTSTRAP_KEYS || 25);
+  const minOk = Number(process.env.MIN_OK_RESPONSES || 25);
+  console.log(`snapshot: ${dataKeys} bootstrap data keys (minimum ${minKeys}), ${ok} other successful responses (minimum ${minOk})`);
+  if (dataKeys < minKeys || ok < minOk) { console.error("snapshot: too little data; not publishing"); process.exit(1); }
 ' "$OUT_SITE" "$REPORTS"
 
 log "stamp capture time into the pages"

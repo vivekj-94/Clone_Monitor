@@ -50,20 +50,53 @@
   // back to the capture instant; time still advances from there. The notice
   // shows the real age. Dates built from explicit values are untouched.
   var CAPTURED_MS = RealDate.parse(ds.capturedAt || '');
+
+  // Self-contained (its source is also injected into a Web Worker below).
+  function installClockShift(g, offset) {
+    var RealD = g.Date;
+    var Shifted = function Date() {
+      if (!new.target) return new RealD(RealD.now() + offset).toString();
+      var args = arguments.length ? Array.prototype.slice.call(arguments) : [RealD.now() + offset];
+      return Reflect.construct(RealD, args, new.target);
+    };
+    Object.setPrototypeOf(Shifted, RealD);
+    Shifted.prototype = RealD.prototype;
+    Shifted.now = function now() { return RealD.now() + offset; };
+    Shifted.parse = RealD.parse;
+    Shifted.UTC = RealD.UTC;
+    g.Date = Shifted;
+  }
+
+  var CLOCK_OFFSET = null;
   if (MODE === 'replay' && isFinite(CAPTURED_MS) && typeof Reflect !== 'undefined') {
-    (function (offset) {
-      var ShiftedDate = function Date() {
-        if (!new.target) return new RealDate(RealDate.now() + offset).toString();
-        var args = arguments.length ? Array.prototype.slice.call(arguments) : [RealDate.now() + offset];
-        return Reflect.construct(RealDate, args, new.target);
+    CLOCK_OFFSET = CAPTURED_MS - NOW;
+    installClockShift(window, CLOCK_OFFSET);
+
+    // The correlation analysis worker judges recency with its own Date
+    // (e.g. "published in the last hour"), so give it the same clock. Only
+    // that worker: the map's workers are left exactly as they are.
+    if (typeof Worker !== 'undefined' && typeof Blob !== 'undefined') {
+      var NativeWorker = Worker;
+      var shiftSrc = '(' + installClockShift.toString() + ')(self,' + CLOCK_OFFSET + ');';
+      var WrappedWorker = function Worker(url, opts) {
+        if (!new.target) return NativeWorker.apply(this, arguments);
+        var abs = null;
+        try { abs = new URL(String(url), location.href); } catch (e) {}
+        if (abs && abs.origin === location.origin && /\/analysis\.worker[^/]*\.js$/.test(abs.pathname)) {
+          try {
+            var boot = opts && opts.type === 'module'
+              ? 'import "data:text/javascript;charset=utf-8,' + encodeURIComponent(shiftSrc) + '";\nimport ' + JSON.stringify(abs.href) + ';\n'
+              : shiftSrc + '\nimportScripts(' + JSON.stringify(abs.href) + ');\n';
+            var blobUrl = URL.createObjectURL(new Blob([boot], { type: 'text/javascript' }));
+            return Reflect.construct(NativeWorker, [blobUrl, opts], new.target);
+          } catch (e) {}
+        }
+        return Reflect.construct(NativeWorker, Array.prototype.slice.call(arguments), new.target);
       };
-      Object.setPrototypeOf(ShiftedDate, RealDate);
-      ShiftedDate.prototype = RealDate.prototype;
-      ShiftedDate.now = function now() { return RealDate.now() + offset; };
-      ShiftedDate.parse = RealDate.parse;
-      ShiftedDate.UTC = RealDate.UTC;
-      window.Date = ShiftedDate;
-    })(CAPTURED_MS - NOW);
+      Object.setPrototypeOf(WrappedWorker, NativeWorker);
+      WrappedWorker.prototype = NativeWorker.prototype;
+      window.Worker = WrappedWorker;
+    }
   }
 
   var stats = { mode: MODE, hits: 0, fuzzy: 0, misses: 0, recorded: 0, rewritten: 0, missed: [], clockShifted: window.Date !== RealDate };
@@ -245,14 +278,34 @@
   // --------------------------------------------------------------- replay
 
   var manifestPromise = null;
+  function fetchManifest(attempt) {
+    return nativeFetch(SNAPSHOT_DIR + 'manifest.json', { cache: 'no-cache' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('manifest HTTP ' + r.status);
+        return r.json();
+      })
+      .catch(function (err) {
+        // A network blip must not blank the page: retry a few times.
+        if (attempt >= 3) throw err;
+        return new Promise(function (res) { setTimeout(res, [500, 1500, 4000][attempt]); }).then(function () {
+          return fetchManifest(attempt + 1);
+        });
+      });
+  }
   function loadManifest() {
     if (!manifestPromise) {
-      manifestPromise = nativeFetch(SNAPSHOT_DIR + 'manifest.json', { cache: 'no-cache' })
-        .then(function (r) {
-          if (!r.ok) throw new Error('manifest HTTP ' + r.status);
-          return r.json();
-        })
+      manifestPromise = fetchManifest(0)
         .then(function (m) {
+          // Page HTML (cached up to 10 min by Pages) from another day than
+          // the manifest: the clock offset would be wrong. Reload once.
+          if (MODE === 'replay' && isFinite(CAPTURED_MS) && m.generatedAt && RealDate.parse(m.generatedAt) !== CAPTURED_MS) {
+            var done = null;
+            try { done = sessionStorage.getItem('cm-reload-for'); } catch (e) {}
+            if (done !== m.generatedAt) {
+              try { sessionStorage.setItem('cm-reload-for', m.generatedAt); } catch (e) {}
+              location.reload();
+            }
+          }
           var byPath = {};
           Object.keys(m.entries).forEach(function (key) {
             var e = m.entries[key];
@@ -266,6 +319,7 @@
         })
         .catch(function (err) {
           console.warn('[snapshot] manifest unavailable:', err);
+          manifestPromise = null; // try again on the next request
           return { entries: {}, byPath: {}, generatedAt: null };
         });
     }
@@ -276,18 +330,44 @@
     return q ? q.split('&') : [];
   }
 
-  // Closest recorded request on the same METHOD + path: most shared query
-  // pairs, then same body, then fewest extra pairs.
+  // name -> sorted list of values ("a=1&b=2&b=3" -> {a:["1"], b:["2","3"]})
+  function paramsOf(pairs) {
+    var out = {};
+    for (var i = 0; i < pairs.length; i++) {
+      var eq = pairs[i].indexOf('=');
+      var k = eq < 0 ? pairs[i] : pairs[i].slice(0, eq);
+      (out[k] = out[k] || []).push(eq < 0 ? '' : pairs[i].slice(eq + 1));
+    }
+    for (var n in out) out[n].sort();
+    return out;
+  }
+
+  // Parameters whose value may differ and still get a useful answer: the UI
+  // language (the English digest beats nothing) and page sizes.
+  var LOOSE_PARAMS = { lang: 1, limit: 1, page_size: 1, pageSize: 1 };
+
+  // Closest recorded request on the same METHOD + path. Every other
+  // parameter of the request must be present with the same value(s), so a
+  // different topic, category, country or symbol is a miss, never another
+  // resource's data. Ranked by shared pairs, same body, fewest extras.
   function fuzzyMatch(m, d) {
     var cands = m.byPath[d.method + ' ' + d.path];
     if (!cands || !cands.length) return null;
     var want = pairsOf(d.query);
+    var wantP = paramsOf(want);
     var best = null;
     var bestScore = -Infinity;
     for (var i = 0; i < cands.length; i++) {
       var c = cands[i];
       if (NEVER_REPLAY_STATUS[c.s]) continue;
       var have = pairsOf(c.q);
+      var haveP = paramsOf(have);
+      var compatible = true;
+      for (var name in wantP) {
+        if (LOOSE_PARAMS[name]) continue;
+        if (!haveP[name] || haveP[name].join('&') !== wantP[name].join('&')) { compatible = false; break; }
+      }
+      if (!compatible) continue;
       var shared = 0;
       for (var j = 0; j < want.length; j++) if (have.indexOf(want[j]) !== -1) shared++;
       var score = shared * 10 - (have.length - shared) - (want.length - shared) + (c.b === (d.body ? cyrb53(d.body, 3).toString(36) : '') ? 5 : 0) + (c.s >= 200 && c.s < 300 ? 3 : 0);
@@ -577,12 +657,14 @@
       setText('.logo', 'CLONE MONITOR');
       setText('.logo-mobile', 'Clone Monitor');
       setText('.site-footer-name', 'CLONE MONITOR');
+      // The "live" label, in whatever UI language; the app's own cached /
+      // unavailable states are left alone.
       var st = document.querySelectorAll('.status-indicator');
       for (var i = 0; i < st.length; i++) {
-        var walker = document.createTreeWalker(st[i], NodeFilter.SHOW_TEXT);
-        for (var n = walker.nextNode(); n; n = walker.nextNode()) {
-          if (/^\s*LIVE\s*$/i.test(n.nodeValue)) n.nodeValue = 'SNAPSHOT';
-        }
+        var cl = st[i].classList;
+        if (cl.contains('status-indicator--cached') || cl.contains('status-indicator--unavailable')) continue;
+        var label = st[i].querySelector('span:not(.status-dot)');
+        if (label && label.textContent !== 'SNAPSHOT') label.textContent = 'SNAPSHOT';
       }
       // Footer reference pages live on the original site, not under this one.
       var links = document.querySelectorAll('.site-footer a[href^="/"]');
@@ -615,7 +697,7 @@
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (m) {
           var cur = window.__cmManifest;
-          if (m && cur && m.generatedAt && m.generatedAt !== cur.generatedAt) location.reload();
+          if (m && m.generatedAt && (!cur || m.generatedAt !== cur.generatedAt)) location.reload();
         })
         .catch(function () {});
     }, 30 * 60 * 1000);
