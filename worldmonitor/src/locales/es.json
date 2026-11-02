@@ -987,7 +987,10 @@
       "stageUnavailable": "No hay cifras publicadas para esta etapa",
       "withheldNote": "W: dato reservado",
       "productionCaption": "Participación de cada país en la producción real. La capa de yacimientos del mapa muestra dónde están los recursos; esta tabla muestra quién los extrae o refina.",
-      "productionProLocked": "Actualiza a PRO para obtener acciones de minas y refinerías por país con concentración (índice de concentración de productores) por etapa."
+      "productionProLocked": "Actualiza a PRO para obtener acciones de minas y refinerías por país con concentración (índice de concentración de productores) por etapa.",
+      "partialTransitCoverage": "Datos de tránsito no disponibles para {{names}}",
+      "oilPipelinesUnavailable": "Datos de oleoductos no disponibles",
+      "gasPipelinesUnavailable": "Datos de gasoductos no disponibles"
     },
     "tradePolicy": {
       "tariffs": "Aranceles",
@@ -2855,7 +2858,7 @@
         "babElMandeb": "Bab el-Mandeb",
         "bosphorus": "Estrechos Turcos",
         "panama": "Panamá",
-        "danishStraits": "Estrechos Daneses"
+        "doverStrait": "Estrecho de Dover"
       },
       "flow": {
         "mbd": "{{value}} mb/d",

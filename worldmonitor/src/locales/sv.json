@@ -1685,7 +1685,10 @@
       "stageUnavailable": "No published figures for this stage",
       "withheldNote": "W withheld",
       "productionCaption": "Country shares of actual production. The map deposits layer shows where resources sit; this table shows who mines or refines them.",
-      "productionProLocked": "Uppgradera till PRO för gruv- och raffinaderiländsandelar med koncentration (producentkoncentrationsindex) per steg."
+      "productionProLocked": "Uppgradera till PRO för gruv- och raffinaderiländsandelar med koncentration (producentkoncentrationsindex) per steg.",
+      "partialTransitCoverage": "Transitdata otillgänglig: {{names}}",
+      "oilPipelinesUnavailable": "Data om oljeledningar är inte tillgängliga",
+      "gasPipelinesUnavailable": "Data om gasledningar är inte tillgängliga"
     },
     "positiveNewsFeed": {
       "noStories": "Inga berättelser i denna kategori ännu"
@@ -2452,7 +2455,7 @@
         "babElMandeb": "Bab el-Mandeb",
         "bosphorus": "Turkiska Sunden",
         "panama": "Panama",
-        "danishStraits": "Danska Sunden"
+        "doverStrait": "Doversundet"
       },
       "flow": {
         "mbd": "{{value}} mb/d",

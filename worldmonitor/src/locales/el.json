@@ -996,7 +996,10 @@
       "stageUnavailable": "No published figures for this stage",
       "withheldNote": "W withheld",
       "productionCaption": "Country shares of actual production. The map deposits layer shows where resources sit; this table shows who mines or refines them.",
-      "productionProLocked": "Αναβάθμιση σε PRO για μετοχές χώρας ορυχείου και διυλιστηρίου με συγκέντρωση (δείκτης συγκέντρωσης παραγωγού) ανά στάδιο."
+      "productionProLocked": "Αναβάθμιση σε PRO για μετοχές χώρας ορυχείου και διυλιστηρίου με συγκέντρωση (δείκτης συγκέντρωσης παραγωγού) ανά στάδιο.",
+      "partialTransitCoverage": "Τα δεδομένα διακίνησης για {{names}} δεν είναι διαθέσιμα",
+      "oilPipelinesUnavailable": "Τα δεδομένα αγωγών πετρελαίου δεν είναι διαθέσιμα",
+      "gasPipelinesUnavailable": "Τα δεδομένα αγωγών φυσικού αερίου δεν είναι διαθέσιμα"
     },
     "tradePolicy": {
       "tariffs": "Δασμοί",
@@ -2836,7 +2839,7 @@
         "babElMandeb": "Bab el-Mandeb",
         "bosphorus": "Τουρκικά Στενά",
         "panama": "Panama",
-        "danishStraits": "Δανικά Στενά"
+        "doverStrait": "Στενό του Ντόβερ"
       },
       "flow": {
         "mbd": "{{value}} mb/d",

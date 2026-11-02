@@ -1097,7 +1097,10 @@
       "stageUnavailable": "No published figures for this stage",
       "withheldNote": "W withheld",
       "productionCaption": "Country shares of actual production. The map deposits layer shows where resources sit; this table shows who mines or refines them.",
-      "productionProLocked": "برای سهم کشور معدن و پالایشگاه با تمرکز (شاخص تمرکز تولید‌کننده) بر اساس مرحله، به PRO ارتقا دهید."
+      "productionProLocked": "برای سهم کشور معدن و پالایشگاه با تمرکز (شاخص تمرکز تولید‌کننده) بر اساس مرحله، به PRO ارتقا دهید.",
+      "partialTransitCoverage": "داده‌های ترانزیت برای {{names}} در دسترس نیست",
+      "oilPipelinesUnavailable": "داده‌های خط لوله نفت در دسترس نیست",
+      "gasPipelinesUnavailable": "داده‌های خط لوله گاز در دسترس نیست"
     },
     "tradePolicy": {
       "overview": "Overview",
@@ -2908,7 +2911,7 @@
         "babElMandeb": "Bab el-Mandeb",
         "bosphorus": "Turkish Straits",
         "panama": "Panama",
-        "danishStraits": "Danish Straits"
+        "doverStrait": "تنگه دوور"
       },
       "flow": {
         "mbd": "{{value}} mb/d",

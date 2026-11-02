@@ -996,7 +996,10 @@
       "stageUnavailable": "No published figures for this stage",
       "withheldNote": "W withheld",
       "productionCaption": "Country shares of actual production. The map deposits layer shows where resources sit; this table shows who mines or refines them.",
-      "productionProLocked": "Надстройте до PRO за мини и рафинерийни акции по държави с концентрация (индекс на концентрация на производителите) по етап."
+      "productionProLocked": "Надстройте до PRO за мини и рафинерийни акции по държави с концентрация (индекс на концентрация на производителите) по етап.",
+      "partialTransitCoverage": "Данни за преходите недостъпни: {{names}}",
+      "oilPipelinesUnavailable": "Данни за нефтопроводите недостъпни",
+      "gasPipelinesUnavailable": "Данни за газопроводите недостъпни"
     },
     "tradePolicy": {
       "tariffs": "Митнически такси",
@@ -2836,7 +2839,7 @@
         "babElMandeb": "Баб ел-Мандеб",
         "bosphorus": "Турски проливи",
         "panama": "Панама",
-        "danishStraits": "Дански проливи"
+        "doverStrait": "Па дьо Кале"
       },
       "flow": {
         "mbd": "{{value}} mb/d",

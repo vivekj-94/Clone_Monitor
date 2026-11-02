@@ -1687,7 +1687,10 @@
       "stageUnavailable": "No published figures for this stage",
       "withheldNote": "W withheld",
       "productionCaption": "Country shares of actual production. The map deposits layer shows where resources sit; this table shows who mines or refines them.",
-      "productionProLocked": "Atualize para PRO para participações de país de mina e refinaria com concentração (índice de concentração de produtor) por estágio."
+      "productionProLocked": "Atualize para PRO para participações de país de mina e refinaria com concentração (índice de concentração de produtor) por estágio.",
+      "partialTransitCoverage": "Dados de trânsito indisponíveis para {{names}}",
+      "oilPipelinesUnavailable": "Dados de oleoduto indisponíveis",
+      "gasPipelinesUnavailable": "Dados de gasoduto indisponíveis"
     },
     "positiveNewsFeed": {
       "noStories": "Ainda não há histórias nesta categoria"
@@ -2469,7 +2472,7 @@
         "babElMandeb": "Bab el-Mandeb",
         "bosphorus": "Estreitos Turcos",
         "panama": "Panamá",
-        "danishStraits": "Estreitos Dinamarqueses"
+        "doverStrait": "Estreito de Dover"
       },
       "flow": {
         "mbd": "{{value}} mb/d",

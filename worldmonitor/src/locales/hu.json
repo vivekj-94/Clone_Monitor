@@ -1097,7 +1097,10 @@
       "stageUnavailable": "No published figures for this stage",
       "withheldNote": "W withheld",
       "productionCaption": "Country shares of actual production. The map deposits layer shows where resources sit; this table shows who mines or refines them.",
-      "productionProLocked": "Frissítsen PRO-ra az erőmű- és finomítóország-részesedésekhez koncentrációval (szállítói koncentrációs index) szakaszonként."
+      "productionProLocked": "Frissítsen PRO-ra az erőmű- és finomítóország-részesedésekhez koncentrációval (szállítói koncentrációs index) szakaszonként.",
+      "partialTransitCoverage": "{{names}} tranzitadatai nem érhetők el",
+      "oilPipelinesUnavailable": "Olajvezeték-adatok nem érhetők el",
+      "gasPipelinesUnavailable": "Gázvezeték-adatok nem érhetők el"
     },
     "tradePolicy": {
       "overview": "Áttekintés",
@@ -2905,7 +2908,7 @@
         "babElMandeb": "Bab el-Mandeb",
         "bosphorus": "Törökországi Szorosok",
         "panama": "Panama",
-        "danishStraits": "Dán Szorosok"
+        "doverStrait": "Doveri-szoros"
       },
       "flow": {
         "mbd": "{{value}} mb/nap",
