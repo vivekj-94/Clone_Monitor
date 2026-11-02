@@ -391,7 +391,6 @@
     "liveNews": "Živé zprávy",
     "markets": "Trhy",
     "map": "Globální situace",
-    "techMap": "Globální Tech",
     "techHubs": "Horká Tech centra",
     "status": "Stav systému",
     "insights": "AI postřehy",
@@ -924,7 +923,10 @@
         "permissive": "Povolný",
         "undefined": "Nedefinováno"
       },
-      "infoTooltip": "<strong>Regulace</strong> Regulační opatření, změny politik a aktualizace vynucování od globálních regulátorů: finanční, technologické, energetické a obchodní úřady. Zdroj: oficiální vládní a regulační publikace."
+      "infoTooltip": "<strong>Regulace</strong> Regulační opatření, změny politik a aktualizace vynucování od globálních regulátorů: finanční, technologické, energetické a obchodní úřady. Zdroj: oficiální vládní a regulační publikace.",
+      "latestActions": "Poslední zaznamenané akce",
+      "otherDeadlines": "Další termíny pro soulad",
+      "daysAgo": "dní zpátky"
     },
     "economic": {
       "indicators": "Ukazatele",
@@ -4248,5 +4250,29 @@
     "reportedClaims": "Zprávy vydavatele. Tvrzení mohou být stále vyšetřována.",
     "occurred": "Incident",
     "reported": "Zveřejněno"
+  },
+  "panelVariants": {
+    "finance": {
+      "map": "Mapa globálních trhů",
+      "liveNews": "Zprávy z trhů",
+      "insights": "AI postřehy o trzích"
+    },
+    "tech": {
+      "map": "Mapa globálních technologií",
+      "liveNews": "Zprávy z technologií"
+    },
+    "commodity": {
+      "map": "Mapa komodit",
+      "liveNews": "Zprávy z komodit",
+      "insights": "AI postřehy o komoditách"
+    },
+    "energy": {
+      "map": "Mapa energetiky",
+      "liveNews": "Zprávy z energetiky",
+      "insights": "AI postřehy o energetice"
+    },
+    "happy": {
+      "map": "Mapa dobrých zpráv"
+    }
   }
 }
