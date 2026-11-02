@@ -82,8 +82,6 @@ jobs:
       contents: read
     env:
       SKIP_INSTALL: '1'
-      WORK: ${{ runner.temp }}/work
-      OUT_SITE: ${{ runner.temp }}/site
       # Project sites live under /<repo>/; a <user>.github.io repo or a
       # custom domain is served from "/". Override with SITE_BASE /
       # SITE_ORIGIN repository variables if needed.
@@ -120,7 +118,11 @@ jobs:
           if curl -s -m 5 -o /dev/null https://api.worldmonitor.app/; then
             echo "api.worldmonitor.app is still reachable" >&2; exit 1
           fi
-          echo "SITE_ORIGIN=${SITE_ORIGIN:-https://${GITHUB_REPOSITORY_OWNER,,}.github.io}" >> "$GITHUB_ENV"
+          {
+            echo "SITE_ORIGIN=${SITE_ORIGIN:-https://${GITHUB_REPOSITORY_OWNER,,}.github.io}"
+            echo "WORK=$RUNNER_TEMP/work"
+            echo "OUT_SITE=$RUNNER_TEMP/site"
+          } >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
