@@ -1190,26 +1190,10 @@
       "resetView": "إعادة تعيين العرض",
       "legend": {
         "title": "دليل الرموز",
-        "startupHub": "مركز شركات ناشئة",
-        "techHQ": "مقر تقني",
-        "accelerator": "مسرّعة",
-        "cloudRegion": "منطقة سحابية",
-        "datacenter": "مركز بيانات",
-        "stockExchange": "بورصة",
-        "financialCenter": "مركز مالي",
-        "centralBank": "بنك مركزي",
-        "commodityHub": "مركز سلعي",
-        "waterway": "ممر مائي",
         "highAlert": "تنبيه مرتفع",
         "elevated": "متصاعد",
         "monitoring": "مراقبة",
-        "base": "قاعدة",
-        "nuclear": "نووي",
-        "aircraft": "طائرات",
-        "miningSite": "موقع تعدين",
-        "commodityPort": "ميناء السلع",
         "pipeline": "خط أنابيب",
-        "processingPlant": "مصنع معالجة",
         "conflict": "منطقة صراع",
         "diseaseAlert": "تنبيه مرض",
         "diseaseWarning": "تحذير مرض",
@@ -1837,6 +1821,8 @@
       "infoTooltip": "<strong>أسواق التنبؤ</strong> أسواق تنبؤ بأموال حقيقية:<ul><li>الأسعار تعكس تقديرات احتمالات الجمهور</li><li>حجم تداول أعلى = إشارة أكثر موثوقية</li><li>تركيز على الأحداث الجيوسياسية والجارية</li></ul>المصدر: Polymarket (polymarket.com)"
     },
     "etfFlows": {
+      "previousColumns": "الأعمدة السابقة",
+      "moreColumns": "المزيد من الأعمدة",
       "unavailable": "بيانات الصناديق المتداولة في البورصة غير متاحة مؤقتاً",
       "netFlow": "صافي التدفق",
       "estFlow": "التدفق المقدّر",
@@ -3308,6 +3294,14 @@
       },
       "description": "بنية تحتية رئيسية لخط أنابيب {{type}}. {{status}}"
     },
+    "storageFacility": {
+      "openInAtlas": "افتح في أطلس التخزين",
+      "types": {
+        "lngExport": "تصدير الغاز الطبيعي المسال",
+        "lngImport": "استيراد الغاز الطبيعي المسال",
+        "crudeTankFarm": "مركز نفط خام"
+      }
+    },
     "pipelineStatusDesc": {
       "operating": "يعمل حالياً وينقل الموارد.",
       "construction": "قيد الإنشاء حالياً."
@@ -3725,7 +3719,11 @@
       "c2Server": "خادم قيادة وتحكم",
       "malwareHost": "مضيف برمجيات خبيثة",
       "phishing": "تصيّد احتيالي",
-      "maliciousUrl": "رابط خبيث"
+      "maliciousUrl": "رابط خبيث",
+      "operational": "تشغيلي",
+      "reduced": "مخفّض",
+      "offline": "متوقف",
+      "disputed": "متنازع عليه"
     },
     "aptTactics": {
       "reconnaissance": "الاستطلاع",
@@ -4299,7 +4297,48 @@
     "fontMono": "أحادي المسافة",
     "fontSystem": "الخط الافتراضي",
     "panelFontScale": "حجم النص",
-    "followGlobalFontScale": "استخدام الحجم العام"
+    "followGlobalFontScale": "استخدام الحجم العام",
+    "selfHostKey": {
+      "heading": "مفتاح سطح المكتب",
+      "description": "فعّل Pro على لوحة المعلومات هذه باستخدام مفتاح سطح المكتب الخاص بك. أنشئ واحداً على worldmonitor.app ضمن الإعدادات → مفاتيح API → إنشاء مفتاح سطح المكتب.",
+      "relay": "يذهب المفتاح إلى خادم هذا التثبيت، الذي يعيد توجيه طلبات Pro الخاصة بك إلى World Monitor. يُحتسب الاستخدام ضمن حد مفتاح سطح المكتب لحسابك، مثل تطبيق سطح المكتب.",
+      "trust": "إذا كان شخص آخر يقوم بتشغيل هذا التثبيت، أنشئ مفتاح سطح مكتب منفصل له. يمكنك إلغاؤه على worldmonitor.app في أي وقت.",
+      "inputLabel": "مفتاح سطح المكتب",
+      "placeholder": "wm_…",
+      "save": "حفظ المفتاح",
+      "saving": "جاري التحقق…",
+      "remove": "إزالة المفتاح",
+      "removing": "جاري الإزالة…",
+      "empty": "أدخل مفتاح سطح المكتب.",
+      "saveFailed": "تعذر حفظ المفتاح. حاول مجدداً.",
+      "removeFailed": "تعذر إزالة المفتاح. حاول مجدداً.",
+      "rateLimited": "عدد محاولات كثير جداً. حاول مجدداً بعد {{seconds}} ثانية.",
+      "rateLimitedSoon": "عدد محاولات كثير جداً. حاول مجدداً بعد دقيقة.",
+      "insecure": "هذه الصفحة لا تستخدم HTTPS، لذا سيعبر المفتاح الشبكة دون تشفير.",
+      "insecureConfirm": "هذه الصفحة لا تستخدم HTTPS، لذا سيعبر المفتاح الشبكة دون تشفير. أرسله فقط على شبكة تثق بها.",
+      "insecureConfirmButton": "إرسال المفتاح",
+      "staleNote": "لم يتمكن آخر فحص من الوصول إلى World Monitor.",
+      "disabled": "قام مشغل هذا التثبيت بإيقاف مفاتيح سطح المكتب.",
+      "state": {
+        "none": "لا يوجد مفتاح",
+        "active": "نشط",
+        "invalid": "غير صحيح",
+        "not_desktop_key": "ليس مفتاح سطح مكتب",
+        "over_cap": "تجاوز حد المفاتيح",
+        "lapsed": "الخطة غير نشطة",
+        "unavailable": "تعذر التحقق",
+        "disabled": "معطّل"
+      },
+      "detail": {
+        "none": "لا يتم حفظ مفتاح في هذا المتصفح.",
+        "active": "تم فتح Pro في هذا المتصفح.",
+        "invalid": "هذا المفتاح غير صحيح أو تم إلغاؤه.",
+        "not_desktop_key": "هذا مفتاح API. استخدم مفتاح سطح مكتب بدلاً من ذلك.",
+        "over_cap": "الحساب يحتوي على مفاتيح سطح مكتب أكثر مما تسمح به الخطة. ألغِ واحداً على worldmonitor.app.",
+        "lapsed": "خطة Pro للحساب غير نشطة.",
+        "unavailable": "تعذر الوصول إلى World Monitor للتحقق من هذا المفتاح. حاول لاحقاً."
+      }
+    }
   },
   "contextMenu": {
     "openCountryBrief": "فتح ملخص البلد",

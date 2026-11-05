@@ -34,9 +34,9 @@ const EVENT_GLYPH: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<DisruptionStatus, string> = {
-  ongoing:  '#e74c3c',
-  resolved: '#7f8c8d',
-  unknown:  '#95a5a6',
+  ongoing:  '#c0392b',
+  resolved: '#5d6d7e',
+  unknown:  '#6b7280',
 };
 
 const EVENT_TYPE_FILTERS: Array<{ key: string; label: string }> = [
@@ -72,10 +72,11 @@ function statusChip(status: DisruptionStatus): string {
  * each render an *asset-scoped* slice of the same events in their drawer,
  * but neither lists the global log.
  *
- * Click-through dispatches the same events those panels already listen
- * for (`energy:open-pipeline-detail` / `energy:open-storage-facility-detail`),
- * so the event-routing contract stays the same as CountryDeepDivePanel's
- * disruption row — no new panel-open protocol introduced.
+ * Click-through dispatches `energy:open-pipeline-detail` for pipelines
+ * (PipelineStatusPanel listens) and `wm:open-storage-atlas` for storage,
+ * which opens the Strategic Storage Atlas on that facility even when the
+ * panel is closed or not yet mounted (see EventHandlerManager and
+ * PanelLayoutManager.focusStorageFacility).
  */
 export class EnergyDisruptionsPanel extends Panel {
   private data: ListEnergyDisruptionsResponse | null = null;
@@ -258,7 +259,7 @@ export class EnergyDisruptionsPanel extends Panel {
         .ed-desc { font-size: calc(10px * var(--wm-panel-effective-scale, 1)); text-transform: none; letter-spacing: normal; margin: 2px 0; }
         .ed-asset-id { overflow-wrap: break-word; }
         .ed-table .ed-val { white-space: nowrap; }
-        .ed-asset-type { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: calc(8px * var(--wm-panel-effective-scale, 1)); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; background: rgba(255,255,255,0.08); color: var(--text-dim, #aaa); margin-right: 4px; }
+        .ed-asset-type { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: calc(8px * var(--wm-panel-effective-scale, 1)); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; background: rgba(255,255,255,0.08); color: var(--text-secondary); margin-right: 4px; }
         .ed-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: calc(9px * var(--wm-panel-effective-scale, 1)); font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.04em; }
         .ed-empty { text-align: center; color: var(--text-dim, #888); padding: 20px; font-style: italic; }
         .ed-offline { font-family: monospace; font-size: calc(10px * var(--wm-panel-effective-scale, 1)); color: var(--text, #eee); }
@@ -289,21 +290,23 @@ export class EnergyDisruptionsPanel extends Panel {
 
   private dispatchOpenAsset(_eventId: string, assetId: string, assetType: string): void {
     // Dispatch only the {pipelineId, facilityId} field the receiving
-    // drawers actually consume today (see PipelineStatusPanel and
-    // StorageFacilityMapPanel `openDetailHandler`). The row click
-    // jumps the user to the asset — they see the full disruption
-    // timeline for that asset and can locate the specific event
-    // visually. A future PR can add a `highlightEventId` contract
-    // with matching drawer-side rendering (scroll-into-view + visual
-    // emphasis); until then, emitting an unread field was a misleading
-    // API surface (Codex P2).
-    const detail = assetType === 'storage'
-      ? { facilityId: assetId }
-      : { pipelineId: assetId };
-    const eventName = assetType === 'storage'
-      ? 'energy:open-storage-facility-detail'
-      : 'energy:open-pipeline-detail';
-    window.dispatchEvent(new CustomEvent(eventName, { detail }));
+    // drawers actually consume today. The row click jumps the user to the
+    // asset — they see the full disruption timeline for that asset and can
+    // locate the specific event visually. A future PR can add a
+    // `highlightEventId` contract with matching drawer-side rendering
+    // (scroll-into-view + visual emphasis); until then, emitting an unread
+    // field was a misleading API surface (Codex P2).
+    //
+    // Storage goes through 'wm:open-storage-atlas' (the same route as the
+    // map popup's "Open in Storage Atlas"): the atlas only claims a direct
+    // 'energy:open-storage-facility-detail' while the user can see it, so a
+    // closed, collapsed or deferred atlas would otherwise drop this click.
+    // The open-atlas route enables, mounts, reveals and then delivers it.
+    if (assetType === 'storage') {
+      window.dispatchEvent(new CustomEvent('wm:open-storage-atlas', { detail: { facilityId: assetId } }));
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('energy:open-pipeline-detail', { detail: { pipelineId: assetId } }));
   }
 
   private renderRow(e: EnergyDisruptionEntry): string {

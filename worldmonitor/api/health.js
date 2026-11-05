@@ -408,6 +408,10 @@ const BOOTSTRAP_KEYS = {
 const STANDALONE_KEYS = {
   ukmtoIncidents: 'maritime:ukmto-incidents:v1',
   sanctionsChanges: 'sanctions:changes:v1',
+  // NVD CVE reference store for the CISA KEV subset (#6229). Seeded daily by
+  // scripts/seed-cve-reference.mjs; no dashboard consumer yet, so it is
+  // monitored here rather than bootstrap-tiered.
+  cveReference: 'cyber:cve-reference:v1',
   predictionCountryMarkets: 'prediction:markets-country-index:v1',
   // US HTS chapter 99 duty index (catalog; coverage shards are versioned by
   // release under trade:us-hts:coverage:v1). Read only by get-us-import-duty.
@@ -616,6 +620,22 @@ const STANDALONE_KEYS = {
   foodPricesTcb: 'economic:food-prices:tcb:v1',
   foodPricesMadr: 'economic:food-prices:madr:v1',
   foodPricesNsomn: 'economic:food-prices:nsomn:v1',
+  foodPricesFewssd: 'economic:food-prices:fewssd:v1',
+  foodPricesFewsss: 'economic:food-prices:fewsss:v1',
+  foodPricesFewsye: 'economic:food-prices:fewsye:v1',
+  foodPricesFewsht: 'economic:food-prices:fewsht:v1',
+  foodPricesTwmoa: 'economic:food-prices:twmoa:v1',
+  foodPricesGeostat: 'economic:food-prices:geostat:v1',
+  foodPricesPricecatcher: 'economic:food-prices:pricecatcher:v1',
+  foodPricesMcba: 'economic:food-prices:mcba:v1',
+  foodPricesCso: 'economic:food-prices:cso:v1',
+  foodPricesStatec: 'economic:food-prices:statec:v1',
+  foodPricesFoagfruit: 'economic:food-prices:foagfruit:v1',
+  foodPricesFoagegg: 'economic:food-prices:foagegg:v1',
+  foodPricesFoagmilk: 'economic:food-prices:foagmilk:v1',
+  foodPricesCsblv: 'economic:food-prices:csblv:v1',
+  foodPricesMakstat: 'economic:food-prices:makstat:v1',
+
   worldCpiImf:           'seed-meta:economic:world-cpi-imf',
   worldCpiEurostat:      'seed-meta:economic:world-cpi-eurostat',
   worldCpiEstat:         'seed-meta:economic:world-cpi-estat',
@@ -917,6 +937,11 @@ const SEED_META = {
   climateNews:      { key: 'seed-meta:climate:news-intelligence', maxStaleMin: 90 }, // relay loop every 30min; 90 = 3× interval
   unrestEvents:     { key: 'seed-meta:unrest:events',           maxStaleMin: 120 }, // 45min cron; 120 = 2h grace (was 75 = 30min buffer, too tight)
   cyberThreats:     { key: 'seed-meta:cyber:threats',           maxStaleMin: 240 }, // 2h interval; 240min = 2x interval
+  cveReference: {
+    key: 'seed-meta:cyber:cve-reference', maxStaleMin: 2880, minRecordCount: 1000,
+    activationKey: 'seed-activated:cyber:cve-reference',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 6229, activationKey: 'seed-activated:cyber:cve-reference' },
+  }, // daily NVD KEV sync; 2880 = 2x interval; KEV has held above 1,300 CVEs since 2024
   cryptoQuotes:     { key: 'seed-meta:market:crypto',           maxStaleMin: 30 },
   etfFlows:         { key: 'seed-meta:market:etf-flows',        maxStaleMin: 60 },
   gulfQuotes:       { key: 'seed-meta:market:gulf-quotes',      maxStaleMin: 30 },
@@ -2052,6 +2077,96 @@ const SEED_META = {
     activationKey: 'seed-activated:economic:food-prices-nsomn',
     cutover: { mode: 'activation-marker', fromKey: null, issue: 10050, activationKey: 'seed-activated:economic:food-prices-nsomn' },
   },
+  foodPricesFewssd: {
+    key: 'seed-meta:economic:food-prices-fewssd',
+    maxStaleMin: 64800,
+    activationKey: 'seed-activated:economic:food-prices-fewssd',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10112, activationKey: 'seed-activated:economic:food-prices-fewssd' },
+  },
+  foodPricesFewsss: {
+    key: 'seed-meta:economic:food-prices-fewsss',
+    maxStaleMin: 64800,
+    activationKey: 'seed-activated:economic:food-prices-fewsss',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10112, activationKey: 'seed-activated:economic:food-prices-fewsss' },
+  },
+  foodPricesFewsye: {
+    key: 'seed-meta:economic:food-prices-fewsye',
+    maxStaleMin: 64800,
+    activationKey: 'seed-activated:economic:food-prices-fewsye',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10112, activationKey: 'seed-activated:economic:food-prices-fewsye' },
+  },
+  foodPricesFewsht: {
+    key: 'seed-meta:economic:food-prices-fewsht',
+    maxStaleMin: 64800,
+    activationKey: 'seed-activated:economic:food-prices-fewsht',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10112, activationKey: 'seed-activated:economic:food-prices-fewsht' },
+  },
+  foodPricesTwmoa: {
+    key: 'seed-meta:economic:food-prices-twmoa',
+    maxStaleMin: 4320,
+    activationKey: 'seed-activated:economic:food-prices-twmoa',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10112, activationKey: 'seed-activated:economic:food-prices-twmoa' },
+  },
+  foodPricesGeostat: {
+    key: 'seed-meta:economic:food-prices-geostat',
+    maxStaleMin: 64800,
+    activationKey: 'seed-activated:economic:food-prices-geostat',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10112, activationKey: 'seed-activated:economic:food-prices-geostat' },
+  },
+  foodPricesPricecatcher: {
+    key: 'seed-meta:economic:food-prices-pricecatcher',
+    maxStaleMin: 4320,
+    activationKey: 'seed-activated:economic:food-prices-pricecatcher',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10146, activationKey: 'seed-activated:economic:food-prices-pricecatcher' },
+  },
+  foodPricesMcba: {
+    key: 'seed-meta:economic:food-prices-mcba',
+    maxStaleMin: 4320,
+    activationKey: 'seed-activated:economic:food-prices-mcba',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10146, activationKey: 'seed-activated:economic:food-prices-mcba' },
+  },
+  foodPricesCso: {
+    key: 'seed-meta:economic:food-prices-cso',
+    maxStaleMin: 64800,
+    activationKey: 'seed-activated:economic:food-prices-cso',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10146, activationKey: 'seed-activated:economic:food-prices-cso' },
+  },
+  foodPricesStatec: {
+    key: 'seed-meta:economic:food-prices-statec',
+    maxStaleMin: 64800,
+    activationKey: 'seed-activated:economic:food-prices-statec',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10146, activationKey: 'seed-activated:economic:food-prices-statec' },
+  },
+  foodPricesFoagfruit: {
+    key: 'seed-meta:economic:food-prices-foagfruit',
+    maxStaleMin: 64800,
+    activationKey: 'seed-activated:economic:food-prices-foagfruit',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10146, activationKey: 'seed-activated:economic:food-prices-foagfruit' },
+  },
+  foodPricesFoagegg: {
+    key: 'seed-meta:economic:food-prices-foagegg',
+    maxStaleMin: 64800,
+    activationKey: 'seed-activated:economic:food-prices-foagegg',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10146, activationKey: 'seed-activated:economic:food-prices-foagegg' },
+  },
+  foodPricesFoagmilk: {
+    key: 'seed-meta:economic:food-prices-foagmilk',
+    maxStaleMin: 64800,
+    activationKey: 'seed-activated:economic:food-prices-foagmilk',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10146, activationKey: 'seed-activated:economic:food-prices-foagmilk' },
+  },
+  foodPricesCsblv: {
+    key: 'seed-meta:economic:food-prices-csblv',
+    maxStaleMin: 64800,
+    activationKey: 'seed-activated:economic:food-prices-csblv',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10146, activationKey: 'seed-activated:economic:food-prices-csblv' },
+  },
+  foodPricesMakstat: {
+    key: 'seed-meta:economic:food-prices-makstat',
+    maxStaleMin: 64800,
+    activationKey: 'seed-activated:economic:food-prices-makstat',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10146, activationKey: 'seed-activated:economic:food-prices-makstat' },
+  },
   worldCpiImf: {
     key: 'seed-meta:economic:world-cpi-imf',
     maxStaleMin: 4320,
@@ -2591,6 +2706,10 @@ const ON_DEMAND_KEYS = new Set([
   'foodPricesTcb',
   'foodPricesMadr',
   'foodPricesNsomn',
+  'foodPricesFewssd', 'foodPricesFewsss', 'foodPricesFewsye', 'foodPricesFewsht',
+  'foodPricesTwmoa', 'foodPricesGeostat', 'foodPricesPricecatcher', 'foodPricesMcba',
+  'foodPricesCso', 'foodPricesStatec', 'foodPricesFoagfruit', 'foodPricesFoagegg', 'foodPricesFoagmilk',
+  'foodPricesCsblv', 'foodPricesMakstat',
   'regionalEnergyPgcb',
   'regionalEnergyPetrobangla',
   'regionalEnergyNiso',
@@ -2700,6 +2819,7 @@ const ON_DEMAND_KEYS = new Set([
   // Scheduled country-index projection. The marker is written only after the
   // projection and its seed metadata publish successfully.
   'predictionCountryMarkets',
+  'cveReference',
   // Per-country GDELT article index (#7748). The 15-minute materializer
   // writes the marker after the index and its seed-meta publish; absence is
   // pending until that first tick and strict afterward.
@@ -2915,10 +3035,26 @@ const ACTIVATION_MARKERS = {
   foodPricesTcb: SEED_META.foodPricesTcb.activationKey,
   foodPricesMadr: SEED_META.foodPricesMadr.activationKey,
   foodPricesNsomn: SEED_META.foodPricesNsomn.activationKey,
+  foodPricesFewssd: SEED_META.foodPricesFewssd.activationKey,
+  foodPricesFewsss: SEED_META.foodPricesFewsss.activationKey,
+  foodPricesFewsye: SEED_META.foodPricesFewsye.activationKey,
+  foodPricesFewsht: SEED_META.foodPricesFewsht.activationKey,
+  foodPricesTwmoa: SEED_META.foodPricesTwmoa.activationKey,
+  foodPricesGeostat: SEED_META.foodPricesGeostat.activationKey,
+  foodPricesPricecatcher: SEED_META.foodPricesPricecatcher.activationKey,
+  foodPricesMcba: SEED_META.foodPricesMcba.activationKey,
+  foodPricesCso: SEED_META.foodPricesCso.activationKey,
+  foodPricesStatec: SEED_META.foodPricesStatec.activationKey,
+  foodPricesFoagfruit: SEED_META.foodPricesFoagfruit.activationKey,
+  foodPricesFoagegg: SEED_META.foodPricesFoagegg.activationKey,
+  foodPricesFoagmilk: SEED_META.foodPricesFoagmilk.activationKey,
+  foodPricesCsblv: SEED_META.foodPricesCsblv.activationKey,
+  foodPricesMakstat: SEED_META.foodPricesMakstat.activationKey,
 
   torontoTfs: SEED_META.torontoTfs.activationKey,
   torontoTps: SEED_META.torontoTps.activationKey,
   predictionCountryMarkets: SEED_META.predictionCountryMarkets.activationKey,
+  cveReference: SEED_META.cveReference.activationKey,
   // Written by scripts/seed-gdelt-bulk-materializer.mjs after the per-country
   // article index publishes with its seed-meta (#7748).
   gdeltCountryArticles: SEED_META.gdeltCountryArticles.activationKey,

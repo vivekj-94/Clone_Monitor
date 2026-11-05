@@ -1372,26 +1372,10 @@
       "resetView": "Weka Mwonekano upya",
       "legend": {
         "title": "UFAFANUZI",
-        "startupHub": "Kitovu cha Kuanzisha",
-        "techHQ": "Makao makuu ya teknolojia",
-        "accelerator": "Kiongeza kasi",
-        "cloudRegion": "Mkoa wa Cloud",
-        "datacenter": "Kituo cha data",
-        "stockExchange": "Soko la Hisa",
-        "financialCenter": "Kituo cha Fedha",
-        "centralBank": "Benki Kuu",
-        "commodityHub": "Kitovu cha Bidhaa",
-        "waterway": "Njia ya maji",
         "highAlert": "Tahadhari ya Juu",
         "elevated": "Imeinuliwa",
         "monitoring": "Ufuatiliaji",
-        "base": "Msingi",
-        "nuclear": "Nyuklia",
-        "aircraft": "Ndege",
-        "miningSite": "Tovuti ya Madini",
-        "commodityPort": "Bandari ya Bidhaa",
         "pipeline": "Bomba",
-        "processingPlant": "Kiwanda cha Usindikaji",
         "conflict": "Eneo la Migogoro",
         "diseaseAlert": "Tahadhari ya Ugonjwa",
         "diseaseWarning": "Onyo la Ugonjwa",
@@ -2113,6 +2097,8 @@
       "infoTooltip": "<strong>Masoko ya Utabiri</strong> Masoko ya utabiri wa pesa halisi:<ul><li>Bei zinaonyesha makadirio ya uwezekano wa umati</li><li>Kiasi cha juu = ishara ya kuaminika zaidi</li><li>Lengo la matukio ya jiografia na ya sasa</li></ul>Vyanzo: Polymarket, Kalshi"
     },
     "etfFlows": {
+      "previousColumns": "Safu wima zilizotangulia",
+      "moreColumns": "Safu wima zaidi",
       "unavailable": "Data ya mifuko inayouzwa kwenye soko la hisa haipatikani kwa sasa",
       "rateLimited": "Data ya mifuko inayouzwa kwenye soko la hisa haipatikani kwa sasa (kikomo cha maombi) — tutajaribu tena hivi karibuni",
       "netFlow": "Mtiririko wa Wavu",
@@ -3305,6 +3291,14 @@
       },
       "description": "Miundombinu kuu ya bomba la {{type}}. {{status}}"
     },
+    "storageFacility": {
+      "openInAtlas": "Fungua katika atlasi ya hifadhi",
+      "types": {
+        "lngExport": "Usafirishaji wa LNG",
+        "lngImport": "Uagizaji wa LNG",
+        "crudeTankFarm": "Kituo cha mafuta ghafi"
+      }
+    },
     "pipelineStatusDesc": {
       "operating": "Kwa sasa rasilimali za uendeshaji na usafirishaji.",
       "construction": "Hivi sasa inajengwa."
@@ -3714,7 +3708,11 @@
       "c2Server": "Seva ya C2",
       "malwareHost": "Mwenyeji wa programu hasidi",
       "phishing": "Hadaa",
-      "maliciousUrl": "URL hasidi"
+      "maliciousUrl": "URL hasidi",
+      "operational": "Inafanya kazi",
+      "reduced": "Imepunguzwa",
+      "offline": "Haifanyi kazi",
+      "disputed": "Inabishaniwa"
     },
     "aptTactics": {
       "reconnaissance": "Upelelezi",
@@ -4289,7 +4287,48 @@
     "fontMono": "Nafasi moja",
     "fontSystem": "Chaguomsingi ya Mfumo",
     "panelFontScale": "Ukubwa wa maandishi",
-    "followGlobalFontScale": "Tumia kiwango cha ulimwengu"
+    "followGlobalFontScale": "Tumia kiwango cha ulimwengu",
+    "selfHostKey": {
+      "heading": "Funguo ya Kompyuta",
+      "description": "Fungua Pro kwenye dashboard hii kwa kutumia funguo yako ya kompyuta. Tengeneza funguo moja kwenye worldmonitor.app chini ya Settings → API Keys → Create desktop key.",
+      "relay": "Funguo inakwenda kwa seva ya uongozaji huu, ambayo inakamatia maombi yako ya Pro kwa World Monitor. Matumizi yanakokotwa kwa ujinga wa funguo ya kompyuta ya akaunti yako, sawa na programu ya kompyuta.",
+      "trust": "Ikiwa mtu mwingine anatumia uongozaji huu, tengeneza funguo tofauti ya kompyuta kwake. Unaweza kuikataa kwenye worldmonitor.app wakati wowote.",
+      "inputLabel": "Funguo ya Kompyuta",
+      "placeholder": "wm_…",
+      "save": "Hifadhi funguo",
+      "saving": "Inakagundua…",
+      "remove": "Ondoa funguo",
+      "removing": "Inaondoa…",
+      "empty": "Ingiza funguo ya kompyuta.",
+      "saveFailed": "Haiwezi kuhifadhi funguo. Jaribu tena.",
+      "removeFailed": "Haiwezi kuondoa funguo. Jaribu tena.",
+      "rateLimited": "Majaribio mengi sana. Jaribu tena kwa sekunde {{seconds}}.",
+      "rateLimitedSoon": "Majaribio mengi sana. Jaribu tena dakika moja.",
+      "insecure": "Ukurasa huu hautumii HTTPS, kwa hivyo funguo yako itakutembea mtandaoni bila simbuzishi.",
+      "insecureConfirm": "Ukurasa huu hautumii HTTPS, kwa hivyo funguo yako itakutembea mtandaoni bila simbuzishi. Itume tu kwenye mtandao unayoamini.",
+      "insecureConfirmButton": "Tuma funguo",
+      "staleNote": "Ukagundua uliotangulia hauwezi kufikia World Monitor.",
+      "disabled": "Mwendeshaji wa uongozaji huu amekamatia funguo za kompyuta.",
+      "state": {
+        "none": "Hakuna funguo",
+        "active": "Inafanya kazi",
+        "invalid": "Sio halali",
+        "not_desktop_key": "Sio funguo ya kompyuta",
+        "over_cap": "Zaidi ya kikomo cha funguo",
+        "lapsed": "Mpango si kamili",
+        "unavailable": "Haiwezi kuthibitisha",
+        "disabled": "Kamatia"
+      },
+      "detail": {
+        "none": "Hakuna funguo iliyohifadhiwa katika kivinjari hiki.",
+        "active": "Pro imefungulwa katika kivinjari hiki.",
+        "invalid": "Funguo hii sio halali au imefutwa.",
+        "not_desktop_key": "Hii ni funguo ya API. Tumia funguo ya kompyuta badala yake.",
+        "over_cap": "Akaunti ina funguo za kompyuta zaidi kuliko mpango wake unavyoruhusu. Kataa moja kwenye worldmonitor.app.",
+        "lapsed": "Mpango wa Pro wa akaunti sio kamili.",
+        "unavailable": "Haiwezi kufikia World Monitor ili kugundua funguo hii. Jaribu tena baadaye."
+      }
+    }
   },
   "premium": {
     "pro": "PRO",

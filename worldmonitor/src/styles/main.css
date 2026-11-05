@@ -2702,30 +2702,63 @@ body.panel-resize-active iframe {
   will-change: opacity, transform;
 }
 
-/* A news panel header carries a LIVE pill, sort, summarize, count and close
-   controls. In a phone panel or a 375px desktop column they leave the title
-   group about 170px. There the LIVE pill becomes the dot used below 300px and
-   the item count leaves the layout (it stays in the accessibility tree; the
-   NEW badge still shows how many items are new). */
+/* A status badge collapsed to a dot must not tell its states apart by colour
+   alone (WCAG 1.4.1), so each state has its own shape, and the freshness dot
+   uses the same ones: live or fresh data is a filled circle, cached or stale
+   data a ring, and unavailable, missing or failed data a hollow square. The
+   dot rules below read these; a full pill ignores them. */
+.panel-data-badge:is(.cached, .unavailable),
+.panel-freshness-badge:not(.panel-freshness-fresh) {
+  --wm-dot-border: 2px solid currentColor;
+  --wm-dot-fill: transparent;
+}
+
+.panel-data-badge.unavailable,
+.panel-freshness-badge:is(.panel-freshness-no_data, .panel-freshness-disabled, .panel-freshness-error) {
+  --wm-dot-radius: 0;
+}
+
+/* Two kinds of header crowd the title in a phone panel or a 375px desktop
+   column. A news header carries a LIVE pill, sort, summarize, count and close
+   controls, and leaves the title group about 170px. A market header carries a
+   data pill such as "CACHED · 12 symbols" and an "Edit Watchlist" button, and
+   left "Premium Stock Analysis" 113px, too narrow for two lines. Up to 420px
+   these headers use the collapse from below 300px: the news LIVE pill and any
+   market data pill become dots, the watchlist button keeps only its icon, and
+   the news item count leaves the layout. The count and the watchlist label
+   stay in the accessibility tree; the NEW badge still shows how many items
+   are new. */
 @container (max-width: 420px) {
-  .panel-header:has(> .panel-summarize-btn) > .panel-data-badge.live {
+  .panel-header:has(> .panel-summarize-btn) > .panel-data-badge.live,
+  .panel-header:has(> .panel-watchlist-btn) > .panel-data-badge {
     flex-shrink: 0;
     width: 8px;
     height: 8px;
     min-width: 0;
     min-height: 0;
     padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: currentColor;
+    border: var(--wm-dot-border, 0);
+    border-radius: var(--wm-dot-radius, 50%);
+    background: var(--wm-dot-fill, currentColor);
     font-size: 0;
   }
 
-  .panel-header:has(> .panel-summarize-btn) > .panel-data-badge.live::before {
+  .panel-header:has(> .panel-summarize-btn) > .panel-data-badge.live::before,
+  .panel-header:has(> .panel-watchlist-btn) > .panel-data-badge::before {
     display: none;
   }
 
-  .panel-header:has(> .panel-summarize-btn) > .panel-count {
+  .panel-header > .panel-watchlist-btn {
+    width: 24px;
+    padding: 4px 0;
+  }
+
+  .panel-header .panel-watchlist-icon {
+    display: inline;
+  }
+
+  .panel-header:has(> .panel-summarize-btn) > .panel-count,
+  .panel-header .panel-watchlist-label {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -2742,17 +2775,17 @@ body.panel-resize-active iframe {
    holds two columns, and on any panel squeezed narrower. The
    header's fixed-size badges then spill under the controls and the title
    collapses to nothing. Below 300px the title wins: status badges in every
-   data state shrink to dots, the counters leave the layout, the watchlist
-   button keeps only its icon, and the controls sit 4px apart. The dots then
-   sit beside a two-line title instead of on a row of their own, as long as
-   the title keeps 9em and its longest word; otherwise they move under it.
+   data state shrink to dots, the counters leave the layout, and the controls
+   sit 4px apart. The dots then sit beside a two-line title instead of on a
+   row of their own, as long as the title keeps 9em and its longest word;
+   otherwise they move under it.
    9em holds most titles in two lines. With less, "Strategic Risk Overview"
    needed a third line in a 192px column and lost "Overview". The title and
    freshness rules sit after their base rules so they win at equal
    specificity. The other base rules come later in the file, so those rules
    are scoped to the header. The counters keep their display, which the JS
    toggles inline, and are hidden the .wm-visually-hidden way so screen
-   readers still read the values, as is the watchlist label. */
+   readers still read the values. */
 @container (max-width: 300px) {
   .panel > .panel-header {
     gap: 4px;
@@ -2770,15 +2803,6 @@ body.panel-resize-active iframe {
     padding: 2px 4px;
   }
 
-  .panel-header > .panel-watchlist-btn {
-    width: 24px;
-    padding: 4px 0;
-  }
-
-  .panel-header .panel-watchlist-icon {
-    display: inline;
-  }
-
   .panel-freshness-badge,
   .panel > .panel-header > .panel-data-badge {
     flex-shrink: 0;
@@ -2787,9 +2811,9 @@ body.panel-resize-active iframe {
     min-width: 0;
     min-height: 0;
     padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: currentColor;
+    border: var(--wm-dot-border, 0);
+    border-radius: var(--wm-dot-radius, 50%);
+    background: var(--wm-dot-fill, currentColor);
     font-size: 0;
   }
 
@@ -2797,25 +2821,9 @@ body.panel-resize-active iframe {
     display: none;
   }
 
-  /* A dot must not tell its states apart by colour alone (WCAG 1.4.1), so
-     each state has its own shape, and the freshness dot uses the same ones:
-     live or fresh data is a filled circle, cached or stale data a ring, and
-     unavailable, missing or failed data a hollow square. */
-  .panel-freshness-badge:not(.panel-freshness-fresh),
-  .panel > .panel-header > .panel-data-badge:is(.cached, .unavailable) {
-    border: 2px solid currentColor;
-    background: transparent;
-  }
-
-  .panel-freshness-badge:is(.panel-freshness-no_data, .panel-freshness-disabled, .panel-freshness-error),
-  .panel > .panel-header > .panel-data-badge.unavailable {
-    border-radius: 0;
-  }
-
   .panel-header .panel-new-badge,
   .panel-header .deviation-indicator,
-  .panel-header .panel-count,
-  .panel-header .panel-watchlist-label {
+  .panel-header .panel-count {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -4690,8 +4698,6 @@ body.live-news-fullscreen-active .panels-grid > *:not(.live-news-fullscreen) {
 /* Pinned list below grid */
 .pinned-webcams-list {
   margin-top: 8px;
-  max-height: 120px;
-  overflow-y: auto;
 }
 
 .pinned-webcams-list-header {
@@ -10482,6 +10488,15 @@ a.prediction-link:hover {
   text-decoration: underline;
 }
 
+button.popup-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: inherit;
+}
+
 .popup-provenance .popup-link {
   margin-top: 0;
   font-size: inherit;
@@ -12450,7 +12465,7 @@ a.prediction-link:hover {
 }
 
 .radiation-confidence-low {
-  color: #7dd3fc;
+  color: var(--semantic-low-text, #7dd3fc);
   border-color: rgba(125, 211, 252, 0.35);
   background: rgba(125, 211, 252, 0.08);
 }
@@ -12460,7 +12475,7 @@ a.prediction-link:hover {
 }
 
 .radiation-flag-conflict {
-  color: #7dd3fc;
+  color: var(--semantic-low-text, #7dd3fc);
 }
 
 .radiation-flag-converted {
@@ -12509,16 +12524,8 @@ a.prediction-link:hover {
 
 /* economic-tabs: now uses shared .panel-tabs / .panel-tab */
 
-.panel-content:has(.economic-content) {
-  display: flex;
-  flex-direction: column;
-}
-
 .economic-content {
   padding: 8px;
-  flex: 1 1 0;
-  min-height: 0;
-  overflow-y: auto;
 }
 
 .economic-content-macro {
@@ -16776,8 +16783,6 @@ a.prediction-link:hover {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: 200px;
-  overflow-y: auto;
 }
 
 .cascade-country {
@@ -17054,8 +17059,6 @@ a.prediction-link:hover {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: 150px;
-  overflow-y: auto;
 }
 
 .risk-alert {
@@ -18735,8 +18738,6 @@ a.prediction-link:hover {
   flex-direction: column;
   gap: 2px;
   padding: 6px 8px;
-  overflow-y: auto;
-  max-height: 320px;
 }
 .id-row {
   background: rgba(255,255,255,.04);
@@ -18802,8 +18803,6 @@ a.prediction-link:hover {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  overflow-y: auto;
-  max-height: 320px;
 }
 .id-date-range {
   font-size: calc(10px * var(--wm-panel-effective-scale, 1));
@@ -19856,6 +19855,10 @@ a.prediction-link:hover {
   padding: 5px 12px;
 }
 
+.deckgl-legend[hidden] {
+  display: none;
+}
+
 .deckgl-legend .legend-label-title {
   font-size: calc(9px * var(--wm-panel-effective-scale, 1));
   font-weight: bold;
@@ -19917,6 +19920,15 @@ a.prediction-link:hover {
 .deckgl-tooltip strong {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* Owning layer, so markers from overlapping layers stay identifiable (#10139) */
+.deckgl-tooltip-category {
+  margin-bottom: 3px;
+  font-size: calc(9px * var(--wm-panel-effective-scale, 1));
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 /* MapLibre GL overrides for dark theme */
@@ -22787,11 +22799,11 @@ body.has-breaking-alert .panels-grid {
 
 .badge-bullish {
   background: rgba(76, 175, 80, 0.2);
-  color: var(--semantic-normal);
+  color: var(--green-text, var(--semantic-normal));
 }
 
 .badge-bearish {
-  background: rgba(244, 67, 54, 0.2);
+  background: rgba(244, 67, 54, 0.12);
   color: var(--semantic-critical-text, var(--semantic-critical));
 }
 
@@ -22856,7 +22868,7 @@ body.has-breaking-alert .panels-grid {
 
 .etf-summary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
   gap: 6px;
   padding: 8px;
   margin-bottom: 8px;
@@ -22865,6 +22877,8 @@ body.has-breaking-alert .panels-grid {
 }
 
 .etf-summary-item {
+  min-width: 0;
+  overflow-wrap: anywhere;
   text-align: center;
 }
 
@@ -22892,6 +22906,37 @@ body.has-breaking-alert .panels-grid {
 
 .etf-table-wrap {
   overflow-x: auto;
+}
+
+.etf-table-nav:not([hidden]) {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.etf-table-nav button {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--overlay-light);
+  color: var(--text);
+  font: inherit;
+  font-size: calc(11px * var(--wm-panel-effective-scale, 1));
+  cursor: pointer;
+}
+
+.etf-table-nav button:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.etf-table-nav button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
 }
 
 .etf-ticker {
@@ -26175,8 +26220,8 @@ body.map-width-resizing {
   border-radius: 3px;
   font-variant-numeric: tabular-nums;
 }
-.cp-badge--green { background: rgba(34,197,94,0.15); color: #4ade80; }
-.cp-badge--red   { background: rgba(239,68,68,0.15);  color: #f87171; }
+.cp-badge--green { background: rgba(34,197,94,0.15); color: var(--green-text, #4ade80); }
+.cp-badge--red   { background: rgba(239,68,68,0.15);  color: var(--red-text, #f87171); }
 .cp-badge--neutral { background: var(--overlay-subtle); color: var(--text-dim); }
 
 .cp-pressure {
@@ -26185,10 +26230,10 @@ body.map-width-resizing {
   padding: 1px 6px;
   border-radius: 3px;
 }
-.cp-pressure--steady  { background: rgba(148,163,184,0.15); color: #94a3b8; }
-.cp-pressure--watch   { background: rgba(245,158,11,0.15);  color: #fbbf24; }
-.cp-pressure--stress  { background: rgba(239,68,68,0.15);   color: #f87171; }
-.cp-pressure--green   { background: rgba(34,197,94,0.15);   color: #4ade80; }
+.cp-pressure--steady  { background: rgba(148,163,184,0.15); color: var(--text-secondary); }
+.cp-pressure--watch   { background: rgba(245,158,11,0.15);  color: var(--yellow-text, #fbbf24); }
+.cp-pressure--stress  { background: rgba(239,68,68,0.15);   color: var(--red-text, #f87171); }
+.cp-pressure--green   { background: rgba(34,197,94,0.15);   color: var(--green-text, #4ade80); }
 
 .cp-col-header { cursor: pointer; }
 .cp-col-header--up::after   { content: ' ↑'; }
@@ -26230,8 +26275,8 @@ body.map-width-resizing {
 .cp-mover-meta  { color: var(--text-dim); font-size: calc(0.65rem * var(--wm-panel-effective-scale, 1)); }
 .cp-mover-cat, .cp-mover-retailer { font-size: calc(0.65rem * var(--wm-panel-effective-scale, 1)); color: var(--text-dim); }
 .cp-mover-pct   { font-weight: 600; font-variant-numeric: tabular-nums; }
-.cp-mover-row--up   .cp-mover-pct { color: #f87171; }
-.cp-mover-row--down .cp-mover-pct { color: #4ade80; }
+.cp-mover-row--up   .cp-mover-pct { color: var(--red-text, #f87171); }
+.cp-mover-row--down .cp-mover-pct { color: var(--green-text, #4ade80); }
 
 .cp-spread-list { display: flex; flex-direction: column; gap: 4px; }
 
@@ -26268,7 +26313,7 @@ body.map-width-resizing {
   font-size: calc(0.6rem * var(--wm-panel-effective-scale, 1));
   padding: 1px 4px;
   background: rgba(245,158,11,0.15);
-  color: #fbbf24;
+  color: var(--yellow-text, #fbbf24);
   border-radius: 2px;
 }
 
@@ -26288,9 +26333,9 @@ body.map-width-resizing {
 .cp-health-name   { flex: 1; }
 .cp-health-rate   { font-size: calc(0.65rem * var(--wm-panel-effective-scale, 1)); color: var(--text-dim); font-variant-numeric: tabular-nums; }
 .cp-health-status { font-size: calc(0.65rem * var(--wm-panel-effective-scale, 1)); padding: 1px 5px; border-radius: 3px; }
-.cp-health-status--ok      { background: rgba(34,197,94,0.15);  color: #4ade80; }
-.cp-health-status--stale   { background: rgba(245,158,11,0.15); color: #fbbf24; }
-.cp-health-status--missing { background: rgba(239,68,68,0.15);  color: #f87171; }
+.cp-health-status--ok      { background: rgba(34,197,94,0.15);  color: var(--green-text, #4ade80); }
+.cp-health-status--stale   { background: rgba(245,158,11,0.15); color: var(--yellow-text, #fbbf24); }
+.cp-health-status--missing { background: rgba(239,68,68,0.15);  color: var(--red-text, #f87171); }
 
 .cp-market-bar {
   display: flex;
@@ -26394,9 +26439,9 @@ body.map-width-resizing {
   border-bottom: 1px solid var(--border);
 }
 
-.cp-fresh--ok      { color: #4ade80; }
-.cp-fresh--warn    { color: #fbbf24; }
-.cp-fresh--stale   { color: #f87171; }
+.cp-fresh--ok      { color: var(--green-text, #4ade80); }
+.cp-fresh--warn    { color: var(--yellow-text, #fbbf24); }
+.cp-fresh--stale   { color: var(--red-text, #f87171); }
 .cp-fresh--unknown { color: var(--text-muted); }
 
 /* ── Grocery Basket Panel ──────────────────────────────────────────────── */
@@ -26448,8 +26493,10 @@ body.map-width-resizing {
 
 .gb-na { text-align: center; color: var(--text-dim); }
 
-.gb-cheapest { background: rgba(34,197,94,0.12); color: #4ade80; }
-.gb-priciest { background: rgba(239,68,68,0.12);  color: #f87171; }
+.gb-cheapest { background: rgba(34,197,94,0.12); color: var(--green-text, #4ade80); }
+.gb-priciest { background: rgba(239,68,68,0.12);  color: var(--red-text, #f87171); }
+/* Muted grey drops below 4.5:1 on the green tint in dark; the local price takes the cell's colour. */
+.gb-cheapest .gb-local, .gb-priciest .gb-local { color: inherit; }
 
 .gb-total-row td { font-weight: 600; background: var(--overlay-subtle); }
 .gb-total { font-size: calc(0.8rem * var(--wm-panel-effective-scale, 1)); }
@@ -26462,8 +26509,8 @@ body.map-width-resizing {
   flex-shrink: 0;
 }
 
-.bm-wow-up   { color: #f87171; } /* red = more expensive */
-.bm-wow-down { color: #4ade80; } /* green = cheaper */
+.bm-wow-up   { color: var(--red-text, #f87171); } /* red = more expensive */
+.bm-wow-down { color: var(--green-text, #4ade80); } /* green = cheaper */
 .bm-wow-summary {
   font-size: calc(0.75rem * var(--wm-panel-effective-scale, 1));
   color: var(--text-muted, #888);
@@ -27371,6 +27418,76 @@ body.map-width-resizing {
 }
 
 .desktop-keys-count:empty {
+  display: none;
+}
+
+.api-starter-offer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* Settings -> Desktop key on a self-hosted install. Reuses the API key form
+   and badge; only the status row and its tones are specific. */
+.selfhost-key-section .wm-pref-group-content {
+  padding-top: 12px;
+}
+
+.selfhost-key-section .api-keys-desc {
+  margin-bottom: 8px;
+}
+
+.selfhost-key-status {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 4px 0 12px;
+  font-size: calc(12px * var(--wm-panel-effective-scale, 1));
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.selfhost-key-badge {
+  align-self: baseline;
+  flex: none;
+}
+
+.selfhost-key-detail {
+  flex: 1 1 14em;
+  min-width: 0;
+}
+
+.selfhost-key-badge[data-tone="ok"] {
+  color: var(--semantic-normal);
+  border-color: color-mix(in srgb, var(--semantic-normal) 45%, transparent);
+}
+
+.selfhost-key-badge[data-tone="warn"] {
+  color: var(--semantic-elevated-text, var(--semantic-elevated));
+  border-color: color-mix(in srgb, var(--semantic-elevated) 45%, transparent);
+}
+
+.selfhost-key-badge[data-tone="bad"] {
+  color: var(--semantic-critical-text, var(--semantic-critical));
+  border-color: color-mix(in srgb, var(--semantic-critical) 45%, transparent);
+}
+
+.selfhost-key-warn {
+  margin: 0 0 8px;
+}
+
+.selfhost-key-form {
+  flex-wrap: wrap;
+}
+
+.selfhost-key-input {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+}
+
+.selfhost-key-message[hidden] {
   display: none;
 }
 
@@ -29115,7 +29232,8 @@ body.map-width-resizing {
      the file, keep them filled in the system text color. The ring and square
      dots are borders, which forced colors keep, so their shapes survive. */
   @container (max-width: 420px) {
-    .panel-header:has(> .panel-summarize-btn) > .panel-data-badge.live {
+    .panel-header:has(> .panel-summarize-btn) > .panel-data-badge.live,
+    .panel-header:has(> .panel-watchlist-btn) > .panel-data-badge.live {
       forced-color-adjust: none;
       background: CanvasText;
     }

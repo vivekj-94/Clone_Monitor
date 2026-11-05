@@ -1044,26 +1044,10 @@
       "resetView": "Zresetuj widok",
       "legend": {
         "title": "LEGENDA",
-        "startupHub": "Hub startupowy",
-        "techHQ": "Siedziba technologiczna",
-        "accelerator": "Akcelerator",
-        "cloudRegion": "Region chmury",
-        "datacenter": "Centrum danych",
-        "stockExchange": "Giełda",
-        "financialCenter": "Centrum finansowe",
-        "centralBank": "Bank centralny",
-        "commodityHub": "Hub towarowy",
-        "waterway": "Droga wodna",
         "highAlert": "Wysoki alarm",
         "elevated": "Podwyższony",
         "monitoring": "Monitorowanie",
-        "base": "Baza",
-        "nuclear": "Obiekt jądrowy",
-        "aircraft": "Samoloty",
-        "miningSite": "Teren górniczy",
-        "commodityPort": "Port towarowy",
         "pipeline": "Rurociąg",
-        "processingPlant": "Zakład przetwarzania",
         "conflict": "Strefa konfliktu",
         "diseaseAlert": "Alert choroby",
         "diseaseWarning": "Ostrzeżenie o chorobie",
@@ -1829,6 +1813,8 @@
       "streamIdleStopNever": "Nigdy"
     },
     "etfFlows": {
+      "previousColumns": "Poprzednie kolumny",
+      "moreColumns": "Więcej kolumn",
       "unavailable": "dane funduszy notowanych na giełdzie czasowo niedostępne",
       "netFlow": "Przepływ netto",
       "estFlow": "Szac. przepływ",
@@ -3267,6 +3253,14 @@
       },
       "description": "Ważna infrastruktura rurociągu {{type}}. {{status}}"
     },
+    "storageFacility": {
+      "openInAtlas": "Otwórz w atlasie magazynów",
+      "types": {
+        "lngExport": "Eksport LNG",
+        "lngImport": "Import LNG",
+        "crudeTankFarm": "Hub ropy naftowej"
+      }
+    },
     "pipelineStatusDesc": {
       "operating": "Aktualnie w eksploatacji i transportujący zasoby.",
       "construction": "Aktualnie w budowie."
@@ -3685,7 +3679,11 @@
       "c2Server": "Serwer C2",
       "malwareHost": "Host złośliwego oprogramowania",
       "phishing": "Phishing",
-      "maliciousUrl": "Złośliwy URL"
+      "maliciousUrl": "Złośliwy URL",
+      "operational": "Działa",
+      "reduced": "Ograniczony",
+      "offline": "Nieczynny",
+      "disputed": "Sporny"
     },
     "aptTactics": {
       "reconnaissance": "Rozpoznanie",
@@ -4257,7 +4255,48 @@
     "fontMono": "Monospace",
     "fontSystem": "Domyślna czcionka systemowa",
     "panelFontScale": "Rozmiar tekstu",
-    "followGlobalFontScale": "Użyj ustawienia globalnego"
+    "followGlobalFontScale": "Użyj ustawienia globalnego",
+    "selfHostKey": {
+      "heading": "Klucz desktopowy",
+      "description": "Odblokuj Pro na tym dashboardzie za pomocą własnego klucza desktopowego. Utwórz go na worldmonitor.app w sekcji Ustawienia → Klucze API → Utwórz klucz desktopowy.",
+      "relay": "Klucz trafia na serwer tej instalacji, która przekazuje Twoje żądania Pro do World Monitor. Użycie wlicza się do limitu klucza desktopowego przypisanego do Twojego konta, tak samo jak w aplikacji desktopowej.",
+      "trust": "Jeśli tę instalację uruchamia ktoś inny, utwórz dla niej osobny klucz desktopowy. Możesz go cofnąć na worldmonitor.app w dowolnym momencie.",
+      "inputLabel": "Klucz desktopowy",
+      "placeholder": "wm_…",
+      "save": "Zapisz klucz",
+      "saving": "Sprawdzanie…",
+      "remove": "Usuń klucz",
+      "removing": "Usuwanie…",
+      "empty": "Wprowadź klucz desktopowy.",
+      "saveFailed": "Nie udało się zapisać klucza. Spróbuj ponownie.",
+      "removeFailed": "Nie udało się usunąć klucza. Spróbuj ponownie.",
+      "rateLimited": "Zbyt wiele prób. Spróbuj ponownie za {{seconds}} sekund.",
+      "rateLimitedSoon": "Zbyt wiele prób. Spróbuj ponownie za minutę.",
+      "insecure": "Ta strona nie używa HTTPS, więc Twój klucz będzie przesyłany przez sieć bez szyfrowania.",
+      "insecureConfirm": "Ta strona nie używa HTTPS, więc Twój klucz będzie przesyłany przez sieć bez szyfrowania. Wyślij go tylko w sieci, której ufasz.",
+      "insecureConfirmButton": "Wyślij klucz",
+      "staleNote": "Ostatnia weryfikacja nie mogła połączyć się z World Monitor.",
+      "disabled": "Operator tej instalacji wyłączył klucze desktopowe.",
+      "state": {
+        "none": "Brak klucza",
+        "active": "Aktywny",
+        "invalid": "Nieprawidłowy",
+        "not_desktop_key": "To nie jest klucz desktopowy",
+        "over_cap": "Przekroczony limit kluczy",
+        "lapsed": "Plan nieaktywny",
+        "unavailable": "Nie udało się zweryfikować",
+        "disabled": "Wyłączony"
+      },
+      "detail": {
+        "none": "W tej przeglądarce nie zapisano żadnego klucza.",
+        "active": "Pro jest odblokowany w tej przeglądarce.",
+        "invalid": "Ten klucz jest nieprawidłowy lub został cofnięty.",
+        "not_desktop_key": "To jest klucz API. Użyj zamiast tego klucza desktopowego.",
+        "over_cap": "Konto posiada więcej kluczy desktopowych niż pozwala na to plan. Cofnij jeden na worldmonitor.app.",
+        "lapsed": "Plan Pro konta nie jest aktywny.",
+        "unavailable": "Nie udało się połączyć z World Monitor, aby zweryfikować ten klucz. Spróbuj później."
+      }
+    }
   },
   "contextMenu": {
     "openCountryBrief": "Otwórz przegląd kraju",

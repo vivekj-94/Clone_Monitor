@@ -530,26 +530,10 @@
       "resetView": "Återställ vy",
       "legend": {
         "title": "TECKENFÖRKLARING",
-        "startupHub": "Startup-hubb",
-        "techHQ": "Teknikhuvudkontor",
-        "accelerator": "Accelerator",
-        "cloudRegion": "Molnregion",
-        "datacenter": "Datacenter",
-        "stockExchange": "Börs",
-        "financialCenter": "Finanscentrum",
-        "centralBank": "Centralbank",
-        "commodityHub": "Råvaruhubb",
-        "waterway": "Vattenväg",
         "highAlert": "Höglarm",
         "elevated": "Förhöjd",
         "monitoring": "Övervakning",
-        "base": "Bas",
-        "nuclear": "Kärnteknisk",
-        "aircraft": "Flygplan",
-        "miningSite": "Gruvplats",
-        "commodityPort": "Råvaruhamn",
         "pipeline": "Ledning",
-        "processingPlant": "Bearbetningsanläggning",
         "conflict": "Konfliktzон",
         "diseaseAlert": "Sjukdomsvarning",
         "diseaseWarning": "Sjukdomsuppmaning",
@@ -1437,6 +1421,8 @@
       "lapsedCount": "Förfallna förslag ({{count}})"
     },
     "etfFlows": {
+      "previousColumns": "Föregående kolumner",
+      "moreColumns": "Fler kolumner",
       "unavailable": "data för börshandlade fonder är tillfälligt otillgängligt",
       "netFlow": "Nettoflöde",
       "estFlow": "Ber. flöde",
@@ -2843,6 +2829,14 @@
       },
       "description": "Viktig {{type}}-rörledningsinfrastruktur. {{status}}"
     },
+    "storageFacility": {
+      "openInAtlas": "Öppna i lagringsatlasen",
+      "types": {
+        "lngExport": "LNG-export",
+        "lngImport": "LNG-import",
+        "crudeTankFarm": "Råoljehubb"
+      }
+    },
     "pipelineStatusDesc": {
       "operating": "I drift och transporterar resurser.",
       "construction": "Under konstruktion."
@@ -3261,7 +3255,11 @@
       "c2Server": "C2-server",
       "malwareHost": "Värd för skadlig kod",
       "phishing": "Nätfiske",
-      "maliciousUrl": "Skadlig URL"
+      "maliciousUrl": "Skadlig URL",
+      "operational": "I drift",
+      "reduced": "Reducerad",
+      "offline": "Ur drift",
+      "disputed": "Omtvistad"
     },
     "aptTactics": {
       "reconnaissance": "Rekognosering",
@@ -4215,7 +4213,48 @@
     "fontMono": "Monospace",
     "fontSystem": "Systemstandard",
     "panelFontScale": "Textstorlek",
-    "followGlobalFontScale": "Använd global"
+    "followGlobalFontScale": "Använd global",
+    "selfHostKey": {
+      "heading": "Skrivbordsnyckel",
+      "description": "Lås upp Pro på denna dashboard med din egen skrivbordsnyckel. Skapa en på worldmonitor.app under Inställningar → API-nycklar → Skapa skrivbordsnyckel.",
+      "relay": "Nyckeln går till denna installations server, som vidarebefordrar dina Pro-förfrågningar till World Monitor. Användningen räknas mot ditt kontos skrivbordsnyckelgräns, precis som i skrivbordsappen.",
+      "trust": "Om någon annan kör denna installation skapar du en separat skrivbordsnyckel för den. Du kan återkalla den på worldmonitor.app när som helst.",
+      "inputLabel": "Skrivbordsnyckel",
+      "placeholder": "wm_…",
+      "save": "Spara nyckel",
+      "saving": "Verifierar…",
+      "remove": "Ta bort nyckel",
+      "removing": "Tar bort…",
+      "empty": "Ange en skrivbordsnyckel.",
+      "saveFailed": "Det gick inte att spara nyckeln. Försök igen.",
+      "removeFailed": "Det gick inte att ta bort nyckeln. Försök igen.",
+      "rateLimited": "För många försök. Försök igen om {{seconds}} sekunder.",
+      "rateLimitedSoon": "För många försök. Försök igen om en minut.",
+      "insecure": "Den här sidan använder inte HTTPS, så din nyckel kommer att skickas okrypterad över nätverket.",
+      "insecureConfirm": "Den här sidan använder inte HTTPS, så din nyckel kommer att skickas okrypterad över nätverket. Skicka den endast på ett nätverk du litar på.",
+      "insecureConfirmButton": "Skicka nyckel",
+      "staleNote": "Den senaste kontrollen kunde inte nå World Monitor.",
+      "disabled": "Operatören av denna installation har inaktiverat skrivbordsnycklar.",
+      "state": {
+        "none": "Ingen nyckel",
+        "active": "Aktiv",
+        "invalid": "Inte giltig",
+        "not_desktop_key": "Inte en skrivbordsnyckel",
+        "over_cap": "Överstiger nyckelgränsen",
+        "lapsed": "Plan är inte aktiv",
+        "unavailable": "Kunde inte verifiera",
+        "disabled": "Inaktiverad"
+      },
+      "detail": {
+        "none": "Ingen nyckel är sparad i denna webbläsare.",
+        "active": "Pro är upplåst i denna webbläsare.",
+        "invalid": "Denna nyckel är inte giltig eller har återkallats.",
+        "not_desktop_key": "Detta är en API-nyckel. Använd en skrivbordsnyckel istället.",
+        "over_cap": "Kontot har fler skrivbordsnycklar än vad planen tillåter. Återkalla en på worldmonitor.app.",
+        "lapsed": "Kontots Pro-plan är inte aktiv.",
+        "unavailable": "Kunde inte nå World Monitor för att verifiera denna nyckel. Försök igen senare."
+      }
+    }
   },
   "contextMenu": {
     "openCountryBrief": "Öppna landsöversikt",

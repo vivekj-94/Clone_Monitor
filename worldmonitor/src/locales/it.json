@@ -1081,26 +1081,10 @@
       "resetView": "Reimposta vista",
       "legend": {
         "title": "LEGENDA",
-        "startupHub": "Hub Startup",
-        "techHQ": "Sede Tech",
-        "accelerator": "Acceleratore",
-        "cloudRegion": "Regione Cloud",
-        "datacenter": "Centro dati",
-        "stockExchange": "Borsa valori",
-        "financialCenter": "Centro finanziario",
-        "centralBank": "Banca centrale",
-        "commodityHub": "Hub materie prime",
-        "waterway": "Via d'acqua",
         "highAlert": "Allerta alta",
         "elevated": "Elevato",
         "monitoring": "Monitoraggio",
-        "base": "Base",
-        "nuclear": "Nucleare",
-        "aircraft": "Aeromobili",
-        "miningSite": "Sito Minerario",
-        "commodityPort": "Porto Merci",
         "pipeline": "Condotta",
-        "processingPlant": "Impianto di Lavorazione",
         "conflict": "Zona di Conflitto",
         "diseaseAlert": "Avviso Malattia",
         "diseaseWarning": "Avvertenza Malattia",
@@ -1919,6 +1903,8 @@
       "streamIdleStopNever": "Mai"
     },
     "etfFlows": {
+      "previousColumns": "Colonne precedenti",
+      "moreColumns": "Altre colonne",
       "unavailable": "Dati dei fondi negoziati in borsa temporaneamente non disponibili",
       "rateLimited": "Dati dei fondi negoziati in borsa temporaneamente non disponibili (limite di velocità raggiunto) — nuovo tentativo tra poco",
       "netFlow": "Flusso netto",
@@ -3247,6 +3233,14 @@
       },
       "description": "Importante infrastruttura {{type}}. {{status}}"
     },
+    "storageFacility": {
+      "openInAtlas": "Apri nell'atlante degli stoccaggi",
+      "types": {
+        "lngExport": "Export GNL",
+        "lngImport": "Import GNL",
+        "crudeTankFarm": "Hub greggio"
+      }
+    },
     "pipelineStatusDesc": {
       "operating": "Attualmente operativo e in trasporto risorse.",
       "construction": "Attualmente in costruzione."
@@ -3665,7 +3659,11 @@
       "c2Server": "Server C2",
       "malwareHost": "Host di malware",
       "phishing": "Phishing",
-      "maliciousUrl": "URL malevolo"
+      "maliciousUrl": "URL malevolo",
+      "operational": "Operativo",
+      "reduced": "Ridotto",
+      "offline": "Fuori servizio",
+      "disputed": "Contestato"
     },
     "aptTactics": {
       "reconnaissance": "Ricognizione",
@@ -4236,7 +4234,48 @@
     "fontMono": "Monospace",
     "fontSystem": "Predefinito di Sistema",
     "panelFontScale": "Dimensione testo",
-    "followGlobalFontScale": "Usa globale"
+    "followGlobalFontScale": "Usa globale",
+    "selfHostKey": {
+      "heading": "Chiave Desktop",
+      "description": "Sblocca Pro su questo dashboard con la tua chiave desktop personale. Creane una su worldmonitor.app in Impostazioni → Chiavi API → Crea chiave desktop.",
+      "relay": "La chiave viene inviata al server di questa installazione, che inoltrerà le tue richieste Pro a World Monitor. L'utilizzo conta verso il tuo limite di chiavi desktop, come nell'app desktop.",
+      "trust": "Se qualcun altro esegue questa installazione, crea una chiave desktop separata per essa. Puoi revocarla su worldmonitor.app in qualsiasi momento.",
+      "inputLabel": "Chiave Desktop",
+      "placeholder": "wm_…",
+      "save": "Salva chiave",
+      "saving": "Verifica in corso…",
+      "remove": "Rimuovi chiave",
+      "removing": "Rimozione in corso…",
+      "empty": "Inserisci una chiave desktop.",
+      "saveFailed": "Impossibile salvare la chiave. Riprova.",
+      "removeFailed": "Impossibile rimuovere la chiave. Riprova.",
+      "rateLimited": "Troppi tentativi. Riprova tra {{seconds}} secondi.",
+      "rateLimitedSoon": "Troppi tentativi. Riprova tra un minuto.",
+      "insecure": "Questa pagina non usa HTTPS, quindi la tua chiave attraverserà la rete senza crittografia.",
+      "insecureConfirm": "Questa pagina non usa HTTPS, quindi la tua chiave attraverserà la rete senza crittografia. Inviarla solo su una rete di cui ti fidi.",
+      "insecureConfirmButton": "Invia chiave",
+      "staleNote": "L'ultimo controllo non ha potuto raggiungere World Monitor.",
+      "disabled": "L'operatore di questa installazione ha disabilitato le chiavi desktop.",
+      "state": {
+        "none": "Nessuna chiave",
+        "active": "Attiva",
+        "invalid": "Non valida",
+        "not_desktop_key": "Non è una chiave desktop",
+        "over_cap": "Limite di chiavi superato",
+        "lapsed": "Piano non attivo",
+        "unavailable": "Impossibile verificare",
+        "disabled": "Disabilitata"
+      },
+      "detail": {
+        "none": "Nessuna chiave salvata in questo browser.",
+        "active": "Pro è sbloccato in questo browser.",
+        "invalid": "Questa chiave non è valida o è stata revocata.",
+        "not_desktop_key": "Questa è una chiave API. Usa invece una chiave desktop.",
+        "over_cap": "L'account ha più chiavi desktop di quante ne consenta il piano. Revocane una su worldmonitor.app.",
+        "lapsed": "Il piano Pro dell'account non è attivo.",
+        "unavailable": "Impossibile raggiungere World Monitor per verificare questa chiave. Riprova più tardi."
+      }
+    }
   },
   "contextMenu": {
     "openCountryBrief": "Apri scheda paese",

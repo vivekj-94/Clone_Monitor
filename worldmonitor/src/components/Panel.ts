@@ -8,8 +8,6 @@ import { getAiFlowSettings } from '@/services/ai-flow-settings';
 import { getSecretState } from '@/services/runtime-config';
 import { PanelGateReason } from '@/services/panel-gating';
 import { lockSvg, upgradeSvg } from '@/components/gate-icons';
-import { createCheckoutConsentElement } from '@/utils/legal-links';
-import { WEB_APP_ORIGIN } from '@/config/web-origin';
 import { dataFreshness, type PanelFreshnessSummary } from '@/services/data-freshness';
 import { formatPanelFreshnessDisplay } from '@/services/panel-freshness-display';
 import {
@@ -969,6 +967,19 @@ export class Panel {
       && !this._collapsed;
   }
 
+  /**
+   * True when the user can see this panel right now: attached, enabled, expanded, not
+   * filtered out by the mobile category nav (`.mobile-cat-hidden`), and not covered by the
+   * fullscreen map (`body.live-news-fullscreen-active` hides the panel grid). Handlers that
+   * claim a map interaction gate on this so a panel the user cannot see never swallows a
+   * click it has no way to answer.
+   */
+  public isVisibleToUser(): boolean {
+    return this.canHostLiveMedia()
+      && !this.element.classList.contains('mobile-cat-hidden')
+      && !document.body.classList.contains('live-news-fullscreen-active');
+  }
+
   protected runWhenConnected(callback: () => void): boolean {
     if (this.destroyed) return false;
     if (this.element.isConnected) {
@@ -1213,15 +1224,11 @@ export class Panel {
       lockedChildren.push(featureList);
     }
 
-    // Assent immediately above the CTA (#6976). This button jumps straight to
-    // Dodo's hosted checkout, where Dodo (merchant of record) shows its terms
-    // and never ours — so ours are presented here, before the jump. The desktop
-    // branch below opens the /pro pricing page in the OS browser instead, and
-    // that page carries its own assent line above every tier CTA.
-    if (!isDesktopRuntime()) lockedChildren.push(createCheckoutConsentElement(WEB_APP_ORIGIN));
+    // The CTA opens the /pro plan picker, which shows the Terms above every
+    // plan button (#6976), so no assent line is needed here.
     const ctaBtn = h('button', { type: 'button', className: 'panel-locked-cta' }, 'Upgrade to Pro');
     ctaBtn.addEventListener('click', () => {
-      import('@/services/upgrade-flow').then((m) => m.openUpgradeCheckout()).catch(() => {
+      import('@/services/upgrade-flow').then((m) => m.openUpgradePlans()).catch(() => {
         window.open('https://worldmonitor.app/pro', '_blank', 'noopener,noreferrer');
       });
     });

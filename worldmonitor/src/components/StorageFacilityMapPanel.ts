@@ -27,9 +27,9 @@ const getSupplyChainClient = createLazyClient(() => new SupplyChainServiceClient
 }));
 
 const BADGE_COLOR: Record<string, string> = {
-  operational: '#2ecc71',
-  reduced:     '#f39c12',
-  offline:     '#e74c3c',
+  operational: '#1e8449',
+  reduced:     '#af601a',
+  offline:     '#c0392b',
   disputed:    '#9b59b6',
 };
 
@@ -57,7 +57,7 @@ function badgeLabel(badge: string): string {
 
 function badgeChip(badge: string | undefined): string {
   const safe = badge && BADGE_COLOR[badge] ? badge : 'disputed';
-  const color = BADGE_COLOR[safe] ?? '#7f8c8d';
+  const color = BADGE_COLOR[safe] ?? '#5d6d7e';
   return `<span class="sf-badge" style="background:${color}">${escapeHtml(badgeLabel(safe))}</span>`;
 }
 
@@ -173,9 +173,15 @@ export class StorageFacilityMapPanel extends Panel {
   private detailError: string | null = null;
   private detailEvents: EnergyDisruptionEntry[] | null | undefined = undefined;
   private usedHydrationPaint = false;
-  private openDetailHandler = (ev: Event): void => {
+  // Claim contract with DeckGLMap: preventDefault() on the cancelable
+  // 'energy:open-storage-facility-detail' event means "the atlas owns this
+  // click, skip the map popup". Claim only when the user can see the atlas;
+  // a closed, collapsed, filtered-out or fullscreen-covered panel leaves the
+  // event unclaimed so the map shows its own facility summary instead.
+  private claimStorageClick = (ev: Event): void => {
     const id = (ev as CustomEvent<{ facilityId?: string }>).detail?.facilityId;
-    if (!id || !this.element?.isConnected) return;
+    if (!id || !this.isVisibleToUser()) return;
+    ev.preventDefault();
     void this.loadDetail(id);
   };
 
@@ -190,11 +196,8 @@ export class StorageFacilityMapPanel extends Panel {
         'evidence (operator statements, sanction refs, commercial state, physical signals) — ' +
         'see /docs/methodology/storage for the classifier spec.',
     });
-    // Loose coupling with DeckGLMap: map clicks on a storage dot dispatch
-    // 'energy:open-storage-facility-detail' with the id, and this panel
-    // opens its drawer. No-op if the panel isn't mounted.
     if (!this.detailSource && typeof window !== 'undefined') {
-      window.addEventListener('energy:open-storage-facility-detail', this.openDetailHandler);
+      window.addEventListener('energy:open-storage-facility-detail', this.claimStorageClick);
     }
     this.content.addEventListener('click', this.handleContentClick);
     bindActivationKeys(this.content, '.sf-row');
@@ -215,7 +218,7 @@ export class StorageFacilityMapPanel extends Panel {
 
   public destroy(): void {
     if (!this.detailSource && typeof window !== 'undefined') {
-      window.removeEventListener('energy:open-storage-facility-detail', this.openDetailHandler);
+      window.removeEventListener('energy:open-storage-facility-detail', this.claimStorageClick);
     }
     super.destroy?.();
   }

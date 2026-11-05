@@ -1227,26 +1227,10 @@
       "resetView": "ビューをリセット",
       "legend": {
         "title": "凡例",
-        "startupHub": "スタートアップハブ",
-        "techHQ": "テック本社",
-        "accelerator": "アクセラレーター",
-        "cloudRegion": "クラウドリージョン",
-        "datacenter": "データセンター",
-        "stockExchange": "証券取引所",
-        "financialCenter": "金融センター",
-        "centralBank": "中央銀行",
-        "commodityHub": "コモディティハブ",
-        "waterway": "水路",
         "highAlert": "高警戒",
         "elevated": "上昇",
         "monitoring": "監視中",
-        "base": "基地",
-        "nuclear": "核施設",
-        "aircraft": "航空機",
-        "miningSite": "採鉱地",
-        "commodityPort": "商品港",
         "pipeline": "パイプライン",
-        "processingPlant": "処理工場",
         "conflict": "紛争地帯",
         "diseaseAlert": "疾病警報",
         "diseaseWarning": "疾病警告",
@@ -1964,6 +1948,8 @@
       "infoTooltip": "<strong>予測市場</strong> リアルマネー予測市場:<ul><li>価格は群衆の確率推定を反映</li><li>取引量が多いほど信頼性の高いシグナル</li><li>地政学・時事問題に焦点</li></ul>ソース: Polymarket (polymarket.com)"
     },
     "etfFlows": {
+      "previousColumns": "前の列",
+      "moreColumns": "他の列",
       "unavailable": "上場投資信託データは一時的に利用できません",
       "rateLimited": "上場投資信託データは一時的に利用できません(レート制限) — 間もなく再試行します",
       "netFlow": "純フロー",
@@ -3216,6 +3202,14 @@
       },
       "description": "主要な{{type}}パイプラインインフラ。{{status}}"
     },
+    "storageFacility": {
+      "openInAtlas": "ストレージアトラスで開く",
+      "types": {
+        "lngExport": "LNG輸出",
+        "lngImport": "LNG輸入",
+        "crudeTankFarm": "原油ハブ"
+      }
+    },
     "pipelineStatusDesc": {
       "operating": "現在稼働中で資源を輸送。",
       "construction": "現在建設中。"
@@ -3625,7 +3619,11 @@
       "c2Server": "C2サーバー",
       "malwareHost": "マルウェアホスト",
       "phishing": "フィッシング",
-      "maliciousUrl": "悪意のあるURL"
+      "maliciousUrl": "悪意のあるURL",
+      "operational": "稼働中",
+      "reduced": "縮小",
+      "offline": "停止中",
+      "disputed": "係争中"
     },
     "aptTactics": {
       "reconnaissance": "偵察",
@@ -4194,7 +4192,48 @@
     "fontMono": "モノスペース",
     "fontSystem": "システムデフォルト",
     "panelFontScale": "テキストサイズ",
-    "followGlobalFontScale": "グローバル設定を使用"
+    "followGlobalFontScale": "グローバル設定を使用",
+    "selfHostKey": {
+      "heading": "デスクトップキー",
+      "description": "worldmonitor.app の設定 → API キー → デスクトップキーを作成から、自分のデスクトップキーを作成して、このダッシュボードで Pro をアンロックします。",
+      "relay": "このインストール環境のサーバーにキーが送信され、そこから Pro リクエストが World Monitor に転送されます。使用量はデスクトップアプリと同じく、アカウントのデスクトップキー利用枠にカウントされます。",
+      "trust": "別の人がこのインストール環境を運用する場合は、別のデスクトップキーを作成してください。worldmonitor.app でいつでも無効化できます。",
+      "inputLabel": "デスクトップキー",
+      "placeholder": "wm_…",
+      "save": "キーを保存",
+      "saving": "確認中…",
+      "remove": "キーを削除",
+      "removing": "削除中…",
+      "empty": "デスクトップキーを入力してください。",
+      "saveFailed": "キーを保存できませんでした。もう一度試してください。",
+      "removeFailed": "キーを削除できませんでした。もう一度試してください。",
+      "rateLimited": "試行回数が多すぎます。{{seconds}} 秒後にもう一度試してください。",
+      "rateLimitedSoon": "試行回数が多すぎます。1 分後にもう一度試してください。",
+      "insecure": "このページは HTTPS を使用していないため、キーが暗号化されずにネットワークを通過します。",
+      "insecureConfirm": "このページは HTTPS を使用していないため、キーが暗号化されずにネットワークを通過します。信頼できるネットワークでのみ送信してください。",
+      "insecureConfirmButton": "キーを送信",
+      "staleNote": "最後の確認時に World Monitor に接続できませんでした。",
+      "disabled": "このインストール環境の運用者がデスクトップキーを無効にしています。",
+      "state": {
+        "none": "キーなし",
+        "active": "有効",
+        "invalid": "無効",
+        "not_desktop_key": "デスクトップキーではありません",
+        "over_cap": "キー数が上限を超えています",
+        "lapsed": "プランが無効です",
+        "unavailable": "確認できませんでした",
+        "disabled": "無効にされています"
+      },
+      "detail": {
+        "none": "このブラウザに保存されたキーはありません。",
+        "active": "このブラウザで Pro がアンロックされています。",
+        "invalid": "このキーは無効であるか、無効化されています。",
+        "not_desktop_key": "これは API キーです。代わりにデスクトップキーを使用してください。",
+        "over_cap": "アカウントのデスクトップキー数がプランの上限を超えています。worldmonitor.app で 1 つ無効化してください。",
+        "lapsed": "アカウントの Pro プランが無効です。",
+        "unavailable": "World Monitor に接続してこのキーを確認できませんでした。後でもう一度試してください。"
+      }
+    }
   },
   "contextMenu": {
     "openCountryBrief": "国の概要を開く",

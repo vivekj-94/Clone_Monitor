@@ -744,7 +744,7 @@
 }
 
 .fire-row.fires-high .fire-hi {
-  color: var(--threat-critical);
+  color: var(--semantic-critical-text, var(--threat-critical));
   font-weight: 600;
 }
 
@@ -898,7 +898,7 @@
 }
 
 .climate-extreme-row:hover {
-  background: color-mix(in srgb, var(--semantic-critical) 10%, transparent);
+  background: color-mix(in srgb, var(--semantic-critical) 8%, transparent);
 }
 
 .climate-zone {
@@ -951,7 +951,7 @@
 }
 
 .severity-extreme {
-  background: color-mix(in srgb, var(--semantic-critical) 20%, transparent);
+  background: color-mix(in srgb, var(--semantic-critical) 8%, transparent);
   color: var(--semantic-critical-text, var(--semantic-critical));
 }
 
@@ -962,7 +962,7 @@
 
 .severity-normal {
   background: var(--overlay-medium);
-  color: var(--text-dim);
+  color: var(--text-secondary);
 }
 
 /* ----------------------------------------------------------
@@ -974,12 +974,13 @@
 
 .disp-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
   margin-bottom: 8px;
 }
 
 .disp-stat-box {
+  min-width: 0;
   background: var(--overlay-subtle);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -1002,6 +1003,45 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+@container panel-body (max-width: 480px) {
+  .disp-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Keep the item count visible even below the shared header's 300px cutoff.
+   The followed-country control gives up its visual label instead. */
+.panel[data-panel="displacement"] > .panel-header > .panel-count {
+  position: relative;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 2px 6px;
+  clip-path: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@container (max-width: 480px) {
+  .panel[data-panel="displacement"] .wm-followed-only-chip {
+    min-width: 24px;
+    min-height: 24px;
+  }
+
+  .panel[data-panel="displacement"] .wm-followed-only-chip-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
 }
 
 .disp-stat-refugees .disp-stat-value {
@@ -1057,7 +1097,7 @@
 }
 
 .disp-crisis {
-  background: color-mix(in srgb, var(--semantic-critical) 20%, transparent);
+  background: color-mix(in srgb, var(--semantic-critical) 8%, transparent);
   color: var(--semantic-critical-text, var(--semantic-critical));
 }
 
@@ -1870,8 +1910,6 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
-  max-height: 320px;
-  overflow-y: auto;
 }
 
 .oref-wave-row {
@@ -2920,7 +2958,7 @@ body.panel-drag-active .map-bottom-grid:empty::after {
 /* ── DeductionPanel ─────────────────────────────────────── */
 .deduction-panel-content {
   display: flex; flex-direction: column; gap: 10px;
-  padding: 10px 12px; height: 100%; overflow-y: auto;
+  padding: 10px 12px;
   font-family: var(--font-body-base, system-ui, sans-serif);
 }
 
@@ -3296,13 +3334,13 @@ body.panel-drag-active .map-bottom-grid:empty::after {
 .gb-table th, .gb-table td { border-inline: 1px solid var(--border-subtle); text-align: right; vertical-align: top; white-space: nowrap; }
 .gb-item-col, .gb-item-name { text-align: start; min-width: 110px; position: sticky; inset-inline-start: 0; z-index: 2; background: var(--panel-bg, var(--surface)); }
 .gb-country-header { text-align: center; min-width: 80px; }
-.gb-country-name { font-size: calc(0.65rem * var(--wm-panel-effective-scale, 1)); opacity: 0.7; }
+.gb-country-name { font-size: calc(0.65rem * var(--wm-panel-effective-scale, 1)); }
 .gb-cell { position: relative; }
-.gb-local { display: block; font-size: calc(0.6rem * var(--wm-panel-effective-scale, 1)); opacity: 0.6; }
-.gb-unit { display: block; font-size: calc(0.6rem * var(--wm-panel-effective-scale, 1)); opacity: 0.5; }
-.gb-na { opacity: 0.3; text-align: center; }
-.gb-cheapest { background: rgba(34,197,94,0.15); color: #4ade80; }
-.gb-priciest { background: rgba(239,68,68,0.1); color: #f87171; }
+.gb-local { display: block; font-size: calc(0.6rem * var(--wm-panel-effective-scale, 1)); }
+.gb-unit { display: block; font-size: calc(0.6rem * var(--wm-panel-effective-scale, 1)); }
+.gb-na { text-align: center; }
+.gb-cheapest { background: rgba(34,197,94,0.15); color: var(--green-text, #4ade80); }
+.gb-priciest { background: rgba(239,68,68,0.1); color: var(--red-text, #f87171); }
 .gb-total-row td { border-top: 2px solid var(--border); }
 .gb-wow { display: block; font-size: calc(0.6rem * var(--wm-panel-effective-scale, 1)); opacity: 0.85; margin-top: 1px; }
 .gb-updated { font-size: calc(0.65rem * var(--wm-panel-effective-scale, 1)); opacity: 0.4; text-align: right; padding: 4px 6px; }
@@ -3454,8 +3492,6 @@ a.hub-top-story {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  max-height: 380px;
-  overflow-y: auto;
 }
 
 .climate-news-card {
@@ -3914,7 +3950,7 @@ td.fx-window {
   font-variant-numeric: tabular-nums;
 }
 .fx-window-dates {
-  opacity: 0.7;
+  color: var(--text-dim);
 }
 /* The raw seeded direction, shown beside the conventional quote. */
 td.fx-inverse {
