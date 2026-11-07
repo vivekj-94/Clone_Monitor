@@ -4,6 +4,7 @@ import type { AirportDelayAlert, PositionSample } from '@/services/aviation';
 import type { Earthquake } from '@/services/earthquakes';
 import type { WeatherAlert } from '@/services/weather';
 import type { CrossBorderPoint } from '@/services/displacement';
+import { renderDisplacementDetails, type DisplacementMarker } from './displacement-marker';
 import { renderCrossBorderDetails } from './cross-border-marker';
 import type { RadiationObservation } from '@/services/radiation';
 import { UNDERSEA_CABLES } from '@/config/geo-map';
@@ -17,7 +18,7 @@ import { TransitChart } from '@/utils/transit-chart';
 import { HS2RingChart } from '@/utils/hs2-ring-chart';
 import type { GetChokepointStatusResponse, TransitDayCount } from '@/services/supply-chain';
 import { fetchChokepointHistory } from '@/services/supply-chain';
-import { t } from '@/services/i18n';
+import { t, getCurrentLanguageTag } from '@/services/i18n';
 import { fetchHotspotContext, formatArticleDate, extractDomain, type GdeltArticle } from '@/services/gdelt-intel';
 import { getWingbitsLiveFlight } from '@/services/wingbits';
 import { isFeatureAvailable } from '@/services/runtime-config';
@@ -30,6 +31,7 @@ import { vesselTypeLabel } from '@/utils/vessel-type-label';
 import { getAuthState } from '@/services/auth-state';
 import { hasPremiumAccess } from '@/services/panel-gating';
 import { trackGateHit } from '@/services/analytics';
+import { bindCyberNetworkSection, renderCyberNetworkSection } from './cyber-network-info';
 import { renderPopupSourceLinks } from './map-popup-source-links';
 import { overlayHistory, type OverlayCloseOrigin, type OverlayOpenHandle } from '@/utils/overlay-history';
 import { setTrustedHtml, trustedHtml } from '@/utils/dom-utils';
@@ -111,7 +113,7 @@ function fmtDelayMin(min: number | undefined): string {
 /** A news marker's popup: its title and, when known, the cluster's corroboration (#9213). */
 type NewsPopupData = Pick<NewsLocationMarker, 'title' | 'corroboration'>;
 
-export type PopupType = 'conflict' | 'hotspot' | 'earthquake' | 'weather' | 'base' | 'waterway' | 'apt' | 'cyberThreat' | 'nuclear' | 'economic' | 'irradiator' | 'pipeline' | 'cable' | 'cable-advisory' | 'repair-ship' | 'outage' | 'datacenter' | 'datacenterCluster' | 'ais' | 'protest' | 'protestCluster' | 'flight' | 'aircraft' | 'militaryFlight' | 'militaryVessel' | 'militaryFlightCluster' | 'militaryVesselCluster' | 'natEvent' | 'port' | 'spaceport' | 'mineral' | 'startupHub' | 'cloudRegion' | 'techHQ' | 'accelerator' | 'techEvent' | 'techHQCluster' | 'techEventCluster' | 'techActivity' | 'geoActivity' | 'stockExchange' | 'financialCenter' | 'centralBank' | 'commodityHub' | 'iranEvent' | 'gpsJamming' | 'radiation' | 'news' | 'crossBorder' | 'storageFacility';
+export type PopupType = 'conflict' | 'hotspot' | 'earthquake' | 'weather' | 'base' | 'waterway' | 'apt' | 'cyberThreat' | 'nuclear' | 'economic' | 'irradiator' | 'pipeline' | 'cable' | 'cable-advisory' | 'repair-ship' | 'outage' | 'datacenter' | 'datacenterCluster' | 'ais' | 'protest' | 'protestCluster' | 'flight' | 'aircraft' | 'militaryFlight' | 'militaryVessel' | 'militaryFlightCluster' | 'militaryVesselCluster' | 'natEvent' | 'port' | 'spaceport' | 'mineral' | 'startupHub' | 'cloudRegion' | 'techHQ' | 'accelerator' | 'techEvent' | 'techHQCluster' | 'techEventCluster' | 'techActivity' | 'geoActivity' | 'stockExchange' | 'financialCenter' | 'centralBank' | 'commodityHub' | 'iranEvent' | 'gpsJamming' | 'radiation' | 'news' | 'crossBorder' | 'displacement' | 'storageFacility';
 
 interface TechEventPopupData {
   id: string;
@@ -250,7 +252,7 @@ interface StorageFacilityPopupData {
 
 interface PopupData {
   type: PopupType;
-  data: ConflictZone | Hotspot | Earthquake | WeatherAlert | MilitaryBase | StrategicWaterway | APTGroup | CyberThreat | NuclearFacility | EconomicCenter | GammaIrradiator | Pipeline | UnderseaCable | CableAdvisory | RepairShip | InternetOutage | AIDataCenter | AisDisruptionEvent | SocialUnrestEvent | AirportDelayAlert | PositionSample | MilitaryFlight | MilitaryVessel | MilitaryFlightCluster | MilitaryVesselCluster | NaturalEvent | Port | Spaceport | CriticalMineralProject | StartupHub | CloudRegion | TechHQ | Accelerator | TechEventPopupData | TechHQClusterData | TechEventClusterData | ProtestClusterData | DatacenterClusterData | TechHubActivity | GeoHubActivity | StockExchangePopupData | FinancialCenterPopupData | CentralBankPopupData | CommodityHubPopupData | IranEventPopupData | GpsJammingPopupData | RadiationObservation | NewsPopupData | CrossBorderPoint | StorageFacilityPopupData;
+  data: ConflictZone | Hotspot | Earthquake | WeatherAlert | MilitaryBase | StrategicWaterway | APTGroup | CyberThreat | NuclearFacility | EconomicCenter | GammaIrradiator | Pipeline | UnderseaCable | CableAdvisory | RepairShip | InternetOutage | AIDataCenter | AisDisruptionEvent | SocialUnrestEvent | AirportDelayAlert | PositionSample | MilitaryFlight | MilitaryVessel | MilitaryFlightCluster | MilitaryVesselCluster | NaturalEvent | Port | Spaceport | CriticalMineralProject | StartupHub | CloudRegion | TechHQ | Accelerator | TechEventPopupData | TechHQClusterData | TechEventClusterData | ProtestClusterData | DatacenterClusterData | TechHubActivity | GeoHubActivity | StockExchangePopupData | FinancialCenterPopupData | CentralBankPopupData | CommodityHubPopupData | IranEventPopupData | GpsJammingPopupData | RadiationObservation | NewsPopupData | DisplacementMarker | CrossBorderPoint | StorageFacilityPopupData;
   relatedNews?: NewsItem[];
   x: number;
   y: number;
@@ -348,6 +350,15 @@ export class MapPopup {
           this.refreshHeightCache(popupType, data, containerRect, positionedWith);
         }, 0);
       });
+    }
+
+    if (data.type === 'datacenter') {
+      this.popup.querySelector('.datacenter-details')?.addEventListener('toggle', () => {
+        this.clampPopupToViewport();
+      });
+    }
+    if (data.type === 'cyberThreat' && (data.data as CyberThreat).indicatorType === 'ip') {
+      bindCyberNetworkSection(this.popup, (data.data as CyberThreat).indicator, () => this.clampPopupToViewport());
     }
 
     // Mount transit chart for waterway popups after DOM insertion
@@ -735,8 +746,7 @@ export class MapPopup {
     if (!this.popup || !this.isMobileSheet || e.touches.length !== 1) return;
 
     const target = e.target as HTMLElement | null;
-    const popupBody = this.popup.querySelector('.popup-body');
-    if (target?.closest('.popup-body') && popupBody && popupBody.scrollTop > 0) {
+    if (target?.closest('.popup-body') && this.popup.scrollTop > 0) {
       this.sheetTouchStartY = null;
       return;
     }
@@ -911,6 +921,9 @@ export class MapPopup {
         return this.renderGpsJammingPopup(data.data as GpsJammingPopupData);
       case 'news':
         return this.renderNewsPopup(data.data as NewsPopupData);
+      case 'displacement':
+        return `<div class="popup-header"><span class="popup-title">${t('panels.displacement')}</span><button class="popup-close" aria-label="${t('common.close')}">×</button></div>`
+          + `<div class="popup-body">${renderDisplacementDetails(data.data as DisplacementMarker)}</div>`;
       case 'crossBorder':
         return `<div class="popup-header"><span class="popup-title">${t('components.displacement.crossBorder')}</span><button class="popup-close" aria-label="${t('common.close')}">×</button></div>`
           + `<div class="popup-body">${renderCrossBorderDetails(data.data as CrossBorderPoint)}</div>`;
@@ -2069,10 +2082,12 @@ ${isFeatureAvailable('wingbitsEnrichment') ? `<div class="wingbits-live-section"
       </div>
       <div class="popup-body">
         <div class="popup-subtitle">${escapeHtml(typeLabel)}</div>
+        <p class="popup-description">${escapeHtml(t(`popups.cyberThreat.explanations.${threat.type}`))}</p>
+        <p class="section-label">${t('popups.cyberThreat.evidence')}</p>
         <div class="popup-stats">
           <div class="popup-stat">
             <span class="stat-label">${escapeHtml(threat.indicatorType.toUpperCase())}</span>
-            <span class="stat-value">${escapeHtml(threat.indicator)}</span>
+            <span class="stat-value" style="overflow-wrap:anywhere">${escapeHtml(threat.indicator)}</span>
           </div>
           <div class="popup-stat">
             <span class="stat-label">${t('popups.country')}</span>
@@ -2086,6 +2101,7 @@ ${isFeatureAvailable('wingbitsEnrichment') ? `<div class="wingbits-live-section"
             <span class="stat-label">${t('popups.malware')}</span>
             <span class="stat-value">${escapeHtml(threat.malwareFamily)}</span>
           </div>` : ''}
+          ${threat.firstSeen ? `<div class="popup-stat"><span class="stat-label">${t('popups.cyberThreat.firstSeen')}</span><span class="stat-value">${escapeHtml(new Date(threat.firstSeen).toLocaleString())}</span></div>` : ''}
           <div class="popup-stat">
             <span class="stat-label">${t('popups.lastSeen')}</span>
             <span class="stat-value">${escapeHtml(threat.lastSeen ? new Date(threat.lastSeen).toLocaleString() : t('popups.unknown'))}</span>
@@ -2095,6 +2111,11 @@ ${isFeatureAvailable('wingbitsEnrichment') ? `<div class="wingbits-live-section"
         <div class="popup-tags">
           ${tags.map((tag) => `<span class="popup-tag">${escapeHtml(tag)}</span>`).join('')}
         </div>` : ''}
+        ${threat.firstSeen ? `<p class="popup-description">${t('popups.cyberThreat.firstSeenNote')}</p>` : ''}
+        ${(threat.tags || []).includes('malware_download') ? `<p class="popup-description">${t('popups.cyberThreat.downloadTag')}</p>` : ''}
+        ${threat.malwareFamily ? `<p class="popup-description">${t('popups.cyberThreat.familyNote')}</p>` : ''}
+        <p class="popup-description">${t('popups.cyberThreat.approximateLocation')}</p>
+        ${threat.indicatorType === 'ip' ? renderCyberNetworkSection() : ''}
       </div>
     `;
   }
@@ -2609,7 +2630,7 @@ ${isFeatureAvailable('wingbitsEnrichment') ? `<div class="wingbits-live-section"
             <span class="stat-label">${t('popups.datacenter.chipType')}</span>
             <span class="stat-value">${escapeHtml(dc.chipType || t('popups.unknown'))}</span>
           </div>
-          ${dc.powerMW ? `
+          ${dc.powerMW != null ? `
           <div class="popup-stat">
             <span class="stat-label">${t('popups.datacenter.power')}</span>
             <span class="stat-value">${dc.powerMW.toFixed(0)} MW</span>
@@ -2623,8 +2644,39 @@ ${isFeatureAvailable('wingbitsEnrichment') ? `<div class="wingbits-live-section"
           ` : ''}
         </div>
         ${dc.note ? `<p class="popup-description">${escapeHtml(dc.note)}</p>` : ''}
+        ${this.renderDatacenterDetails(dc)}
         <div class="popup-attribution">${t('popups.datacenter.attribution')}</div>
       </div>
+    `;
+  }
+
+  private renderDatacenterDetails(dc: AIDataCenter): string {
+    const label = (key: string) => t(`popups.datacenter.details.${key}`);
+    const unknown = label('notAvailable');
+    const number = (value: number) => value.toLocaleString(getCurrentLanguageTag(), { maximumFractionDigits: 20 });
+    const row = (name: string, value: string) => `<div><dt>${escapeHtml(name)}</dt><dd>${escapeHtml(value)}</dd></div>`;
+    const sourceUrl = dc.sourceUrl ? sanitizeUrl(dc.sourceUrl) : '';
+    return `
+      <details class="datacenter-details">
+        <summary>${label('more')}</summary>
+        <h3>${escapeHtml(dc.name)}</h3>
+        ${dc.description ? `<p>${escapeHtml(dc.description)}</p>` : ''}
+        <dl>
+          ${row(label('owner'), dc.owner)}
+          ${row(t('popups.datacenter.gpuChipCount'), number(dc.chipCount))}
+          ${row(t('popups.datacenter.chipType'), dc.chipType || unknown)}
+          ${row(label('power'), dc.powerMW != null ? `${number(dc.powerMW)} MW` : unknown)}
+          ${row(label('powerBasis'), dc.powerBasis ? label(dc.powerBasis) : unknown)}
+          ${row(label('location'), dc.locationPrecision ? label(dc.locationPrecision) : label('locationUnknown'))}
+          ${row(label('firstOperationalDate'), dc.firstOperationalDate || unknown)}
+          ${row(label('sourceDate'), dc.sourceDate || unknown)}
+          ${row(label('metadataReviewedAt'), dc.metadataReviewedAt || unknown)}
+        </dl>
+        <p>${label('powerCaveat')}</p>
+        <p>${label('freshness')}</p>
+        <a href="https://epoch.ai/data/gpu-clusters" target="_blank" rel="noopener noreferrer">${label('dataset')} ↗</a>
+        ${sourceUrl ? `<a href="${sourceUrl}" target="_blank" rel="noopener noreferrer">${label('evidence')} ↗</a>` : ''}
+      </details>
     `;
   }
 

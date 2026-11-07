@@ -948,7 +948,7 @@
         "asia": "AZIJA",
         "space": "SVEMIR"
       },
-      "play": "Pokreni",
+      "play": "Gledaj uživo",
       "previewStatus": "Spremno za reprodukciju",
       "connecting": "Povezivanje…",
       "unverified": "Ne mogu potvrditi je li ovaj stream uživo",
@@ -1355,6 +1355,7 @@
       }
     },
     "countryBrief": {
+      "moreActions": "Više radnji",
       "shareLink": "Dijeli vezu",
       "shareStory": "Dijeli priču",
       "printPdf": "Ispiši / PDF",
@@ -2658,8 +2659,8 @@
     },
     "proBanner": {
       "badge": "PRO",
-      "headline": "Pro je lansiran",
-      "tagline": "Više signala, manje šuma. Više AI sažetaka. Geopolitički i equity istraživač samo za vas.",
+      "headline": "Dnevni AI-briefinzi putem e-maila ili Slacka",
+      "tagline": "plus WM Analyst, pravila upozorenja i MCP za Claude",
       "cta": "Nadogradi na Pro →",
       "dismiss": "Odbaci"
     },
@@ -3299,7 +3300,44 @@
     },
     "apt": {},
     "cyberThreat": {
-      "title": "KIBERNETSKA PRIJETNJA"
+      "title": "KIBERNETSKA PRIJETNJA",
+      "evidence": "Dokazi iz feed-a prijetnji",
+      "firstSeen": "Prvi put viđeno",
+      "explanations": {
+        "c2_server": "Feed izvještava o serveru za naredbe i kontrolu koji se koristi za slanje uputa zlonamjernom kodu.",
+        "malware_host": "Feed izvještava o adresi koja se koristi za hostiranje zlonamjernog koda.",
+        "phishing": "Feed izvještava o pokazatelju povezanom s phishingom.",
+        "malicious_url": "Feed izvještava o URL-u povezanom sa zlonamjernom aktivnošću."
+      },
+      "downloadTag": "malware_download: izvor izvještava o lokaciji preuzimanja zlonamjernog koda.",
+      "familyNote": "Oznaka obitelji zlonamjernog koda dolazi iz feed-a prijetnji. Ne identificira osobu ili organizaciju.",
+      "approximateLocation": "Mapirana lokacija je približni kontekst izvedeni iz IP-a, a ne verificirana fizička lokacija domaćina.",
+      "network": {
+        "title": "Informacije o mreži",
+        "privacy": "Proširi za zahtjev pasivnih mrežnih podataka iz RIPEstat-a. Pokazatelj IP-a se dijeli s tim pružateljem.",
+        "disclaimer": "Mrežna registracija i usmjeravanje ne identificiraju napadača niti čine pružatelja odgovornim za aktivnost.",
+        "loading": "Učitavanje informacija o mreži…",
+        "unknown": "Nije dostupno",
+        "disabled": "Mrežni pregled nije omogućen.",
+        "invalid": "Mrežni pregled zahtijeva javnu IP adresu.",
+        "unavailable": "Mrežni pregled neuspješan. Zatvori i ponovno otvori skočni prozor da pokušaš kasnije.",
+        "rateLimited": "Mrežni pregled je privremeno ograničen. Pokušaj kasnije.",
+        "noData": "Pružatelj nije vratio mrežne informacije za tu IP adresu.",
+        "partial": "Dio mrežnih informacija nije mogao biti dohvaćen.",
+        "ip": "IP",
+        "asn": "Izvorni ASN",
+        "operator": "Prijavljeni držatelj ASN-a / mrežni operator",
+        "prefix": "Prijavljeni usmjeravaški prefiks",
+        "hostname": "Obrnuti DNS naziv domaćina (rDNS)",
+        "lookupAt": "Vrijeme mrežnog pregleda",
+        "routingAt": "Vrijeme podataka usmjeravanja",
+        "broaderPrefix": "Pružatelj se podudarao sa širim usmjeravačkim prefiksom. Ovo nije točan zapis dodjele IP-a.",
+        "rdnsNote": "rDNS je DNS oznaka, a ne dokaz vlasništva. Registrirana organizacija i precizna lokacija nisu dostavljeni ovim pregledom.",
+        "copy": "Kopiraj",
+        "copied": "Kopirano.",
+        "copyFailed": "Kopiranje neuspješno. Odaberi tekst da ga kopiraš."
+      },
+      "firstSeenNote": "Ovo je najraniji dostupan datum indikatora dostupan kroz feedove ili World Monitor promatranja; može se razlikovati od datuma navedenog izvora."
     },
     "nuclear": {
       "types": {
@@ -3470,6 +3508,28 @@
       "readReport": "Pročitaj puni izvještaj"
     },
     "datacenter": {
+      "details": {
+        "more": "Više pojedinosti",
+        "owner": "Vlasnik / pružatelj klastera (skup podataka)",
+        "power": "Podatak o snazi u skupu podataka",
+        "powerCaveat": "Kapacitet snage može biti prijavljen ili procijenjen. Ovo nije mjerenje trenutačne potrošnje električne energije.",
+        "powerBasis": "Osnova podatka o snazi",
+        "reported": "Prijavljeno",
+        "estimated": "Procijenjeno",
+        "notAvailable": "Nije dostupno",
+        "location": "Preciznost lokacije",
+        "locationUnknown": "Nepotvrđena točka na karti; ne upotrebljavajte kao točnu adresu objekta.",
+        "site": "Objekt (potvrđen izvorom)",
+        "city": "Samo grad",
+        "region": "Samo regija",
+        "country": "Samo država",
+        "dataset": "Skup podataka GPU klastera Epoch AI",
+        "evidence": "Potkrepljujući izvor",
+        "sourceDate": "Datum objave izvora",
+        "metadataReviewedAt": "Metapodaci provjereni",
+        "firstOperationalDate": "Datum početka rada (skup podataka)",
+        "freshness": "Spremljena snimka skupa podataka. Trenutačni status i specifikacije možda su se promijenili."
+      },
       "status": {
         "existing": "OPERATIVAN",
         "planned": "PLANIRANO",
@@ -4715,7 +4775,7 @@
         "category": "Prirodne katastrofe",
         "purpose": "Prikazuje potrese, teška upozorenja na katastrofe i aktivne događaje promatranja Zemlje za pregled situacije.",
         "source": "Potresi USGS, upozorenja GDACS i događaji NASA EONET, spojeni u usluzi prirodnih događaja.",
-        "freshness": "Prirodni događaji pune se svaka 3 sata. Za potrese USGS opisano očekivanje je ritam izvora otprilike svakih 5 minuta.",
+        "freshness": "Prirodni događaji pune se svakih 30 minuta. Za potrese USGS opisano očekivanje je ritam izvora otprilike svakih 5 minuta.",
         "confidence": "Jako za otkrivene javne signale katastrofa. Pouzdanost ovisi o vrsti opasnosti i kašnjenju prijave na izvoru.",
         "limitations": {
           "0": "Upozorenja GDACS niske ozbiljnosti filtriraju se da karta ostane čitljiva.",
@@ -4809,5 +4869,14 @@
     "happy": {
       "map": "Mapa dobrih vijesti"
     }
+  },
+  "pwaInstall": {
+    "title": "Instaliraj aplikaciju",
+    "share": "U Safariju dodirnite Dijeli (kvadrat sa strelicom prema gore). Možda prvo trebate otvoriti izbornik Više.",
+    "add": "Odaberite Dodaj na početni zaslon.",
+    "confirm": "Dodirnite Dodaj i otvorite World Monitor s početnog zaslona.",
+    "close": "Zatvori",
+    "alertsHint": "Instalirajte World Monitor na početni zaslon kako biste primali upozorenja na ovom iPhoneu ili iPadu.",
+    "how": "Kako instalirati"
   }
 }

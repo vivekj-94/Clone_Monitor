@@ -64,7 +64,7 @@ import {
   panelGateStateChanged,
   sweepLegacyDisabledCustomWidgets,
 } from '@/app/free-tier-gate';
-import { initEntitlementSubscription, destroyEntitlementSubscription, isEntitlementActive, hasTier, getEntitlementState, onEntitlementChange } from '@/services/entitlements';
+import { initEntitlementSubscription, destroyEntitlementSubscription, markEntitlementVerificationUnavailable, isEntitlementActive, hasTier, getEntitlementState, onEntitlementChange } from '@/services/entitlements';
 import { createEntitlementReloadController } from '@/services/entitlement-reload-controller';
 import { initSubscriptionWatch, destroySubscriptionWatch, onSubscriptionChange } from '@/services/billing';
 import { initPaymentFailureBanner } from '@/components/payment-failure-banner';
@@ -864,6 +864,7 @@ export class PanelLayoutManager implements AppModule {
     panel.getElement().scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
+  /** Retire panel resources and watches, then settle pending entitlement verification. */
   destroy(): void {
     this.pendingStorageFacilityId = null;
     this.checkoutReturnFocusController.abort();
@@ -974,6 +975,8 @@ export class PanelLayoutManager implements AppModule {
     // Clean up billing subscription watch + entitlement subscription
     destroySubscriptionWatch();
     destroyEntitlementSubscription();
+    // Final teardown owns the terminal verdict; account rebinds keep verification pending.
+    markEntitlementVerificationUnavailable();
 
     // Clean up entitlement change listener
     this.unsubscribeEntitlementChange?.();

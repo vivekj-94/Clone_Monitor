@@ -869,7 +869,7 @@
         "asia": "亚洲",
         "space": "太空"
       },
-      "play": "播放",
+      "play": "观看实时直播",
       "previewStatus": "准备播放",
       "connecting": "正在连接…",
       "unverified": "无法确认此直播流是否实时",
@@ -1202,6 +1202,7 @@
       "emojiKeyNaval": "海军资产"
     },
     "countryBrief": {
+      "moreActions": "更多操作",
       "shareLink": "分享链接",
       "shareStory": "分享报道",
       "printPdf": "打印 / PDF",
@@ -2562,8 +2563,8 @@
     },
     "proBanner": {
       "badge": "PRO",
-      "headline": "Pro已上线",
-      "tagline": "更多信号，更少噪音。更多AI简报。专属于您的地缘政治和股票研究员。",
+      "headline": "每日AI情报摘要，通过邮件或Slack接收",
+      "tagline": "另含WM Analyst、告警规则和适用于Claude的MCP",
       "cta": "升级到Pro →",
       "dismiss": "关闭"
     },
@@ -3180,7 +3181,44 @@
       "airborne": "空中"
     },
     "cyberThreat": {
-      "title": "网络威胁"
+      "title": "网络威胁",
+      "evidence": "威胁数据源证据",
+      "firstSeen": "首次发现",
+      "explanations": {
+        "c2_server": "数据源报告了用于向恶意软件发送指令的命令控制服务器。",
+        "malware_host": "数据源报告了用于托管恶意软件的地址。",
+        "phishing": "数据源报告了与钓鱼攻击相关的指标。",
+        "malicious_url": "数据源报告了与恶意活动相关的URL。"
+      },
+      "downloadTag": "malware_download：来源报告的恶意软件下载位置。",
+      "familyNote": "恶意软件家族标签来自威胁数据源。它不用于标识个人或组织。",
+      "approximateLocation": "映射的位置是根据IP推导的近似上下文，而非已验证的物理主机位置。",
+      "network": {
+        "title": "网络信息",
+        "privacy": "展开以从RIPEstat请求被动网络数据。指标IP将与该提供商共享。",
+        "disclaimer": "网络注册和路由信息不能用于识别攻击者或确定提供商对该活动的责任。",
+        "loading": "正在加载网络信息…",
+        "unknown": "不可用",
+        "disabled": "网络查询未启用。",
+        "invalid": "网络查询需要公网IP地址。",
+        "unavailable": "网络查询失败。关闭并重新打开弹窗稍后重试。",
+        "rateLimited": "网络查询暂时受限。请稍后重试。",
+        "noData": "提供商未返回此IP的网络信息。",
+        "partial": "部分网络信息无法检索。",
+        "ip": "IP",
+        "asn": "源ASN",
+        "operator": "报告的ASN持有人/网络运营商",
+        "prefix": "报告的路由前缀",
+        "hostname": "反向DNS主机名（rDNS）",
+        "lookupAt": "网络查询时间",
+        "routingAt": "路由数据时间",
+        "broaderPrefix": "提供商匹配了更广泛的路由前缀。这不是精确的IP分配记录。",
+        "rdnsNote": "rDNS是DNS标签，不是所有权证明。此查询不提供注册组织和精确位置。",
+        "copy": "复制",
+        "copied": "已复制。",
+        "copyFailed": "复制失败。请选中文本后复制。"
+      },
+      "firstSeenNote": "这是跨源和 World Monitor 观察中最早可用的指标日期；可能与列出的源的日期不同。"
     },
     "nuclear": {
       "types": {
@@ -3350,6 +3388,28 @@
       "readReport": "阅读完整报告"
     },
     "datacenter": {
+      "details": {
+        "more": "更多详情",
+        "owner": "集群所有者 / 提供商（数据集）",
+        "power": "数据集功率数值",
+        "powerCaveat": "功率容量可能为报告值或估算值。这不是当前用电量的测量值。",
+        "powerBasis": "功率数值依据",
+        "reported": "报告值",
+        "estimated": "估算值",
+        "notAvailable": "暂无信息",
+        "location": "位置精度",
+        "locationUnknown": "未经核实的地图点；请勿用作设施的准确地址。",
+        "site": "设施位置（来源已核实）",
+        "city": "仅城市",
+        "region": "仅地区",
+        "country": "仅国家",
+        "dataset": "Epoch AI GPU 集群数据集",
+        "evidence": "佐证来源",
+        "sourceDate": "来源发布日期",
+        "metadataReviewedAt": "元数据核查日期",
+        "firstOperationalDate": "首次运营日期（数据集）",
+        "freshness": "已保存的数据集快照。当前状态和规格可能已发生变化。"
+      },
       "status": {
         "existing": "运营中",
         "planned": "计划中",
@@ -4662,7 +4722,7 @@
         "category": "自然灾害",
         "purpose": "显示地震、严重灾害警报和仍在持续的地球观测事件，用于掌握态势。",
         "source": "USGS地震、GDACS警报和NASA EONET事件，合并进自然事件服务。",
-        "freshness": "自然事件每3小时写入一次种子。USGS地震的预期在文档中约为5分钟的来源节奏。",
+        "freshness": "自然事件每30分钟写入一次种子。USGS地震的预期在文档中约为5分钟的来源节奏。",
         "confidence": "对已探测到的公开灾害信号较强。置信度因灾害类型和上游报告延迟而不同。",
         "limitations": {
           "0": "为保持地图可读，低严重程度的GDACS警报会被滤除。",
@@ -4756,5 +4816,14 @@
     "happy": {
       "map": "好消息地图"
     }
+  },
+  "pwaInstall": {
+    "title": "安装应用",
+    "share": "在 Safari 中轻点分享（带向上箭头的方框）。你可能需要先打开更多菜单。",
+    "add": "选择添加到主屏幕。",
+    "confirm": "轻点添加，然后从主屏幕打开 World Monitor。",
+    "close": "关闭",
+    "alertsHint": "将 World Monitor 安装到主屏幕，以便在此 iPhone 或 iPad 上接收提醒。",
+    "how": "如何安装"
   }
 }
