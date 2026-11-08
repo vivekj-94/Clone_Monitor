@@ -1,4 +1,6 @@
 import type { AppContext, AppModule } from '@/app/app-context';
+import { enqueueSentryCall } from '@/bootstrap/sentry-defer';
+import { isPageUnloading } from '@/bootstrap/page-unload-signal';
 import { fetchUkmtoIncidents } from '@/services/ukmto-incidents';
 import { getRpcBaseUrl } from '@/services/rpc-client';
 import { isReportableCanadaRoad } from '@/services/canada-road-report';
@@ -488,6 +490,8 @@ export class DataLoaderManager implements AppModule {
   private readonly digestRequestTimeoutMs = 8000;
   private readonly digestFirstPaintGraceMs = 1500;
   private readonly digestBreakerCooldownMs = 5 * 60 * 1000;
+  /** Failure kinds already sent to Sentry this page load (one event per kind). */
+  private readonly reportedDigestFailures = new Set<DigestFetchFailureKind>();
   private readonly persistedDigestMaxAgeMs = 6 * 60 * 60 * 1000;
   private readonly outageFallbackCategoryFeedLimit = 3;
   private readonly outageFallbackIntelFeedLimit = 6;
@@ -807,11 +811,15 @@ export class DataLoaderManager implements AppModule {
       this.digestBreaker.state = 'half-open';
     }
 
+    // Kept so the catch can tell our deadline from other aborts: WebKit rejects
+    // a timed-out fetch with AbortError, not TimeoutError (Sentry WORLDMONITOR-1D5).
+    let deadline: AbortSignal | null = null;
     try {
       markLcpDebug('wm:data:feed-digest-start');
+      deadline = AbortSignal.timeout(this.digestRequestTimeoutMs);
       const resp = await publicRpcFetch(
         toApiUrl(`/api/news/v1/list-feed-digest?variant=${SITE_VARIANT}&lang=${requestLanguage}`),
-        { signal: AbortSignal.timeout(this.digestRequestTimeoutMs) },
+        { signal: deadline },
       );
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json() as ListFeedDigestResponse;
@@ -850,13 +858,16 @@ export class DataLoaderManager implements AppModule {
         // scope's persistent cache, but it must not become live data or an
         // in-memory fallback for the language now active.
         const fallback = this.getRetainedDigest(currentKey) ?? await this.loadPersistedDigest(currentKey);
-        this.reportDigestCoverage(fallback, fallback ? 'stale' : 'unavailable');
+        this.reportDigestCoverage(fallback, fallback ? 'stale' : 'unavailable', 'switching');
         return fallback ? { digest: fallback, servedStale: true } : null;
       }
       this.lastGoodDigest = retainRicherScopedDigest(this.lastGoodDigest, requestKey, data);
       this.reportDigestCoverage(data);
       return { digest: data, servedStale: data.coverage?.servedStale === true };
     } catch (e) {
+      // Read before any await: a slow fallback read below can outlast the
+      // deadline and would turn an unrelated abort into a "timeout".
+      const deadlineExpired = deadline?.aborted === true;
       markLcpDebug('wm:data:feed-digest-error');
       console.warn('[News] Digest fetch failed, using fallback:', e);
       this.digestBreaker.failures++;
@@ -865,10 +876,46 @@ export class DataLoaderManager implements AppModule {
         this.digestBreaker.cooldownUntil = now + this.digestBreakerCooldownMs;
       }
       const currentKey = this.digestCacheKey();
-      const fallback = this.getRetainedDigest(currentKey) ?? await this.loadPersistedDigest(currentKey);
+      const retained = this.getRetainedDigest(currentKey);
+      const fallback = retained ?? await this.loadPersistedDigest(currentKey);
+      this.reportDigestFetchFailure(e, retained ? 'retained' : fallback ? 'saved' : 'none', deadlineExpired);
       this.reportDigestCoverage(fallback, fallback ? 'stale' : 'unavailable');
       return fallback ? { digest: fallback, servedStale: true } : null;
     }
+  }
+
+  /**
+   * The footer tells the user when this browser fell back to an old copy, but
+   * nothing told us. One warning per failure kind per page load: enough to
+   * measure how often users see stale news and why, without a burst per
+   * refresh. Offline browsers and page teardown are not service failures.
+   */
+  private reportDigestFetchFailure(
+    error: unknown,
+    fallback: 'retained' | 'saved' | 'none',
+    deadlineExpired: boolean,
+  ): void {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    if (isPageUnloading()) return;
+    const kind = classifyDigestFetchFailure(error, deadlineExpired);
+    if (this.reportedDigestFailures.has(kind)) return;
+    this.reportedDigestFailures.add(kind);
+    enqueueSentryCall((s) => s.captureMessage('News digest fetch failed', {
+      level: 'warning',
+      tags: {
+        surface: 'news',
+        'digest.failure': kind,
+        'digest.fallback': fallback,
+        'digest.variant': SITE_VARIANT,
+        // The error's name only: messages can carry URLs. Without it an
+        // "other" failure says nothing about what went wrong.
+        'digest.error': digestErrorName(error),
+      },
+      extra: { timeoutMs: this.digestRequestTimeoutMs },
+      // Tags do not split issues; one group per kind keeps timeouts, 5xx and
+      // ad-blocked requests readable as separate rates.
+      fingerprint: ['news-digest-fetch', kind],
+    }));
   }
 
   /**
@@ -922,8 +969,20 @@ export class DataLoaderManager implements AppModule {
   private reportDigestCoverage(
     digest: ListFeedDigestResponse | null,
     stateOverride?: 'stale' | 'unavailable',
+    // Why this browser is showing its own copy: its request failed, or the
+    // request answered for a language the user has since left.
+    deviceCause: 'device' | 'switching' = 'device',
   ): void {
     const cov = digest?.coverage;
+    const generatedMs = digest ? Date.parse(digest.generatedAt) : NaN;
+    const contentAgeFromGeneratedAt = Number.isFinite(generatedMs)
+      ? Math.max(0, Math.round((Date.now() - generatedMs) / 1000))
+      : null;
+    // A client override means THIS browser fell back to a retained or saved
+    // copy; the server may be perfectly healthy.
+    const deviceStale = stateOverride === 'stale'
+      ? { staleCause: deviceCause, staleReason: '', contentAgeSeconds: contentAgeFromGeneratedAt }
+      : null;
     if (!cov || typeof cov.state !== 'string') {
       const categoryEntries = digest ? Object.entries(digest.categories) : [];
       const items = categoryEntries.flatMap(([, bucket]) => bucket.items);
@@ -938,6 +997,11 @@ export class DataLoaderManager implements AppModule {
         missingCategories: categoryEntries
           .filter(([, bucket]) => bucket.items.length === 0)
           .map(([category]) => category),
+        itemsConsidered: 0,
+        publishersConsidered: 0,
+        staleCause: deviceStale?.staleCause ?? null,
+        staleReason: '',
+        contentAgeSeconds: deviceStale?.contentAgeSeconds ?? null,
       });
       return;
     }
@@ -955,6 +1019,15 @@ export class DataLoaderManager implements AppModule {
       missingCategories: Object.entries(cov.categoryStates ?? {})
         .filter(([, v]) => v === 'missing')
         .map(([k]) => k),
+      itemsConsidered: Number(cov.itemsConsidered) || 0,
+      publishersConsidered: Number(cov.publishersConsidered) || 0,
+      ...(deviceStale ?? (state === 'stale'
+        ? {
+          staleCause: 'server' as const,
+          staleReason: typeof cov.staleReason === 'string' ? cov.staleReason : '',
+          contentAgeSeconds: Number(cov.staleAgeSeconds) || contentAgeFromGeneratedAt,
+        }
+        : { staleCause: null, staleReason: '', contentAgeSeconds: null })),
     });
   }
 
@@ -5269,4 +5342,32 @@ export class DataLoaderManager implements AppModule {
       this.callPanel('cross-source-signals', 'showFetchError');
     }
   }
+}
+
+export type DigestFetchFailureKind = 'timeout' | 'http-5xx' | 'http-4xx' | 'empty-body' | 'network' | 'other';
+
+/**
+ * Bucket a digest fetch failure into a closed, low-cardinality kind.
+ *
+ * `deadlineExpired` is whether the request's own timeout signal fired. Chrome
+ * and Firefox reject with `TimeoutError` then, but Safari and every iOS browser
+ * reject with `AbortError: Fetch is aborted`, so the name alone filed WebKit
+ * timeouts under "other" (Sentry WORLDMONITOR-1D5).
+ */
+export function classifyDigestFetchFailure(error: unknown, deadlineExpired = false): DigestFetchFailureKind {
+  const name = error instanceof Error || error instanceof DOMException ? error.name : '';
+  const message = error instanceof Error || error instanceof DOMException ? error.message : String(error);
+  if (name === 'TimeoutError') return 'timeout';
+  if (name === 'AbortError' && deadlineExpired) return 'timeout';
+  const status = /^HTTP (\d{3})$/.exec(message)?.[1];
+  if (status) return status.startsWith('5') ? 'http-5xx' : 'http-4xx';
+  if (message === 'digest returned 0 categories') return 'empty-body';
+  if (error instanceof TypeError) return 'network';
+  return 'other';
+}
+
+/** A short, PII-free label for a digest failure: the error's name, or its type. */
+function digestErrorName(error: unknown): string {
+  const name = error instanceof Error || error instanceof DOMException ? error.name : typeof error;
+  return (name || 'unknown').slice(0, 64);
 }
