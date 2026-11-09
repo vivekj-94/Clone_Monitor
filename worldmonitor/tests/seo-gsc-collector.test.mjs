@@ -12,10 +12,12 @@ import {
   createLiveTransport,
   createServiceAccountAssertion,
   decodeServiceAccount,
+  buildNonBrandQueries,
   describeDisagreement,
   buildInventory,
   BRAND_QUERY_PATTERN,
   isBrandQuery,
+  queryCell,
   pickIndexStatus,
   QuotaExhaustedError,
   weeklyTotals,
@@ -25,6 +27,7 @@ import {
   toScorecardSearchExport,
 } from '../scripts/seo-gsc-collect.mjs';
 import { normalizeSearchExport } from '../scripts/seo-ai-visibility-collector.mjs';
+import { computeQuerySetDigest } from '../scripts/seo-ai-visibility-scorecard.mjs';
 
 const repoPath = (relativePath) => new URL(`../${relativePath}`, import.meta.url).pathname;
 
@@ -724,6 +727,126 @@ describe('Search Console site totals and brand split', () => {
     }
   });
 
+  it('joins non-brand queries to their page and desktop share across paginated rows', async () => {
+    const { snapshot } = await collect();
+    const list = snapshot.performance.nonBrandQueries;
+    assert.equal(list.status, 'available');
+    assert.equal(list.window, '28d');
+    assert.deepEqual(list.rows.map((row) => row.query), [
+      'kerch strait',
+      'pizza index',
+      'quiet desktop query',
+    ]);
+    const pizza = list.rows[1];
+    assert.equal(pizza.page, 'https://www.worldmonitor.app/blog/glossary/pentagon-pizza-index/');
+    assert.equal(pizza.impressions, 1000);
+    assert.equal(pizza.clicks, 13);
+    assert.equal(pizza.position, 7.2);
+    assert.equal(pizza.desktopShare, 0.2);
+    assert.equal(pizza.likelyAutomated, false);
+  });
+
+  it('flags only zero-click, nearly all-desktop queries with enough impressions', async () => {
+    const { snapshot } = await collect();
+    const list = snapshot.performance.nonBrandQueries;
+    const flagged = list.rows.filter((row) => row.likelyAutomated).map((row) => row.query);
+    assert.deepEqual(flagged, ['kerch strait']);
+    assert.equal(list.rows.find((row) => row.query === 'quiet desktop query').desktopShare, 1);
+    assert.deepEqual(list.summary, {
+      queries: 4,
+      nonBrandImpressions: 2155,
+      likelyAutomatedQueries: 1,
+      likelyAutomatedImpressions: 1000,
+      nonBrandImpressionsExcludingLikelyAutomated: 1155,
+    });
+  });
+
+  it('keeps rare queries out of the committed list but inside the summary', async () => {
+    const { snapshot } = await collect();
+    const list = snapshot.performance.nonBrandQueries;
+    assert.equal(list.rows.some((row) => row.query === 'tiny query'), false);
+    assert.equal(list.summary.queries, 4);
+  });
+
+  it('reports the query list as unavailable when its view was not collected', async () => {
+    const { snapshot, markdown } = await collect(`${FIXTURES}quota/`);
+    const list = snapshot.performance.nonBrandQueries;
+    assert.equal(list.status, 'unavailable');
+    assert.equal(list.summary, null);
+    assert.deepEqual(list.rows, []);
+    assert.match(list.reason, /queryNonBrandDevice view was not collected/);
+    assert.match(markdown, /Non-brand queries: unavailable/);
+  });
+
+  it('summarizes low-click non-brand queries and names the automated ones', async () => {
+    const { markdown } = await collect();
+    assert.match(markdown, /### Non-brand queries with few clicks \(28d\)/);
+    assert.match(markdown, /1 of 4 non-brand queries look automated, 1000 of 2155 impressions/);
+    assert.match(markdown, /\| kerch strait \| \/chokepoints\/kerch-strait\/ \| 1000 \| 0 \| 0\.0% \| 9\.2 \| 98% \| yes \|/);
+  });
+
+  it('asks Google for the query rows by device and by page, without brand queries', async () => {
+    const bodies = [];
+    const transport = createLiveTransport({
+      accessToken: 't',
+      property: 'sc-domain:example.com',
+      fetchImpl: async (_url, init) => {
+        bodies.push(JSON.parse(init.body));
+        return jsonResponse(200, { rows: [] });
+      },
+      sleep: async () => {},
+    });
+    const window = { startDate: '2026-08-27', endDate: '2026-09-23' };
+    await transport.searchAnalytics({ dimension: 'queryNonBrandDevice', page: 0, ...window });
+    await transport.searchAnalytics({ dimension: 'queryNonBrandPage', page: 0, ...window });
+    assert.deepEqual(bodies[0].dimensions, ['query', 'device']);
+    assert.deepEqual(bodies[1].dimensions, ['query', 'page']);
+    for (const body of bodies) {
+      assert.equal(body.dimensionFilterGroups[0].filters[0].operator, 'excludingRegex');
+    }
+  });
+
+  it('compares the unrounded desktop share with the automated cutoff', () => {
+    const row = (device, impressions) => ({ key: 'near cutoff', secondKey: device, clicks: 0, impressions, position: 5 });
+    const list = buildNonBrandQueries({
+      window: { label: '28d' },
+      device: { rows: [row('DESKTOP', 8999), row('MOBILE', 1001)], truncationReason: null, recorded: true },
+      page: { rows: [], truncationReason: null, recorded: true },
+    });
+    assert.equal(list.rows[0].desktopShare, 0.9);
+    assert.equal(list.rows[0].likelyAutomated, false);
+  });
+
+  it('withholds top pages and says why when the page view is cut short', async () => {
+    const { snapshot } = await collect();
+    const list = buildNonBrandQueries({
+      window: { label: '28d' },
+      device: {
+        rows: [{ key: 'pizza index', secondKey: 'MOBILE', clicks: 0, impressions: 500, position: 5 }],
+        truncationReason: null,
+        recorded: true,
+      },
+      page: {
+        rows: [{ key: 'pizza index', secondKey: 'https://www.worldmonitor.app/', clicks: 0, impressions: 9, position: 5 }],
+        truncationReason: 'searchanalytics quota was exhausted after 1 queryNonBrandPage rows: x',
+        recorded: true,
+      },
+    });
+    assert.equal(list.status, 'partial');
+    assert.equal(list.rows[0].page, null);
+    const copy = structuredClone(snapshot);
+    copy.performance.nonBrandQueries = list;
+    assert.match(renderGscMarkdown(copy), /Top pages are withheld: searchanalytics quota was exhausted/);
+  });
+
+  it('keeps Markdown in a query cell from rendering as links, images or HTML', () => {
+    const cell = queryCell('[x](https://a.example/) <img src=y> ![i](z) www.a.example `c` *b* _d_ ~e~');
+    assert.doesNotMatch(cell, /(?<!\\)</);
+    for (const live of ['[x](', '![i]', 'https://', 'www.a', '`c`', '*b*', '_d_', '~e~']) {
+      assert.equal(cell.includes(live), false, `${live} stays live in ${cell}`);
+    }
+  });
+
   it('escapes backslashes and pipes in a query cell', async () => {
     const { snapshot } = await collect();
     const copy = structuredClone(snapshot);
@@ -871,5 +994,209 @@ describe('Search Console live transport resilience', () => {
       () => assertNoSecrets(JSON.stringify({ property: 'sc-domain:worldmonitor.app' }), { property: 'sc-domain:worldmonitor.app' }),
       /refusing to write/,
     );
+  });
+});
+
+describe('Search Console reviewed-query lookups', () => {
+  const lookupOf = (snapshot, label, queryId) => snapshot.reviewedQueries.windows
+    .find((window) => window.label === label)
+    .lookups.find((lookup) => lookup.queryId === queryId);
+  const exportedRow = (exported, label, queryId) => exported.windows
+    .find((window) => window.label === label)
+    .queryRows.find((row) => row.queryId === queryId);
+
+  it('looks up every reviewed query in every window and records the query set identity', async () => {
+    const { snapshot } = await collect();
+    const section = snapshot.reviewedQueries;
+    assert.equal(section.querySetId, querySet.querySetId);
+    assert.equal(section.querySetDigest, computeQuerySetDigest(querySet));
+    assert.equal(section.operator, 'equals');
+    assert.deepEqual(section.windows.map((window) => window.label), ['28d', '90d']);
+    for (const window of section.windows) {
+      assert.deepEqual(
+        window.lookups.map((lookup) => lookup.queryId),
+        querySet.queries.map((query) => query.id),
+      );
+    }
+  });
+
+  it('matches a reviewed query on the lowercased, space-collapsed text Google stores', async () => {
+    const { snapshot } = await collect();
+    const pricing = lookupOf(snapshot, '28d', 'q23');
+    assert.equal(pricing.query, 'World Monitor pricing');
+    assert.equal(pricing.expression, 'world monitor pricing');
+    assert.equal(pricing.status, 'reported');
+    assert.equal(pricing.reason, null);
+    assert.deepEqual(
+      [pricing.clicks, pricing.impressions, pricing.position],
+      [2, 40, 6.5],
+    );
+    const row = exportedRow(toScorecardSearchExport(snapshot, { querySet }), '28d', 'q23');
+    assert.deepEqual(row, {
+      queryId: 'q23',
+      query: 'World Monitor pricing',
+      clicks: 2,
+      impressions: 40,
+      ctr: 0.05,
+      position: 6.5,
+      reason: null,
+    });
+
+    const expressions = [];
+    const spaced = {
+      ...querySet,
+      queries: [{ ...querySet.queries[22], query: '  World   Monitor PRICING ' }],
+    };
+    const section = (await collectFrom({
+      ...memoryTransport(),
+      lookupQuery: async ({ expression }) => { expressions.push(expression); return { rows: [] }; },
+    }, { querySet: spaced })).reviewedQueries;
+    assert.deepEqual(expressions, ['world monitor pricing']);
+    assert.equal(section.windows[0].lookups[0].expression, 'world monitor pricing');
+  });
+
+  it('reports a query Google returns no row for as not reported, never as zero', async () => {
+    const { snapshot } = await collect();
+    const gdelt = lookupOf(snapshot, '28d', 'q18');
+    assert.equal(gdelt.status, 'not-reported');
+    assert.match(gdelt.reason, /not reported by Search Console/i);
+    assert.deepEqual([gdelt.clicks, gdelt.impressions, gdelt.position], [null, null, null]);
+
+    const exported = toScorecardSearchExport(snapshot, { querySet });
+    const row = exportedRow(exported, '28d', 'q18');
+    assert.deepEqual(
+      [row.clicks, row.impressions, row.ctr, row.position],
+      [null, null, null, null],
+    );
+    assert.match(row.reason, /privacy threshold/);
+
+    const normalized = normalizeSearchExport(exported, {
+      querySet,
+      observedAt: '2026-09-24T00:00:00Z',
+      provider: 'Google Search Console',
+      schemaVersion: 2,
+    });
+    const normalizedRow = normalized.queryRows.find(
+      (entry) => entry.windowLabel === '28d' && entry.queryId === 'q18',
+    );
+    assert.deepEqual(normalizedRow.metrics, {
+      impressions: null, clicks: null, ctr: null, averagePosition: null,
+    });
+    assert.equal(normalizedRow.reason, row.reason);
+    assert.equal(normalized.status, 'partial');
+  });
+
+  it('records a failed or unrecorded lookup as unavailable with its reason and keeps going', async () => {
+    const { snapshot } = await collect();
+    const failed = lookupOf(snapshot, '28d', 'q12');
+    assert.equal(failed.status, 'unavailable');
+    assert.match(failed.reason, /lookup failed: .*HTTP 500/);
+    const unrecorded = lookupOf(snapshot, '28d', 'q01');
+    assert.equal(unrecorded.status, 'unavailable');
+    assert.match(unrecorded.reason, /no lookup was recorded/);
+    assert.equal(lookupOf(snapshot, '90d', 'q23').status, 'reported');
+    assert.equal(snapshot.reviewedQueries.status, 'partial');
+    assert.match(snapshot.reviewedQueries.reason, /28d: 23 of 25 lookups unavailable/);
+
+    const row = exportedRow(toScorecardSearchExport(snapshot, { querySet }), '28d', 'q12');
+    assert.deepEqual([row.impressions, row.clicks], [null, null]);
+    assert.match(row.reason, /HTTP 500/);
+  });
+
+  it('stops looking up once the quota runs out and says so for every remaining query', async () => {
+    let calls = 0;
+    const snapshot = await collectFrom({
+      ...memoryTransport(),
+      lookupQuery: async () => {
+        calls += 1;
+        if (calls === 2) throw new QuotaExhaustedError('Search Console daily quota is exhausted (HTTP 429)');
+        return { rows: [] };
+      },
+    }, { querySet });
+    assert.equal(calls, 2);
+    const [window] = snapshot.reviewedQueries.windows;
+    assert.equal(window.lookups[0].status, 'not-reported');
+    for (const lookup of window.lookups.slice(1)) {
+      assert.equal(lookup.status, 'unavailable');
+      assert.match(lookup.reason, /quota was exhausted/);
+    }
+    assert.equal(snapshot.reviewedQueries.status, 'partial');
+  });
+
+  it('records a row with missing counts as unavailable instead of filling in a zero', async () => {
+    const snapshot = await collectFrom({
+      ...memoryTransport(),
+      lookupQuery: async ({ expression }) => ({ rows: [{ keys: [expression], impressions: 12, position: 4 }] }),
+    }, { querySet });
+    const [lookup] = snapshot.reviewedQueries.windows[0].lookups;
+    assert.equal(lookup.status, 'unavailable');
+    assert.match(lookup.reason, /without clicks or impressions/);
+    assert.deepEqual([lookup.clicks, lookup.impressions, lookup.position], [null, null, null]);
+  });
+
+  it('is unavailable with a reason when no query set is supplied', async () => {
+    const snapshot = await collectFrom(memoryTransport());
+    assert.equal(snapshot.reviewedQueries.status, 'unavailable');
+    assert.match(snapshot.reviewedQueries.reason, /no reviewed query set was supplied/);
+    assert.deepEqual(snapshot.reviewedQueries.windows, []);
+  });
+
+  it('refuses to map lookups that were made for a different query set', async () => {
+    const { snapshot } = await collect();
+    const edited = structuredClone(querySet);
+    edited.queries[22].query = 'World Monitor price';
+    const exported = toScorecardSearchExport(snapshot, { querySet: edited });
+    for (const window of exported.windows) assert.deepEqual(window.queryRows, []);
+    assert.match(exported.reason, /lookups were made for query set seo-ai-visibility-v1 \(sha256:[0-9a-f]{12}/);
+    assert.match(exported.reason, /not the supplied/);
+  });
+
+  it('maps a snapshot that predates the lookups to no query rows, with the reason', () => {
+    const committed = JSON.parse(readFileSync(
+      repoPath('docs/research/seo-ai-visibility/gsc/2026-11-03.json'),
+      'utf8',
+    ));
+    assert.equal(committed.reviewedQueries, undefined);
+    const exported = toScorecardSearchExport(committed, { querySet });
+    for (const window of exported.windows) assert.deepEqual(window.queryRows, []);
+    assert.match(exported.reason, /predates reviewed-query lookups/);
+    assert.doesNotMatch(exported.reason, /top 20/);
+  });
+
+  it('summarizes how many reviewed queries Google reported in the markdown', async () => {
+    const { markdown } = await collect();
+    assert.match(markdown, /### Reviewed queries/);
+    assert.match(markdown, /\| 28d \| 25 \| 1 \| 1 \| 23 \|/);
+    assert.match(markdown, /\| World Monitor pricing \| 40 \| 2 \| 5\.0% \| 6\.5 \|/);
+  });
+
+  it('asks Google for an exact match on the query dimension, retrying a 5xx', async () => {
+    const bodies = [];
+    let calls = 0;
+    const transport = createLiveTransport({
+      accessToken: 't',
+      property: 'sc-domain:example.com',
+      fetchImpl: async (_url, init) => {
+        calls += 1;
+        bodies.push(JSON.parse(init.body));
+        return calls === 1 ? jsonResponse(503, {}) : jsonResponse(200, { responseAggregationType: 'byProperty' });
+      },
+      sleep: async () => {},
+    });
+    const response = await transport.lookupQuery({
+      expression: 'world monitor pricing',
+      startDate: '2026-08-27',
+      endDate: '2026-09-23',
+    });
+    assert.deepEqual(response, { responseAggregationType: 'byProperty' });
+    assert.equal(calls, 2);
+    // Without a dimension Google answers an unknown query with a zero row;
+    // grouped by query it answers with no row, which is the honest outcome.
+    assert.deepEqual(bodies[1].dimensions, ['query']);
+    assert.deepEqual(bodies[1].dimensionFilterGroups[0].filters, [
+      { dimension: 'query', operator: 'equals', expression: 'world monitor pricing' },
+    ]);
+    assert.equal(bodies[1].dataState, 'final');
+    assert.deepEqual([bodies[1].startDate, bodies[1].endDate], ['2026-08-27', '2026-09-23']);
   });
 });

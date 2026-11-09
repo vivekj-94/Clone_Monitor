@@ -17,6 +17,13 @@ import {
 } from '../server/worldmonitor/supply-chain/v1/_scoring.mjs';
 
 import {
+  DATASET_ID as OPEN_DATA_DATASET_ID,
+  DEFAULT_OUT_DIR as OPEN_DATA_OUT_DIR,
+  LICENSE as OPEN_DATA_LICENSE,
+} from '../scripts/build-open-data-chokepoints.mjs';
+
+import {
+  CHOKEPOINT_OPEN_DATA,
   buildCiiRankingEntries,
   buildChokepointHubRows,
   normalizeActiveWars,
@@ -761,6 +768,37 @@ function isAbsoluteHttpUrl(value) {
   }
 }
 
+// The daily chokepoint archive is the one Dataset whose downloads this build
+// does not write: vercel.json rewrites them to api/open-data-chokepoints.js.
+// The rewrite alone is not proof, since it also matches names the handler
+// answers with 404. The exemption covers only the three undated files, which
+// tests/open-data-chokepoints-archive.test.mjs drives through the real handler.
+const SERVED_OPEN_DATA_FILES = new Set(['index.json', 'latest.json', 'latest.csv']);
+
+function isServedOpenDataDownload(pathname) {
+  if (!pathname.startsWith(CHOKEPOINT_OPEN_DATA.basePath)) return false;
+  const config = JSON.parse(readFileSync(join(repoRoot, 'vercel.json'), 'utf8'));
+  const rewrite = config.rewrites.find((entry) => entry.destination.startsWith('/api/open-data-chokepoints?'));
+  assert.ok(rewrite, 'vercel.json must rewrite the chokepoint open dataset to its handler');
+  const [prefix, pattern] = rewrite.source.split(':file');
+  assert.equal(prefix, CHOKEPOINT_OPEN_DATA.basePath, 'the open dataset rewrite must cover the advertised base path');
+  const file = pathname.slice(prefix.length);
+  return SERVED_OPEN_DATA_FILES.has(file) && new RegExp(`^${pattern}$`).test(file);
+}
+
+describe('open dataset download exemption', () => {
+  it('covers only files the handler serves without a date lookup', () => {
+    for (const file of SERVED_OPEN_DATA_FILES) {
+      assert.equal(isServedOpenDataDownload(`/data/v1/chokepoints/${file}`), true, file);
+    }
+    const datedFile = `${new Date().toISOString().slice(0, 10)}.json`;
+    for (const file of ['missing.json', datedFile, 'latest.xml', 'README.md']) {
+      assert.equal(isServedOpenDataDownload(`/data/v1/chokepoints/${file}`), false, file);
+    }
+    assert.equal(isServedOpenDataDownload('/chokepoints/status.json'), false);
+  });
+});
+
 function assertDatasetDownloadsAreGenerated(html, outDir, route, baseUrl = 'https://www.worldmonitor.app') {
   const datasets = jsonLdObjects(html).flatMap((entry) => collectDatasets(entry));
   const downloads = datasets.flatMap((dataset) => {
@@ -788,6 +826,7 @@ function assertDatasetDownloadsAreGenerated(html, outDir, route, baseUrl = 'http
       /^\/api\//,
       `${route} DataDownload must not point at an authenticated API route: ${item.contentUrl}`,
     );
+    if (isServedOpenDataDownload(url.pathname)) continue;
     const relativePath = url.pathname.replace(/^\/+/, '');
     assert.ok(
       existsSync(join(outDir, relativePath)),
@@ -4202,6 +4241,32 @@ describe('crawlable corpus generator', () => {
       assert.ok(chokepointDataset.variableMeasured.length >= 3);
       assert.equal(chokepointDataset.distribution['@type'], 'DataDownload');
       assert.equal(chokepointDataset.includedInDataCatalog['@id'], chokepointCatalog['@id']);
+
+      const archiveDataset = chokepointsLd.find((entry) => entry['@id']?.endsWith('#daily-archive'));
+      assert.ok(archiveDataset, 'chokepoint hub must describe the daily open-data archive');
+      assert.equal(archiveDataset['@type'], 'Dataset');
+      assert.equal(archiveDataset.identifier, OPEN_DATA_DATASET_ID);
+      assert.equal(archiveDataset.license, OPEN_DATA_LICENSE.url);
+      assert.notEqual(archiveDataset.license, chokepointDataset.license.url, 'the archive is CC BY, not the Terms of Service');
+      assert.equal(CHOKEPOINT_OPEN_DATA.basePath, `/${OPEN_DATA_OUT_DIR.replace(/^public\//, '')}/`);
+      assert.deepEqual(
+        archiveDataset.distribution.map((item) => [item.encodingFormat, item.contentUrl]),
+        [
+          ['application/json', 'https://www.worldmonitor.app/data/v1/chokepoints/latest.json'],
+          ['text/csv', 'https://www.worldmonitor.app/data/v1/chokepoints/latest.csv'],
+        ],
+      );
+      assert.equal(archiveDataset.url, 'https://www.worldmonitor.app/data/v1/chokepoints/README.md');
+      const openDataSection = chokepointsDocument.querySelector('[data-chokepoint-open-data]');
+      assert.match(openDataSection?.textContent ?? '', /CC BY 4\.0/);
+      assert.equal(openDataSection.querySelector('a[rel="license"]')?.getAttribute('href'), OPEN_DATA_LICENSE.url);
+      assert.deepEqual(
+        [...chokepointsDocument.querySelectorAll('[data-chokepoint-open-data-files] a')].map((link) => link.getAttribute('href')),
+        ['latest.json', 'latest.csv', 'index.json', 'README.md', 'schema.json'].map((name) => `/data/v1/chokepoints/${name}`),
+      );
+      for (const name of ['README.md', 'schema.json']) {
+        assert.ok(existsSync(join(repoRoot, 'public/data/v1/chokepoints', name)), `${name} is a committed static file`);
+      }
       for (const [index, listEntry] of chokepointItemList.itemListElement.entries()) {
         const visibleRow = chokepointRows[index];
         assert.equal(listEntry.url, visibleRow.querySelector('a').href);
@@ -5962,6 +6027,30 @@ describe('live-pulse snapshot injection (#7533)', () => {
     } finally {
       rmSync(mismatchDir, { recursive: true, force: true });
     }
+  });
+
+  it('keeps the fixture fixed sets in step with the registries the freeze captures', async () => {
+    // The freeze refuses to publish unless it captures every registered crisis
+    // and chokepoint, so the next capture always carries the registry's full
+    // set. Comparing the fixture only with the committed capture lets a
+    // registry change pass its own PR and fail the next weekly refresh:
+    // #10180 added four crises and the 2026-11-09 refresh PR (#10331) failed.
+    const fixture = JSON.parse(readFileSync(join(repoRoot, FIXTURE_RELATIVE_PATH), 'utf8'));
+    const crisisSlugs = JSON.parse(read(repoRoot, 'shared/crawlable-crises.json'))
+      .map((crisis) => crisis.slug);
+    assert.deepEqual(
+      Object.keys(fixture.crises).sort(),
+      [...crisisSlugs].sort(),
+      `${FIXTURE_RELATIVE_PATH} crises must match shared/crawlable-crises.json; add a record for each new crisis`,
+    );
+    const { CHOKEPOINT_REGISTRY } = await import(
+      pathToFileURL(join(repoRoot, 'src/config/chokepoint-registry.ts')).href
+    );
+    assert.deepEqual(
+      Object.keys(fixture.chokepoints).sort(),
+      CHOKEPOINT_REGISTRY.map((entry) => entry.id).sort(),
+      `${FIXTURE_RELATIVE_PATH} chokepoints must match src/config/chokepoint-registry.ts`,
+    );
   });
 
   it('builds the full corpus against the injected fixture snapshot', async () => {

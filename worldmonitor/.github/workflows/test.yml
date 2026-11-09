@@ -276,6 +276,8 @@ jobs:
             /^src-tauri\// { count++; next }
             /^package\.json$/ { count++; next }
             /^scripts\/repack-linux-appimage\.sh$/ { count++; next }
+            /^scripts\/prefetch-appimage-tools\.sh$/ { count++; next }
+            /^scripts\/fetch-with-retry\.sh$/ { count++; next }
             /^scripts\/check-desktop-build-env\.mjs$/ { count++; next }
             /^scripts\/sync-desktop-version\.mjs$/ { count++; next }
             /^scripts\/check-rust-security-floors\.mjs$/ { count++; next }
@@ -882,8 +884,11 @@ jobs:
             echo '::error::Desktop versions out of sync — run `npm run version:sync` and commit the result.'
             exit 1
           }
-      - name: Linux AppImage post-processing script parses
-        run: bash -n scripts/repack-linux-appimage.sh
+      - name: Linux AppImage build scripts parse
+        run: |
+          bash -n scripts/repack-linux-appimage.sh
+          bash -n scripts/prefetch-appimage-tools.sh
+          bash -n scripts/fetch-with-retry.sh
       - name: Desktop build env parity (#5905)
         # A VITE_ key missing from the Tauri build steps silently disables the
         # capability in every shipped build (sign-in, Pro, Cyber Threats were
@@ -1026,8 +1031,9 @@ jobs:
         # lists in package.json (test:e2e:ci-smoke:1..4) are balanced by
         # measured test-seconds (history in docs/solutions/performance-issues/
         # ci-runners-are-cpu-bound-shard-before-parallel-steps.md). Re-balance
-        # them from the per-test durations in the list reporter output when a
-        # spec grows.
+        # them with `node scripts/balance-smoke-shards.mjs --write`, which packs
+        # the specs from per-test durations in recent main runs, when a spec is
+        # added or grows.
         shard: [1, 2, 3, 4]
     timeout-minutes: 20
     needs: changes

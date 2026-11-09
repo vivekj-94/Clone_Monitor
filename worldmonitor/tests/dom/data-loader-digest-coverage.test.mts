@@ -47,6 +47,7 @@ interface DigestLoaderInternals {
   loadPersistedDigest(key?: string): Promise<ListFeedDigestResponse | null>;
   persistDigest(key: string, data: ListFeedDigestResponse): void;
   tryFetchDigest(): Promise<SelectedNewsDigest | null>;
+  fetchEditionDigest(edition: string, language: string): Promise<ListFeedDigestResponse | null>;
   beginNewsLoad(): number;
   commitNewsFreshness(generation: number, servedStale: boolean): boolean;
   canNotifyForCommittedNews(generation: number, servedStale: boolean): boolean;
@@ -190,6 +191,163 @@ describe('digest coverage follows the selected browser response', () => {
     expect(setNewsLocations).toHaveBeenLastCalledWith([]);
   });
 
+  describe('a slow digest does not hold the hydration queue (#10323 review)', () => {
+    type HydrationInternals = {
+      digestFirstPaintGraceMs: number;
+      runHydrationTasks(tasks: Array<{ name: string; task: () => Promise<void> }>, forceAll: boolean): Promise<void>;
+      newsHydrationTask(forceAll: boolean): Promise<void>;
+      wantsNewsHydration(forceAll: boolean): boolean;
+      waitForNewsLoad(): Promise<void>;
+    };
+
+    async function slowDigestLoader(digestPromise: Promise<SelectedNewsDigest | null>) {
+      const made = await makeLoader();
+      const ctx = (made.loader as unknown as { ctx: AppContext }).ctx;
+      ctx.map = { setNewsLocations: vi.fn(), updateHotspotActivity: vi.fn() } as unknown as AppContext['map'];
+      ctx.monitors = [];
+      ctx.inFlight = new Set();
+      const hydration = made.internal as unknown as HydrationInternals;
+      hydration.digestFirstPaintGraceMs = 0;
+      made.internal.resolveEnabledNewsCategories = () => [{ key: 'politics', feeds: [{ name: 'Reuters', url: 'https://fixture.test/rss' }], isCustom: false }];
+      made.internal.tryFetchDigest = () => digestPromise;
+      made.internal.loadNewsCategory = async () => [];
+      made.internal.loadIntelNews = async () => [];
+      made.internal.clusterNewsForGeneration = async () => ({ clusters: [] });
+      const loadNews = vi.spyOn(made.loader, 'loadNews');
+      const updateSearchIndex = vi.fn();
+      made.loader.updateSearchIndex = updateSearchIndex;
+      return { ...made, ctx, hydration, loadNews, updateSearchIndex };
+    }
+
+    it('starts the next tier at first paint and still commits the late digest', async () => {
+      let resolveDigest!: (value: SelectedNewsDigest | null) => void;
+      const { ctx, hydration } = await slowDigestLoader(new Promise((resolve) => { resolveDigest = resolve; }));
+      const natural = vi.fn(async () => {});
+
+      await hydration.runHydrationTasks([
+        { name: 'news', task: () => hydration.newsHydrationTask(false) },
+        { name: 'natural', task: natural },
+      ], false);
+
+      // The queue drained while the digest was still pending.
+      expect(natural).toHaveBeenCalledOnce();
+      expect(ctx.initialLoadComplete).toBe(false);
+      expect(ctx.inFlight.has('news')).toBe(true);
+
+      resolveDigest({ digest: digest('complete'), servedStale: false });
+      await vi.waitFor(() => expect(ctx.clustersSettled).toBe(true));
+      expect(ctx.initialLoadComplete).toBe(true);
+      expect(ctx.inFlight.has('news')).toBe(false);
+    });
+
+    it('waits for the whole load when the digest arrives within the grace window', async () => {
+      const { ctx, hydration } = await slowDigestLoader(Promise.resolve({ digest: digest('complete'), servedStale: false }));
+      hydration.digestFirstPaintGraceMs = 1500;
+
+      await hydration.newsHydrationTask(false);
+
+      expect(ctx.clustersSettled).toBe(true);
+      expect(ctx.inFlight.has('news')).toBe(false);
+    });
+
+    it('replays a request made during the wait once the load ends', async () => {
+      let resolveDigest!: (value: SelectedNewsDigest | null) => void;
+      const { ctx, hydration, loadNews } = await slowDigestLoader(new Promise((resolve) => { resolveDigest = resolve; }));
+
+      await hydration.newsHydrationTask(false);
+      // A forced pass (e.g. a source toggle) arrives while the digest is pending.
+      await hydration.newsHydrationTask(true);
+      expect(loadNews).toHaveBeenCalledOnce();
+
+      resolveDigest({ digest: digest('complete'), servedStale: false });
+      await vi.waitFor(() => expect(loadNews).toHaveBeenCalledTimes(2));
+      await vi.waitFor(() => expect(ctx.inFlight.has('news')).toBe(false));
+    });
+
+    it('replays a return to the previously loaded work-list made during the wait', async () => {
+      const { internal, hydration, loadNews } = await slowDigestLoader(Promise.resolve({ digest: digest('complete'), servedStale: false }));
+      const politics = [{ key: 'politics', feeds: [{ name: 'Reuters', url: 'https://fixture.test/rss' }], isCustom: false }];
+      const withEnergy = [...politics, { key: 'energy', feeds: [{ name: 'Oil', url: 'https://fixture.test/oil' }], isCustom: false }];
+
+      // Work-list A loads and lands.
+      internal.resolveEnabledNewsCategories = () => politics;
+      await hydration.newsHydrationTask(false);
+      expect(hydration.wantsNewsHydration(false)).toBe(false);
+
+      // The user adds a panel (B); its digest is slow.
+      let resolveDigest!: (value: SelectedNewsDigest | null) => void;
+      internal.tryFetchDigest = () => new Promise((resolve) => { resolveDigest = resolve; });
+      internal.resolveEnabledNewsCategories = () => withEnergy;
+      expect(hydration.wantsNewsHydration(false)).toBe(true);
+      await hydration.newsHydrationTask(false);
+
+      // They remove it again before B lands. The recorded signature is still
+      // A's, so only the running load lets the pass through.
+      internal.resolveEnabledNewsCategories = () => politics;
+      expect(hydration.wantsNewsHydration(false)).toBe(true);
+      await hydration.newsHydrationTask(false);
+      expect(loadNews).toHaveBeenCalledTimes(2);
+
+      // B commits B's signature, which no longer matches the panels: replay A.
+      internal.tryFetchDigest = async () => ({ digest: digest('complete'), servedStale: false });
+      resolveDigest({ digest: digest('complete'), servedStale: false });
+      await vi.waitFor(() => expect(loadNews).toHaveBeenCalledTimes(3));
+      await hydration.waitForNewsLoad();
+      expect(hydration.wantsNewsHydration(false)).toBe(false);
+    });
+
+    it('re-indexes search when the late digest commits', async () => {
+      let resolveDigest!: (value: SelectedNewsDigest | null) => void;
+      const { hydration, updateSearchIndex } = await slowDigestLoader(new Promise((resolve) => { resolveDigest = resolve; }));
+
+      await hydration.newsHydrationTask(false);
+      expect(updateSearchIndex).not.toHaveBeenCalled();
+
+      resolveDigest({ digest: digest('complete'), servedStale: false });
+      await hydration.waitForNewsLoad();
+      expect(updateSearchIndex).toHaveBeenCalledOnce();
+    });
+
+    it('does not re-index search for a load the task already waited on', async () => {
+      const { hydration, updateSearchIndex } = await slowDigestLoader(Promise.resolve({ digest: digest('complete'), servedStale: false }));
+      hydration.digestFirstPaintGraceMs = 1500;
+
+      await hydration.newsHydrationTask(false);
+
+      expect(updateSearchIndex).not.toHaveBeenCalled();
+    });
+
+    it('lets headline consumers wait for the late digest and any replay', async () => {
+      let resolveDigest!: (value: SelectedNewsDigest | null) => void;
+      const { ctx, hydration, loadNews } = await slowDigestLoader(new Promise((resolve) => { resolveDigest = resolve; }));
+
+      await hydration.newsHydrationTask(false);
+      await hydration.newsHydrationTask(true);
+      let waited = false;
+      const wait = hydration.waitForNewsLoad().then(() => { waited = true; });
+      await Promise.resolve();
+      expect(waited).toBe(false);
+
+      resolveDigest({ digest: digest('complete'), servedStale: false });
+      await wait;
+      // Both the original load and its forced replay have finished.
+      expect(loadNews).toHaveBeenCalledTimes(2);
+      expect(ctx.inFlight.has('news')).toBe(false);
+    });
+
+    it('does not replay a request whose work-list the finished load already covered', async () => {
+      let resolveDigest!: (value: SelectedNewsDigest | null) => void;
+      const { ctx, hydration, loadNews } = await slowDigestLoader(new Promise((resolve) => { resolveDigest = resolve; }));
+
+      await hydration.newsHydrationTask(false);
+      await hydration.newsHydrationTask(false);
+
+      resolveDigest({ digest: digest('complete'), servedStale: false });
+      await vi.waitFor(() => expect(ctx.inFlight.has('news')).toBe(false));
+      expect(loadNews).toHaveBeenCalledOnce();
+    });
+  });
+
   it('preserves news locations when the news load has no authoritative result', async () => {
     const { loader, internal } = await makeLoader();
     const ctx = (loader as unknown as { ctx: AppContext }).ctx;
@@ -295,6 +453,43 @@ describe('digest coverage follows the selected browser response', () => {
       expect(events[0]!.ctx.fingerprint).toEqual(['news-digest-fetch', 'timeout']);
     });
 
+    it('waits as long as the server is allowed to take (Sentry WORLDMONITOR-1D4)', async () => {
+      // The server answers a cold rebuild by RESPONSE_DEADLINE_MS. A shorter
+      // client deadline throws away digests the server was still delivering:
+      // in production, 8.3-8.7 s server responses landed just after the
+      // browser's 8 s deadline, and users with no saved copy saw empty panels.
+      const { __testing__ } = await import('../../server/worldmonitor/news/v1/list-feed-digest');
+      const { internal } = await makeLoader();
+      internal.digestCacheKey = () => 'digest:current';
+      const timeout = vi.spyOn(AbortSignal, 'timeout');
+      vi.mocked(globalThis.fetch).mockImplementation(async () => new Response(JSON.stringify(digest('complete', 3))));
+
+      // Each method mints its own deadline before publicRpcFetch adds its 30 s
+      // transport cap, so the FIRST timeout of each request is the caller's.
+      // Checking per method keeps the transport cap from standing in for a
+      // deadline a method stopped setting.
+      const callerDeadline = async (request: () => Promise<unknown>): Promise<number[]> => {
+        timeout.mockClear();
+        expect(await request()).not.toBeNull();
+        return timeout.mock.calls.map(([ms]) => ms);
+      };
+      let home: number[];
+      let edition: number[];
+      try {
+        home = await callerDeadline(() => internal.tryFetchDigest());
+        edition = await callerDeadline(() => internal.fetchEditionDigest('tech', 'en'));
+      } finally {
+        timeout.mockRestore();
+      }
+
+      for (const calls of [home, edition]) {
+        expect(calls).toHaveLength(2);
+        // The request aborts at the shorter of the two, so both must outlast the server.
+        expect(calls[0]).toBeGreaterThan(__testing__.RESPONSE_DEADLINE_MS);
+        expect(calls[1]).toBeGreaterThan(__testing__.RESPONSE_DEADLINE_MS);
+      }
+    });
+
     it('counts a WebKit deadline abort as a timeout, not "other" (Sentry WORLDMONITOR-1D5)', async () => {
       // Safari and every iOS browser reject the fetch with `AbortError: Fetch is
       // aborted` when AbortSignal.timeout fires, never `TimeoutError`, so the
@@ -383,6 +578,131 @@ describe('digest coverage follows the selected browser response', () => {
 
       expect(captured()).toHaveLength(1);
       expect(captured()[0]!.ctx.tags['digest.failure']).toBe('network');
+    });
+
+    // Sentry WORLDMONITOR-1D4 after the 25 s deadline shipped: the server had
+    // answered every digest in under 20 s, and most timed-out requests never
+    // reached the origin at all (the CDN serves this route). A request that
+    // stalls on the way left a browser with no saved copy showing empty news
+    // until the next refresh, 10 minutes later. One immediate retry covers it.
+    describe('a stalled first request with nothing to show', () => {
+      it('retries once and renders the retry', async () => {
+        const { internal } = await makeLoader();
+        internal.digestCacheKey = () => 'digest:current';
+        const fresh = digest('complete', 3);
+        vi.mocked(globalThis.fetch)
+          .mockRejectedValueOnce(new DOMException('signal timed out', 'TimeoutError'))
+          .mockResolvedValueOnce(new Response(JSON.stringify(fresh)));
+
+        const result = await internal.tryFetchDigest();
+
+        expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+        expect(result).toEqual({ digest: fresh, servedStale: false });
+        expect(internal.persistDigest).toHaveBeenCalledWith('digest:current', fresh);
+        expect(internal.digestBreaker).toMatchObject({ state: 'closed', failures: 0 });
+        // The stall still happened, so it is still reported, marked as recovered.
+        const events = captured();
+        expect(events).toHaveLength(1);
+        expect(events[0]!.ctx.tags).toMatchObject({
+          'digest.failure': 'timeout',
+          'digest.fallback': 'none',
+          'digest.retry': 'recovered',
+        });
+        expect(events[0]!.ctx.tags).not.toHaveProperty('digest.retry.failure');
+      });
+
+      it('gives up after the retry fails and reports both attempts as one event', async () => {
+        const { internal } = await makeLoader();
+        internal.digestCacheKey = () => 'digest:current';
+        vi.mocked(globalThis.fetch)
+          .mockRejectedValueOnce(new DOMException('signal timed out', 'TimeoutError'))
+          .mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+        const result = await internal.tryFetchDigest();
+
+        expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+        expect(result).toBeNull();
+        // Two real failures: the breaker counts both.
+        expect(internal.digestBreaker.state).toBe('open');
+        const events = captured();
+        expect(events).toHaveLength(1);
+        expect(events[0]!.ctx.tags).toMatchObject({
+          'digest.failure': 'timeout',
+          'digest.fallback': 'none',
+          'digest.retry': 'failed',
+          'digest.retry.failure': 'network',
+        });
+      });
+
+      it('retries a CDN 5xx as well', async () => {
+        const { internal } = await makeLoader();
+        internal.digestCacheKey = () => 'digest:current';
+        vi.mocked(globalThis.fetch)
+          .mockResolvedValueOnce(new Response('', { status: 522 }))
+          .mockResolvedValueOnce(new Response(JSON.stringify(digest('complete', 3))));
+
+        expect(await internal.tryFetchDigest()).not.toBeNull();
+        expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+      });
+
+      it('does not retry when a copy is on screen to fall back to', async () => {
+        const { internal } = await makeLoader();
+        internal.digestCacheKey = () => 'digest:current';
+        internal.lastGoodDigest = { key: 'digest:current', data: digest('complete', 3) };
+        vi.mocked(globalThis.fetch).mockRejectedValueOnce(new DOMException('signal timed out', 'TimeoutError'));
+
+        await internal.tryFetchDigest();
+
+        expect(globalThis.fetch).toHaveBeenCalledOnce();
+        expect(captured()[0]!.ctx.tags).toMatchObject({ 'digest.fallback': 'retained', 'digest.retry': 'none' });
+      });
+
+      it('does not retry when a saved copy exists', async () => {
+        const { internal } = await makeLoader();
+        internal.digestCacheKey = () => 'digest:current';
+        internal.loadPersistedDigest = vi.fn().mockResolvedValue(digest('complete', 3));
+        vi.mocked(globalThis.fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+        await internal.tryFetchDigest();
+
+        expect(globalThis.fetch).toHaveBeenCalledOnce();
+      });
+
+      it('does not retry a failure a second request would repeat', async () => {
+        const { internal } = await makeLoader();
+        internal.digestCacheKey = () => 'digest:current';
+        vi.mocked(globalThis.fetch).mockResolvedValueOnce(new Response('', { status: 404 }));
+
+        await internal.tryFetchDigest();
+
+        expect(globalThis.fetch).toHaveBeenCalledOnce();
+      });
+
+      it('does not retry while the breaker is probing a recovery', async () => {
+        const { internal } = await makeLoader();
+        internal.digestCacheKey = () => 'digest:current';
+        internal.digestBreaker = { state: 'open', failures: 2, cooldownUntil: 0 };
+        vi.mocked(globalThis.fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+        await internal.tryFetchDigest();
+
+        expect(globalThis.fetch).toHaveBeenCalledOnce();
+      });
+
+      it('does not retry while the browser reports itself offline', async () => {
+        const { internal } = await makeLoader();
+        internal.digestCacheKey = () => 'digest:current';
+        const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+        vi.mocked(globalThis.fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+        try {
+          await internal.tryFetchDigest();
+        } finally {
+          online.mockRestore();
+        }
+
+        expect(globalThis.fetch).toHaveBeenCalledOnce();
+      });
     });
 
     it('stays quiet while the browser reports itself offline', async () => {

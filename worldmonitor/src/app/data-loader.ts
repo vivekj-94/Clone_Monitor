@@ -487,8 +487,16 @@ export class DataLoaderManager implements AppModule {
   private fullEditionIntel: { generation: number; selection: Promise<SelectedNewsDigest | null> } | null = null;
   private committedNewsGeneration = 0;
   private committedNewsServedStale = false;
-  private readonly digestRequestTimeoutMs = 8000;
+  // Must outlast the server's own response deadline (RESPONSE_DEADLINE_MS,
+  // 22 s, in list-feed-digest.ts) plus the body download. At 8 s the browser
+  // abandoned digests the server was still delivering (Sentry WORLDMONITOR-1D4).
+  // First paint does not wait on this: it renders after digestFirstPaintGraceMs.
+  private readonly digestRequestTimeoutMs = 25_000;
   private readonly digestFirstPaintGraceMs = 1500;
+  /** A news hydration request that arrived while a news load was still running. */
+  private newsHydrationReplay: { forceAll: boolean } | null = null;
+  /** The running news hydration load, including the part after first paint. */
+  private activeNewsLoad: Promise<void> | null = null;
   private readonly digestBreakerCooldownMs = 5 * 60 * 1000;
   /** Failure kinds already sent to Sentry this page load (one event per kind). */
   private readonly reportedDigestFailures = new Set<DigestFetchFailureKind>();
@@ -794,7 +802,13 @@ export class DataLoaderManager implements AppModule {
     };
   }
 
-  private async tryFetchDigest(): Promise<SelectedNewsDigest | null> {
+  /**
+   * `firstFailure` is set only on the one retry below: the failure that earned
+   * it, so this load's single report names what happened and how the retry went.
+   */
+  private async tryFetchDigest(
+    firstFailure: { error: unknown; deadlineExpired: boolean } | null = null,
+  ): Promise<SelectedNewsDigest | null> {
     const now = Date.now();
     // Capture request and persistence scope together. Sampling the language again
     // after the response would let an old-language request populate the new
@@ -862,6 +876,7 @@ export class DataLoaderManager implements AppModule {
         return fallback ? { digest: fallback, servedStale: true } : null;
       }
       this.lastGoodDigest = retainRicherScopedDigest(this.lastGoodDigest, requestKey, data);
+      if (firstFailure) this.reportDigestFetchFailure(firstFailure.error, 'none', firstFailure.deadlineExpired, 'recovered');
       this.reportDigestCoverage(data);
       return { digest: data, servedStale: data.coverage?.servedStale === true };
     } catch (e) {
@@ -878,7 +893,30 @@ export class DataLoaderManager implements AppModule {
       const currentKey = this.digestCacheKey();
       const retained = this.getRetainedDigest(currentKey);
       const fallback = retained ?? await this.loadPersistedDigest(currentKey);
-      this.reportDigestFetchFailure(e, retained ? 'retained' : fallback ? 'saved' : 'none', deadlineExpired);
+      // Nothing to show and a failure a second request can clear: try once more
+      // now rather than leave the news panels empty until the next refresh
+      // (Sentry WORLDMONITOR-1D4: the CDN serves this route, and requests that
+      // timed out had mostly never reached the origin).
+      if (
+        !firstFailure
+        && !fallback
+        && currentKey === requestKey
+        && this.digestBreaker.state === 'closed'
+        && isRetryableDigestFailure(classifyDigestFetchFailure(e, deadlineExpired))
+        && !(typeof navigator !== 'undefined' && navigator.onLine === false)
+        && !isPageUnloading()
+      ) {
+        console.info('[News] Retrying the digest once: no saved copy to show');
+        return this.tryFetchDigest({ error: e, deadlineExpired });
+      }
+      const reported = firstFailure ?? { error: e, deadlineExpired };
+      this.reportDigestFetchFailure(
+        reported.error,
+        retained ? 'retained' : fallback ? 'saved' : 'none',
+        reported.deadlineExpired,
+        firstFailure ? 'failed' : 'none',
+        firstFailure ? classifyDigestFetchFailure(e, deadlineExpired) : undefined,
+      );
       this.reportDigestCoverage(fallback, fallback ? 'stale' : 'unavailable');
       return fallback ? { digest: fallback, servedStale: true } : null;
     }
@@ -894,6 +932,8 @@ export class DataLoaderManager implements AppModule {
     error: unknown,
     fallback: 'retained' | 'saved' | 'none',
     deadlineExpired: boolean,
+    retry: 'none' | 'recovered' | 'failed',
+    retryFailure?: DigestFetchFailureKind,
   ): void {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     if (isPageUnloading()) return;
@@ -910,6 +950,11 @@ export class DataLoaderManager implements AppModule {
         // The error's name only: messages can carry URLs. Without it an
         // "other" failure says nothing about what went wrong.
         'digest.error': digestErrorName(error),
+        // Whether the one retry ran: 'recovered' rendered fresh news after a
+        // delay, 'failed' left the panels empty, 'none' was not attempted.
+        'digest.retry': retry,
+        // How the retry itself failed, which can differ from the first failure.
+        ...(retryFailure ? { 'digest.retry.failure': retryFailure } : {}),
       },
       extra: { timeoutMs: this.digestRequestTimeoutMs },
       // Tags do not split issues; one group per kind keeps timeouts, 5xx and
@@ -1177,8 +1222,8 @@ export class DataLoaderManager implements AppModule {
     };
 
     const tasks: HydrationTask[] = [];
-    if (this.shouldHydrateNews(forceAll)) {
-      tasks.push({ name: 'news', task: () => runGuarded('news', () => this.loadNews()) });
+    if (this.wantsNewsHydration(forceAll)) {
+      tasks.push({ name: 'news', task: () => this.newsHydrationTask(forceAll) });
     }
 
     // Happy variant only loads news data -- skip all geopolitical/financial/military data
@@ -1383,6 +1428,10 @@ export class DataLoaderManager implements AppModule {
     this.updateSearchIndex();
 
     if (hasPremiumAccess() && runOncePerViewport('premium-briefs', ['daily-market-brief', 'market-implications'])) {
+      // The news task may have released the tiers at first paint. The brief is
+      // built from the headlines and cached for the day, so wait for the late
+      // digest instead of building it from the fallback.
+      await this.waitForNewsLoad();
       await Promise.allSettled([
         this.loadDailyMarketBrief(),
         this.loadMarketImplications(),
@@ -2249,7 +2298,64 @@ export class DataLoaderManager implements AppModule {
     return generation === this.committedNewsGeneration && !servedStale;
   }
 
-  async loadNews(): Promise<void> {
+  /**
+   * The `news` hydration task. It resolves at the category first paint, not
+   * when a slow digest finally lands: the digest may take up to
+   * digestRequestTimeoutMs (25 s), and every later hydration tier — on mobile,
+   * every later task — would wait behind it. The load keeps running after the
+   * task resolves. A pass that asks for news meanwhile is replayed when the
+   * load ends, so a category change made during the wait is not dropped.
+   */
+  private newsHydrationTask(forceAll: boolean): Promise<void> {
+    if (this.ctx.isDestroyed) return Promise.resolve();
+    if (this.ctx.inFlight.has('news')) {
+      this.newsHydrationReplay = { forceAll: (this.newsHydrationReplay?.forceAll ?? false) || forceAll };
+      return Promise.resolve();
+    }
+    this.ctx.inFlight.add('news');
+    let releasedAtFirstPaint = false;
+    let markFirstPaint!: () => void;
+    const firstPaint = new Promise<void>((resolve) => {
+      markFirstPaint = () => { releasedAtFirstPaint = true; resolve(); };
+    });
+    const load = (async () => {
+      try {
+        await this.loadNews({ onFirstPaint: markFirstPaint });
+        // runLoadAllData indexed search when the task resolved, before these
+        // headlines were committed.
+        if (releasedAtFirstPaint && !this.ctx.isDestroyed) this.updateSearchIndex();
+      } catch (e) {
+        if (!this.ctx.isDestroyed) console.error('[App] news failed:', e);
+      } finally {
+        this.ctx.inFlight.delete('news');
+        this.activeNewsLoad = null;
+        const replay = this.newsHydrationReplay;
+        this.newsHydrationReplay = null;
+        if (replay && !this.ctx.isDestroyed && this.shouldHydrateNews(replay.forceAll)) {
+          void this.newsHydrationTask(replay.forceAll);
+        }
+      }
+    })();
+    this.activeNewsLoad = load;
+    return Promise.race([load, firstPaint]);
+  }
+
+  /**
+   * Whether a loadAllData() pass should run the news task. While a news load
+   * is running, the pass always does, so newsHydrationTask can record a
+   * replay: `loadedNewsSignature` still describes the PREVIOUS load, and a
+   * user returning to it mid-load would otherwise be skipped.
+   */
+  private wantsNewsHydration(forceAll: boolean): boolean {
+    return this.ctx.inFlight.has('news') || this.shouldHydrateNews(forceAll);
+  }
+
+  /** Resolves once no news hydration load (or its replay) is running. */
+  private async waitForNewsLoad(): Promise<void> {
+    while (this.activeNewsLoad) await this.activeNewsLoad;
+  }
+
+  async loadNews(options: { onFirstPaint?: () => void } = {}): Promise<void> {
     const generation = this.beginNewsLoad();
     // Reset happy variant accumulator for fresh pipeline run
     if (SITE_VARIANT === 'happy') {
@@ -2287,6 +2393,7 @@ export class DataLoaderManager implements AppModule {
         digestPromise,
         fallbackDigest: fallbackSelection,
         digestGraceMs: this.digestFirstPaintGraceMs,
+        onFirstPaint: options.onFirstPaint,
         loadCategory: ({ key, feeds, isCustom }, selection, options) => (
           this.loadNewsCategory(
             key,
@@ -5364,6 +5471,15 @@ export function classifyDigestFetchFailure(error: unknown, deadlineExpired = fal
   if (message === 'digest returned 0 categories') return 'empty-body';
   if (error instanceof TypeError) return 'network';
   return 'other';
+}
+
+/**
+ * Failures a second request can clear: a stalled or dropped connection, or a
+ * 5xx from the CDN or origin. A 4xx, a malformed body or an empty digest would
+ * come back the same.
+ */
+function isRetryableDigestFailure(kind: DigestFetchFailureKind): boolean {
+  return kind === 'timeout' || kind === 'network' || kind === 'http-5xx';
 }
 
 /** A short, PII-free label for a digest failure: the error's name, or its type. */
