@@ -1647,6 +1647,10 @@
       "infoTooltip": "<strong>Teknoloji Etkinlikleri</strong> Yaklaşan ve son teknoloji etkinlikleri: konferanslar, ürün lansmanları, düzenleyici oturumlar ve kazanç görüşmeleri. Resmi etkinlik takvimleri ve sektör kaynaklarından derlenmektedir."
     },
     "techReadiness": {
+      "ranked": "Sıralanan",
+      "unranked": "Sıralama dışı",
+      "coverageRequirement": "Sıralama için gereken asgari kapsam",
+      "coverageLabel": "Mevcut göstergeler",
       "internetUsers": "Internet Kullanicilari",
       "mobileSubscriptions": "Mobil Abonelikler",
       "rdSpending": "Araştırma ve geliştirme harcaması",
@@ -2375,7 +2379,15 @@
       "noData": "Enerji verileri geçici olarak kullanılamıyor - yeniden denecek",
       "liveTape": "Canlı Bant",
       "liveTapeSource": "Pazar teklifleri",
-      "infoTooltip": "<strong>Enerji Kompleksi</strong> Fiziksel ve işlem gören enerji sinyalleri tek yerde:<ul><li><strong>ABD Enerji Bilgi İdaresi metrikleri</strong>: WTI, Brent, ABD üretimi ve stokları</li><li><strong>Canlı veriler</strong>: Ham petrol ve doğal gaz gibi işlem gören enerji fiyatları</li><li><strong>Amaç</strong>: Fiziksel enerji stresini daha geniş makro ve emtia panellerinden ayırmak</li></ul>"
+      "infoTooltip": "<strong>Enerji Kompleksi</strong> Fiziksel ve işlem gören enerji sinyalleri tek yerde:<ul><li><strong>ABD Enerji Bilgi İdaresi metrikleri</strong>: WTI, Brent, ABD üretimi ve stokları</li><li><strong>Canlı veriler</strong>: Ham petrol ve doğal gaz gibi işlem gören enerji fiyatları</li><li><strong>Amaç</strong>: Fiziksel enerji stresini daha geniş makro ve emtia panellerinden ayırmak</li></ul>",
+      "marketTape": "Piyasa fiyatları",
+      "futures": "Vadeli işlemler",
+      "dailySpot": "Günlük spot fiyat",
+      "eiaWeeklySpot": "EIA spot fiyatı · haftalık ortalama",
+      "weekEnding": "{{date}} tarihinde sona eren hafta",
+      "unknownPriceDate": "Gözlem zamanı bilinmiyor",
+      "unknownQuoteSource": "Fiyat kaynağı bilinmiyor",
+      "stalePrice": "Güncel değil"
     },
     "consumerPrices": {
       "tabs": {

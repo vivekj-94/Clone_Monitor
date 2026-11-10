@@ -768,6 +768,15 @@ describe('crawlable content corpus deployment contracts', () => {
       'scripts/country-related-links.mjs',
       'scripts/data/country-centroids.json',
       'scripts/related-reading.mjs',
+      'scripts/data/related-reading.json',
+      'scripts/chokepoint-page-content.mjs',
+      'scripts/live-pages/',
+      'scripts/build-live-topic-pages.mjs',
+      'scripts/data/crisis-editorial.json',
+      'scripts/data/search-links/',
+      'scripts/search-links.mjs',
+      'scripts/lib/search-links.mjs',
+      'scripts/lib/main-module.mjs',
     ]) {
       assert.equal(vercelIgnoreSource.split(`'${path}'`).length - 1, 2, `${path} must trigger main and preview builds`);
     }
@@ -810,6 +819,15 @@ describe('crawlable content corpus deployment contracts', () => {
         'scripts/country-related-links.mjs',
         'scripts/data/country-centroids.json',
         'scripts/related-reading.mjs',
+        'scripts/data/related-reading.json',
+        'scripts/chokepoint-page-content.mjs',
+        'scripts/live-pages/related-links.mjs',
+        'scripts/build-live-topic-pages.mjs',
+        'scripts/data/crisis-editorial.json',
+        'scripts/data/search-links/countries.json',
+        'scripts/search-links.mjs',
+        'scripts/lib/search-links.mjs',
+        'scripts/lib/main-module.mjs',
       ]) {
         const previous = git('rev-parse', 'HEAD').trim();
         mkdirSync(dirname(join(fixture, path)), { recursive: true });
@@ -4249,9 +4267,10 @@ describe('agent readiness: MCP/OAuth origin alignment', () => {
       // WorkOS auth.md agent_auth discovery block (only `anonymous` is honest —
       // WM has no ID-JAG identity endpoint, so identity_assertion is not advertised).
       assert.ok(json.agent_auth, `agent_auth block present for ${host}`);
-      // Scanners require skill == <issuer>/auth.md. The apex serves it because
-      // /auth.md is exempt from the Cloudflare apex→www 301 (ARCHITECTURE.md §2).
-      assert.equal(json.agent_auth.skill, `https://${host}/auth.md`, `skill is the issuer's /auth.md for ${host}`);
+      // ora.ai compares skill with the /auth.md published on the scanned domain,
+      // so every host names the apex copy. The apex serves it because /auth.md
+      // is exempt from the Cloudflare apex→www 301 (ARCHITECTURE.md §2).
+      assert.equal(json.agent_auth.skill, 'https://worldmonitor.app/auth.md', `skill is the apex /auth.md for ${host}`);
       assert.equal(json.agent_auth.register_uri, `https://${host}/oauth/register`);
       // auth.md v0.2's identity_endpoint takes {"type":"anonymous"} and returns
       // an identity_assertion; /oauth/register is RFC 7591 DCR, so it must not

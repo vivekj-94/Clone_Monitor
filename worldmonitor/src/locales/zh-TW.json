@@ -1643,6 +1643,10 @@
       "infoTooltip": "<strong>科技活動</strong> 即將舉行和近期的科技活動：會議、產品釋出、監管聽證會和財報電話會議。從官方活動日曆和行業來源彙總。"
     },
     "techReadiness": {
+      "ranked": "已排名",
+      "unranked": "未排名",
+      "coverageRequirement": "參與排名所需的最少指標數",
+      "coverageLabel": "可用指標",
       "internetUsers": "網際網路使用者",
       "mobileSubscriptions": "移動訂閱",
       "rdSpending": "研究和開發支出",
@@ -2366,7 +2370,15 @@
       "noData": "能源資料暫時不可用 - 將重試",
       "liveTape": "即時行情",
       "liveTapeSource": "市場報價",
-      "infoTooltip": "<strong>能源市場</strong> 實物和可交易能源訊號整合顯示：<ul><li><strong>美國能源資訊署指標</strong>：WTI、布倫特油價、美國產量和庫存</li><li><strong>即時行情</strong>：原油和天然氣等可交易能源價格</li><li><strong>目的</strong>：將實物能源壓力與更廣泛的宏觀和商品面板分離</li></ul>"
+      "infoTooltip": "<strong>能源市場</strong> 實物和可交易能源訊號整合顯示：<ul><li><strong>美國能源資訊署指標</strong>：WTI、布倫特油價、美國產量和庫存</li><li><strong>即時行情</strong>：原油和天然氣等可交易能源價格</li><li><strong>目的</strong>：將實物能源壓力與更廣泛的宏觀和商品面板分離</li></ul>",
+      "marketTape": "市場報價",
+      "futures": "期貨",
+      "dailySpot": "每日現貨價",
+      "eiaWeeklySpot": "EIA 現貨價 · 周均價",
+      "weekEnding": "截至 {{date}} 的一週",
+      "unknownPriceDate": "觀測時間不可用",
+      "unknownQuoteSource": "報價來源不可用",
+      "stalePrice": "已過時"
     },
     "consumerPrices": {
       "tabs": {

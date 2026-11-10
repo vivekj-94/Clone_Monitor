@@ -921,6 +921,10 @@
       "infoTooltip": "<strong>Tech-evenementen</strong> Aankomende en recente technologie-evenementen: conferenties, productlanceringen, regelgevende hoorzittingen en winstgesprekken. Samengesteld uit officiële evenementenkalenders en industriebronnen."
     },
     "techReadiness": {
+      "ranked": "Met rang",
+      "unranked": "Geen rang",
+      "coverageRequirement": "Minimale dekking voor rangschikking",
+      "coverageLabel": "Beschikbare indicatoren",
       "internetUsers": "Internetgebruikers",
       "mobileSubscriptions": "Mobiele abonnementen",
       "rdSpending": "Onderzoeks- en ontwikkelingsbegroting",
@@ -1991,7 +1995,15 @@
       "noData": "Energiegegevens tijdelijk niet beschikbaar - wordt opnieuw geprobeerd",
       "liveTape": "Live koersen",
       "liveTapeSource": "Marktkoersen",
-      "infoTooltip": "<strong>Energy Complex</strong> Fysieke en verhandelbare energiesignalen op één plaats:<ul><li><strong>Statistieken US Energy Information Administration</strong>: WTI, Brent, Amerikaanse productie en voorraden</li><li><strong>Live tape</strong>: Verhandelbare energieprijzen zoals ruwe olie en aardgas</li><li><strong>Doel</strong>: Fysieke energiespanning scheiden van bredere macro- en commoditypanels</li></ul>"
+      "infoTooltip": "<strong>Energy Complex</strong> Fysieke en verhandelbare energiesignalen op één plaats:<ul><li><strong>Statistieken US Energy Information Administration</strong>: WTI, Brent, Amerikaanse productie en voorraden</li><li><strong>Live tape</strong>: Verhandelbare energieprijzen zoals ruwe olie en aardgas</li><li><strong>Doel</strong>: Fysieke energiespanning scheiden van bredere macro- en commoditypanels</li></ul>",
+      "marketTape": "Marktkoersen",
+      "futures": "Termijncontracten",
+      "dailySpot": "Dagelijkse spotprijs",
+      "eiaWeeklySpot": "EIA-spotprijs · weekgemiddelde",
+      "weekEnding": "Week eindigend op {{date}}",
+      "unknownPriceDate": "Waarnemingstijd niet beschikbaar",
+      "unknownQuoteSource": "Koersbron niet beschikbaar",
+      "stalePrice": "Verouderd"
     },
     "consumerPrices": {
       "tabs": {

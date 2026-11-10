@@ -1783,7 +1783,7 @@ const SEED_META = {
   radiationWatch:      { key: 'seed-meta:radiation:observations',             maxStaleMin: 30 },
   groceryBasket:       { key: 'seed-meta:economic:grocery-basket',            maxStaleMin: 10080 }, // weekly seed; 10080 = 7 days
   bigmac:              { key: 'seed-meta:economic:bigmac',                    maxStaleMin: 10080 }, // weekly seed; 10080 = 7 days
-  fuelPrices:          { key: 'seed-meta:economic:fuel-prices',               maxStaleMin: 10080 }, // weekly seed; 10080 = 7 days
+  fuelPrices:          { key: 'seed-meta:economic:fuel-prices',               maxStaleMin: 11520 }, // weekly cron (Tue 06:00 UTC); 8d = one run plus a day of grace, still under the 10d CACHE_TTL. Exactly 7d expired as each run started (WORLDMONITOR-1DG)
   faoFoodPriceIndex:   { key: 'seed-meta:economic:fao-ffpi',                  maxStaleMin: 86400 }, // monthly seed; 86400 = 60 days (2x interval)
   thermalEscalation:   { key: 'seed-meta:thermal:escalation',                 maxStaleMin: 360 }, // cron every 2h; 360 = 3x interval (was 240 = 2x)
   thermalEscalationBootstrap: { key: 'seed-meta:thermal:escalation-bootstrap', maxStaleMin: 360 }, // Same cron as above. Monitored separately because the bootstrap tier now hydrates from the compact projection, and a transform/write failure there must not hide behind a healthy canonical key (#5300).
@@ -5903,6 +5903,41 @@ function nextAlertedIncidents(alertedRaw, sigKeys, delivered) {
   return [...new Set([...kept, ...delivered])].sort();
 }
 
+// Fields that say why a non-freshness status fired. COVERAGE_PARTIAL has
+// several causes and CHINA_DEGRADED names its failing entries only in
+// `problems`; without these an incident carries no cause (WORLDMONITOR-1D6).
+const SOURCE_INCIDENT_DIAGNOSTIC_FIELDS = [
+  'minRecordCount', 'rankableRecordCount', 'minRankableRecordCount',
+  'poolCounts', 'minPoolCounts', 'coverage', 'decisionGroups', 'failedDatasets',
+  'dominantFailureMode', 'lastSourceFailureCode', 'consecutiveSourceFailures',
+  'chinaStatus', 'seedStatus', 'counts', 'problems', 'degradedStreak', 'degradedProblemKey', 'reason',
+  // Set by the composers after classification: chokepoint transits missing
+  // their measurable inputs, the CII input audit, the read-model gate, and the
+  // vulnerability floors a COVERAGE_PARTIAL compares against.
+  'missingMeasurable', 'ciiInputs', 'readModelReady', 'requiredVulnerabilityCoverage',
+];
+// Per-field cap on the serialized value: a coverage block can list every
+// country, and Sentry rejects oversized events whole.
+const SOURCE_INCIDENT_FIELD_MAX_CHARS = 4_000;
+
+/**
+ * A check field as it goes into a Sentry incident: unchanged when small, else
+ * its first SOURCE_INCIDENT_FIELD_MAX_CHARS characters (JSON for objects) and
+ * a truncation mark. Strings are capped too: `degradedProblemKey` is a
+ * serialized copy of the China problems.
+ */
+function boundedIncidentValue(value) {
+  if (value === null || (typeof value !== 'object' && typeof value !== 'string')) return value;
+  const text = typeof value === 'string' ? value : JSON.stringify(value);
+  return text.length <= SOURCE_INCIDENT_FIELD_MAX_CHARS
+    ? value
+    : `${text.slice(0, SOURCE_INCIDENT_FIELD_MAX_CHARS)}…[truncated]`;
+}
+
+/**
+ * Report one `<source>:<status>` incident to Sentry with the check fields that
+ * say how stale it is and why it fired. Resolves true when Sentry accepted it.
+ */
 async function reportSourceIncident(key, checks, ctx, capture = captureSilentError) {
   const separator = key.lastIndexOf(':');
   const name = key.slice(0, separator);
@@ -5911,6 +5946,9 @@ async function reportSourceIncident(key, checks, ctx, capture = captureSilentErr
   const extra = {};
   for (const field of ['records', 'seedAgeMin', 'maxStaleMin', 'contentAgeMin', 'maxContentAgeMin', 'errorCode']) {
     if (check[field] !== undefined) extra[field] = check[field];
+  }
+  for (const field of SOURCE_INCIDENT_DIAGNOSTIC_FIELDS) {
+    if (check[field] !== undefined && check[field] !== null) extra[field] = boundedIncidentValue(check[field]);
   }
   return await capture(new Error(`Health source incident: ${name} ${status}`), {
     level: 'warning',
@@ -6781,6 +6819,7 @@ export default async function handler(req, ctx) {
 // the classifier without standing up the full bootstrap-keys + Redis pipeline.
 // 2026-05-04 health-readiness plan, Sprint 1 test plan (Codex round 2 P1).
 export const __testing__ = {
+  reportSourceIncident,
   composeContractsFinderHealth,
   composeChokepointTransitsCoverage,
   composeRiskScoresInputHealth,

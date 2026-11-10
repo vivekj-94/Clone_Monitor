@@ -123,6 +123,7 @@ const { pizzintVenuePoint } = require('./shared/pizzint-location.cjs');
 const { getUsEquitySession, isMultiMarketEquityTradingDay } = require('./shared/market-hours.cjs');
 const { mergeLastGoodQuotes, planYahooRefresh, resolveMergedQuotesAsOf } = require('./shared/market-quote-refresh.cjs');
 const { PREVIOUS_SESSION_CHART_QUERY, awaitsSessionOpen, previousSessionClose } = require('./shared/yahoo-closed-session.cjs');
+const { crudeOilQuoteProvenance } = require('./shared/oil-quote-provenance.cjs');
 // ESM module loaded via require(esm) (Node >= 22.12; relay image is node:24).
 // Same implementation the RPC handler scores with — see the module header for
 // why it lives in shared/ rather than beside the other scoring helpers.
@@ -3248,6 +3249,23 @@ async function seedUcdpEvents() {
       ...ucdpCandidateContentMeta(capped),
     }, 604800);
     console.log(`[UCDP] Seeded ${capped.length} events (raw: ${allEvents.length}, candidate: ${candidateVersion || 'none'}, failed pages: ${failedPages}, redis: ${ok ? 'OK' : 'FAIL'})`);
+    // The bootstrap tier hydrates from the compact projection, which health
+    // watches under its own seed-meta. The backup cron skips while the canonical
+    // seed-meta above is fresh, so this writer must refresh the projection too or
+    // it ages past its budget between backup runs (Sentry WORLDMONITOR-1DC).
+    // Best-effort, like the backup cron: the canonical key is already published.
+    if (ok) {
+      try {
+        const { compactUcdpDashboardPayload, UCDP_BOOTSTRAP_KEY, UCDP_BOOTSTRAP_META_KEY } = await import('./_ucdp-dashboard.mjs');
+        const compact = compactUcdpDashboardPayload(payload);
+        if (!await upstashSet(UCDP_BOOTSTRAP_KEY, compact, UCDP_TTL_SECONDS)) throw new Error('projection SET failed');
+        if (!await upstashSet(UCDP_BOOTSTRAP_META_KEY, { fetchedAt: Date.now(), recordCount: compact.events.length }, 604800)) {
+          throw new Error('projection seed-meta SET failed');
+        }
+      } catch (err) {
+        console.warn(`[UCDP] Compact projection write failed: ${err?.message || err}`);
+      }
+    }
     const newConflicts = capped.filter(e => e.deathsBest >= 10 && !ucdpPrevAlertedIds.has(e.id)).sort((a, b) => b.deathsBest - a.deathsBest);
     for (const e of newConflicts.slice(0, 2)) {
       ucdpPrevAlertedIds.add(e.id);
@@ -3763,10 +3781,14 @@ async function seedMarketQuotes() {
 async function seedCommodityQuotes() {
   const quotes = [];
   const missing = [];
+  const toQuote = (symbol, meta, yahoo) => ({
+    symbol, name: meta.name, display: meta.display, price: yahoo.price, change: yahoo.change, sparkline: yahoo.sparkline,
+    ...crudeOilQuoteProvenance(symbol, 'Yahoo Finance', 'futures', yahoo.lastTradeAt * 1000),
+  });
   for (const s of COMMODITY_SYMBOLS) {
     const meta = COMMODITY_META.get(s) || { name: s, display: s };
     const yahoo = await fetchYahooChartDirect(s);
-    if (yahoo) quotes.push({ symbol: s, name: meta.name, display: meta.display, price: yahoo.price, change: yahoo.change, sparkline: yahoo.sparkline });
+    if (yahoo) quotes.push(toQuote(s, meta, yahoo));
     else missing.push(s);
     await sleep(150);
   }
@@ -3776,7 +3798,7 @@ async function seedCommodityQuotes() {
     for (const s of missing) {
       const meta = COMMODITY_META.get(s);
       const yahoo = await fetchYahooChartDirect(s);
-      if (yahoo) quotes.push({ symbol: s, name: meta.name, display: meta.display, price: yahoo.price, change: yahoo.change, sparkline: yahoo.sparkline });
+      if (yahoo) quotes.push(toQuote(s, meta, yahoo));
       await sleep(200);
     }
   }
@@ -7375,10 +7397,7 @@ const WB_TTL_SECONDS = 7 * 24 * 3600; // 7 days
 const WB_BOOTSTRAP_KEY = 'economic:worldbank-techreadiness:v1';
 const WB_PROGRESS_KEY = 'economic:worldbank-progress:v1';
 const WB_RENEWABLE_KEY = 'economic:worldbank-renewable:v1';
-const { buildWorldBankTechObservations } = require('./_wb-tech-readiness-projection.cjs');
-
-const WB_WEIGHTS = { internet: 30, mobile: 15, broadband: 20, rdSpend: 35 };
-const WB_NORMALIZE_MAX = { internet: 100, mobile: 150, broadband: 50, rdSpend: 5 };
+const { computeWorldBankTechRankings: wbComputeRankings } = require('./_wb-tech-readiness-projection.cjs');
 
 const WB_INDICATORS = [
   { key: 'internet',  id: 'IT.NET.USER.ZS', dateRange: '2019:2024' },
@@ -7449,43 +7468,6 @@ async function wbFetchIndicator(indicatorId, dateRange) {
     }
   }
   return latestByCountry;
-}
-
-function wbNormalize(val, max) {
-  if (val === undefined || val === null) return null;
-  return Math.min(100, (val / max) * 100);
-}
-
-function wbComputeRankings(indicatorData) {
-  const allCountries = new Set();
-  for (const data of Object.values(indicatorData)) {
-    Object.keys(data).forEach(c => allCountries.add(c));
-  }
-  const scores = [];
-  for (const cc of allCountries) {
-    const components = {
-      internet:  wbNormalize(indicatorData.internet[cc]?.value, WB_NORMALIZE_MAX.internet),
-      mobile:    wbNormalize(indicatorData.mobile[cc]?.value, WB_NORMALIZE_MAX.mobile),
-      broadband: wbNormalize(indicatorData.broadband[cc]?.value, WB_NORMALIZE_MAX.broadband),
-      rdSpend:   wbNormalize(indicatorData.rdSpend[cc]?.value, WB_NORMALIZE_MAX.rdSpend),
-    };
-    let totalWeight = 0, weightedSum = 0;
-    for (const [key, weight] of Object.entries(WB_WEIGHTS)) {
-      if (components[key] !== null) { weightedSum += components[key] * weight; totalWeight += weight; }
-    }
-    const score = totalWeight > 0 ? weightedSum / totalWeight : 0;
-    const name = indicatorData.internet[cc]?.name || indicatorData.mobile[cc]?.name || cc;
-    const observations = buildWorldBankTechObservations({
-      internet: indicatorData.internet[cc],
-      mobile: indicatorData.mobile[cc],
-      broadband: indicatorData.broadband[cc],
-      rdSpend: indicatorData.rdSpend[cc],
-    });
-    scores.push({ country: cc, countryName: name, score: Math.round(score * 10) / 10, rank: 0, components, observations });
-  }
-  scores.sort((a, b) => b.score - a.score);
-  scores.forEach((s, i) => { s.rank = i + 1; });
-  return scores;
 }
 
 async function wbFetchProgress() {
@@ -7561,7 +7543,7 @@ async function seedWorldBank() {
       console.log(`[WB]   ${id}: ${Object.keys(indicatorData[key]).length} countries`);
     }
     const rankings = wbComputeRankings(indicatorData);
-    console.log(`[WB] Rankings: ${rankings.length} countries`);
+    console.log(`[WB] Rankings: ${rankings.filter(entry => entry.rank !== null).length}/${rankings.length} countries ranked`);
 
     console.log('[WB] Fetching progress indicators...');
     const progressData = await wbFetchProgress();
