@@ -1653,10 +1653,19 @@
       "dataPreparing": "Aktualizace dat technologické připravenosti — zobrazí se krátce."
     },
     "populationExposure": {
-      "totalAffected": "Celkem zasaženo",
-      "affectedCount": "Zasaženo: {{count}}",
-      "radiusKm": "Rádius {{km}} km",
-      "infoTooltip": "<strong>Odhady expozice obyvatelstva</strong> Odhadovaný počet obyvatel v okruhu dopadu události. Na základě dat hustoty zalidnění zemí z WorldPop.<ul><li>Konflikt: rádius 50 km</li><li>Zemětřesení: rádius 100 km</li><li>Záplavy: rádius 100 km</li><li>Požár: rádius 30 km</li></ul>"
+      "estimateWithin": "Přibližně {{count}} lidí v okruhu {{km}} km",
+      "method": "Odhady vycházejí z průměrné hustoty zalidnění dané země.",
+      "empty": "Žádné vhodné lokality událostí",
+      "infoTooltip": "Zobrazují se události s údaji o hustotě obyvatelstva země. Polohy ze starších dat bez údajů o přesnosti jsou označeny jako čekající na aktualizaci. Odhadované oblasti se mohou překrývat.",
+      "eventCount_one": "{{count}} událost",
+      "eventCount_few": "{{count}} události",
+      "eventCount_many": "{{count}} událostí",
+      "eventCount_other": "{{count}} událostí",
+      "locationPending": "Přesnost polohy čeká na aktualizaci",
+      "unrestCoverage": "Pokrytí nepokojů",
+      "ucdpPending": "Pokrytí UCDP čeká na aktualizaci",
+      "coverageShown": "Zobrazené události: {{shown}} z {{total}}",
+      "coverageLeftOut": "Nezobrazeno: {{imprecise}} bez přesné polohy, {{noEstimate}} v zemích bez údajů o hustotě, {{otherPlaces}} za prvními 10 místy každého zdroje"
     },
     "securityAdvisories": {
       "loading": "Načítání cestovních varování...",
@@ -2732,7 +2741,7 @@
     },
     "sanctionsPressure": {
       "title": "Sankce a designace",
-      "infoTooltip": "Office of Foreign Assets Control Special Designated Nationals a Consolidated Lists plus Global Affairs Canada SEMA/JVCFOA designace. Ukazuje, které země čelí nejvyššímu tlaku designace, které programy to řídí a co bylo nově přidáno od poslední aktualizace.",
+      "infoTooltip": "Seznamy OFAC SDN a konsolidované seznamy spolu s kanadskými sankcemi SEMA/JVCFOA. Řádky zemí používají přímé vazby. Vlajky plavidel a registrace letadel se počítají odděleně v registrech; nulový počet aktiv u země neznamená, že neexistují sankcionovaná aktiva. Země mateřských subjektů jsou odděleny od údajů o adrese a nevstupují do skóre rizika.",
       "loading": "Načítání dat sankcí...",
       "unavailable": "Data sankcí není dostupná.",
       "summary": {
@@ -2744,7 +2753,9 @@
       "sections": {
         "countries": "Země s sankcemi",
         "entries": "Nedávné designace",
-        "programs": "Programy"
+        "programs": "Programy",
+        "flagRegistries": "Registry vlajek plavidel a letadel",
+        "regulationTargets": "Státy, na které cílí předpisy SEMA"
       },
       "empty": {
         "countries": "Žádná přiřazení zemí není dostupná.",
@@ -2769,7 +2780,8 @@
         "undated": "bez data"
       },
       "designations_few": "{{count}} označení",
-      "designations_many": "{{count}} označení"
+      "designations_many": "{{count}} označení",
+      "targetExplanation": "Cílové státy předpisů nejsou dokladem státní příslušnosti ani adresy. Nezahrnují se do hodnocení rizik zemí ani přehledů."
     },
     "radiationWatch": {
       "title": "Sledování radiace",
@@ -4535,7 +4547,17 @@
     "renameHint": "{{name}} — dvojitým kliknutím přejmenujete",
     "deleteTab": "Smazat kartu",
     "deleteTabAria": "Smazat kartu {{name}}",
-    "tabNameAria": "Název karty"
+    "tabNameAria": "Název karty",
+    "addTabTitleSaved": "Nová karta (obsahuje panely, které jste uložili)",
+    "newTabOptions": "Možnosti nové karty",
+    "newTabStartsDefault": "Nové karty začínají s výchozími panely.",
+    "newTabStartsSaved": "Nové karty začínají s panely, které jste uložili.",
+    "newTabOptionsHint": "Karty, které již máte, se nemění.",
+    "useThisTabPanels": "Použít panely této karty",
+    "useDefaultPanels": "Použít výchozí panely",
+    "newTabPanelsNotSaved": "Nepodařilo se uložit. Tento prohlížeč blokuje ukládání dat na webu.",
+    "team": "Tým",
+    "teamDashboards": "Týmové dashboardy"
   },
   "theaterPresets": {
     "label": "Balíčky pokrytí",
@@ -4907,5 +4929,22 @@
     "close": "Zavřít",
     "alertsHint": "Nainstalujte World Monitor na plochu, abyste na tomto iPhonu nebo iPadu dostávali upozornění.",
     "how": "Jak nainstalovat"
+  },
+  "teamDashboards": {
+    "desc": "Dashboardy, které si váš tým sdílí. Otevřete jeden a přidejte jej jako novou kartu.",
+    "empty": "Váš tým zatím nesdílí žádný dashboard. Sdílejte tuto kartu a předejte všem členům týmu její panely, velikosti a mapu.",
+    "open": "Otevřít {{name}} jako novou kartu",
+    "stopSharing": "Přestat sdílet {{name}}",
+    "confirmStop": "Přestat sdílet {{name}} se svým týmem? Karty, které si lidé z něj už otevřeli, zůstanou jak jsou.",
+    "shareTab": "Sdílet tuto kartu se svým týmem",
+    "shareChanges": "Sdílet změny v této kartě se svým týmem",
+    "behind": "Váš tým změnil tento dashboard poté, co jste jej otevřeli.",
+    "getLatest": "Získat nejnovější verzi",
+    "opened": "{{name}} otevřen z vašeho týmu.",
+    "shared": "{{name}} sdílen s vaším týmem.",
+    "updated": "Tato karta má nyní nejnovější verzi vašeho týmu.",
+    "stopped": "Sdílení {{name}} zastaveno.",
+    "failed": "Nelze se připojit k dashboardům vašeho týmu. Zkuste to znovu.",
+    "limit": "Váš tým zde již sdílí {{limit}} dashboardů. Nejprve přestanete sdílet jeden."
   }
 }

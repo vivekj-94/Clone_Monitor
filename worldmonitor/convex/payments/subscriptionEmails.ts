@@ -416,6 +416,7 @@ export const conversionContextValidator = v.object({
     campaign: v.optional(v.string()),
     referrer: v.optional(v.string()),
     landing: v.optional(v.string()),
+    path: v.optional(v.string()),
     firstSeen: v.optional(v.string()),
   })),
   mcpAttribution: v.optional(v.string()),
@@ -442,16 +443,53 @@ function dayBeforePurchase(day: string, purchasedAt: number): string {
   return `${day} (${days} day${days === 1 ? "" : "s"} before purchase)`;
 }
 
+// Stored utm_source tokens are dash-normalized (`chatgpt.com` → `chatgpt-com`).
+const AI_ASSISTANT_SOURCES: ReadonlyMap<string, string> = new Map([
+  ["chatgpt-com", "ChatGPT"],
+  ["chat-openai-com", "ChatGPT"],
+  ["openai", "ChatGPT"],
+  ["perplexity", "Perplexity"],
+  ["perplexity-ai", "Perplexity"],
+  ["claude", "Claude"],
+  ["claude-ai", "Claude"],
+  ["anthropic", "Claude"],
+  ["copilot", "Copilot"],
+  ["copilot-com", "Copilot"],
+  ["copilot-microsoft-com", "Copilot"],
+  ["gemini", "Gemini"],
+  ["gemini-google-com", "Gemini"],
+  ["grok", "Grok"],
+  ["grok-com", "Grok"],
+  ["deepseek", "DeepSeek"],
+  ["chat-deepseek-com", "DeepSeek"],
+  ["meta-ai", "Meta AI"],
+  ["poe", "Poe"],
+]);
+
+function sourceLabel(source: string | undefined): string | undefined {
+  const name = source ? AI_ASSISTANT_SOURCES.get(source) : undefined;
+  return name ? `${name} (${source})` : source;
+}
+
 function conversionRowsHtml(conversion: ConversionContext): string {
   const { acquisition, purchasedAt } = conversion;
   const rows: string[] = [];
-  const sourceParts = [acquisition?.source, acquisition?.medium, acquisition?.campaign].filter(Boolean);
+  const sourceParts = [sourceLabel(acquisition?.source), acquisition?.medium, acquisition?.campaign].filter(Boolean);
   if (sourceParts.length > 0) rows.push(adminRow("Source", sourceParts.join(" / ")));
   else if (!acquisition && !conversion.mcpAttribution && !conversion.referralCode) {
     rows.push(adminRow("Source", "not captured"));
   }
-  if (acquisition?.referrer) rows.push(adminRow("Referrer", acquisition.referrer));
-  if (acquisition?.landing) rows.push(adminRow("Landing Page", acquisition.landing));
+  if (acquisition?.referrer) {
+    // ChatGPT tags cited links with utm_source but sends no Referer, so a
+    // tagged first touch records "direct" even though the link named its source.
+    // "direct" also covers a referrer that failed host validation, hence "recorded".
+    const taggedWithoutReferrer = acquisition.referrer === "direct" && Boolean(acquisition.source);
+    rows.push(adminRow("Referrer", taggedWithoutReferrer ? "none recorded (source from utm tag)" : acquisition.referrer));
+  }
+  const landingPage = acquisition?.path && acquisition.landing
+    ? `${acquisition.path} (${acquisition.landing})`
+    : acquisition?.path ?? acquisition?.landing;
+  if (landingPage) rows.push(adminRow("Landing Page", landingPage));
   if (acquisition?.firstSeen) rows.push(adminRow("First Visit", dayBeforePurchase(acquisition.firstSeen, purchasedAt)));
   if (conversion.mcpAttribution) rows.push(adminRow("MCP Funnel", conversion.mcpAttribution));
   if (conversion.referralCode) {

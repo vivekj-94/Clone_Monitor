@@ -1662,10 +1662,16 @@
       "dataPreparing": "重新整理技術就緒資料中——即將顯示。"
     },
     "populationExposure": {
-      "totalAffected": "受影響總數",
-      "affectedCount": "{{count}}人受影響",
-      "radiusKm": "{{km}}km半徑",
-      "infoTooltip": "<strong>人口暴露估計</strong>事件影響半徑內的估計人口。基於WorldPop國家人口密度資料。<ul><li>衝突：50km半徑</li><li>地震：100km半徑</li><li>洪水：100km半徑</li><li>野火：30km半徑</li></ul>"
+      "estimateWithin": "半徑 {{km}} 公里內約有 {{count}} 人",
+      "method": "估算使用該國的平均人口密度。",
+      "empty": "沒有符合條件的事件地點",
+      "infoTooltip": "顯示有國家人口密度資料的事件。缺少精度資訊的舊資料位置會標記為待更新。估計區域可能重疊。",
+      "eventCount_other": "{{count}} 起事件",
+      "locationPending": "位置精度待更新",
+      "unrestCoverage": "動亂資料覆蓋範圍",
+      "ucdpPending": "UCDP 資料覆蓋範圍待更新",
+      "coverageShown": "已顯示事件：{{shown}} / {{total}}",
+      "coverageLeftOut": "未顯示：{{imprecise}} 起無精確位置，{{noEstimate}} 起位於無人口密度資料的國家，{{otherPlaces}} 起在每個來源前 10 個地點之後"
     },
     "securityAdvisories": {
       "loading": "正在載入旅行警告...",
@@ -2702,7 +2708,7 @@
     },
     "sanctionsPressure": {
       "title": "制裁與指定",
-      "infoTooltip": "美國外交資產凍結辦公室特別指定國民和綜合清單以及加拿大全球事務部SEMA/JVCFOA名單。顯示哪些國家面臨最高列表壓力、驅動列表的計劃以及自上次更新以來新增的內容。",
+      "infoTooltip": "OFAC SDN和綜合名單，以及加拿大SEMA/JVCFOA制裁名單。國家行使用直接關聯。船旗和航空器註冊在註冊資訊中單獨計數；某國資產數量為零並不表示沒有受制裁資產。母實體所屬國家與地址證據分開記錄，不計入風險評分。",
       "loading": "正在載入制裁資料...",
       "unavailable": "制裁資料不可用。",
       "summary": {
@@ -2714,7 +2720,9 @@
       "sections": {
         "countries": "受制裁國家",
         "entries": "最近指定",
-        "programs": "計劃"
+        "programs": "計劃",
+        "flagRegistries": "船舶旗籍與航空器登記",
+        "regulationTargets": "SEMA法規目標國家"
       },
       "empty": {
         "countries": "無國家歸屬資訊。",
@@ -2736,7 +2744,8 @@
         "unattributed": "未歸屬",
         "program": "計劃",
         "undated": "無日期"
-      }
+      },
+      "targetExplanation": "法規目標國家並非國籍或地址證據，不計入國家風險評分和簡報統計。"
     },
     "radiationWatch": {
       "title": "輻射監測",
@@ -4472,7 +4481,17 @@
     "renameHint": "{{name}} — 雙擊重新命名",
     "deleteTab": "刪除標籤頁",
     "deleteTabAria": "刪除標籤頁 {{name}}",
-    "tabNameAria": "標籤頁名稱"
+    "tabNameAria": "標籤頁名稱",
+    "addTabTitleSaved": "新標籤頁（使用已儲存的面板）",
+    "newTabOptions": "新標籤頁選項",
+    "newTabStartsDefault": "新標籤頁將從預設面板開始。",
+    "newTabStartsSaved": "新標籤頁將從已儲存的面板開始。",
+    "newTabOptionsHint": "已有的標籤頁不會改變。",
+    "useThisTabPanels": "使用此標籤頁的面板",
+    "useDefaultPanels": "使用預設面板",
+    "newTabPanelsNotSaved": "無法儲存。瀏覽器阻止了網站儲存。",
+    "team": "團隊",
+    "teamDashboards": "團隊儀表盤"
   },
   "theaterPresets": {
     "label": "覆蓋預設",
@@ -4844,5 +4863,22 @@
     "close": "關閉",
     "alertsHint": "將 World Monitor 安裝到主螢幕，以便在此 iPhone 或 iPad 上接收提醒。",
     "how": "如何安裝"
+  },
+  "teamDashboards": {
+    "desc": "團隊共享的儀表盤。開啟一個可將其作為新標籤頁新增。",
+    "empty": "你的團隊還未共享任何儀表盤。共享此標籤頁可讓團隊成員獲得相同的面板、尺寸和地圖。",
+    "open": "以新標籤頁開啟 {{name}}",
+    "stopSharing": "停止共享 {{name}}",
+    "confirmStop": "停止與團隊共享 {{name}}？已開啟的標籤頁將保持不變。",
+    "shareTab": "將此標籤頁與團隊共享",
+    "shareChanges": "將此標籤頁的更改與團隊共享",
+    "behind": "你開啟此儀表盤後，團隊進行了更改。",
+    "getLatest": "獲取最新版本",
+    "opened": "從團隊共享中開啟了 {{name}}。",
+    "shared": "已將 {{name}} 與團隊共享。",
+    "updated": "此標籤頁現已是團隊的最新版本。",
+    "stopped": "停止共享 {{name}}。",
+    "failed": "無法連線團隊儀表盤。請重試。",
+    "limit": "你的團隊已在此共享 {{limit}} 個儀表盤。請先停止共享其中一個。"
   }
 }

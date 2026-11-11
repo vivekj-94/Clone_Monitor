@@ -1662,10 +1662,16 @@
       "dataPreparing": "Đang làm mới dữ liệu sẵn sàng công nghệ — sẽ xuất hiện ngay."
     },
     "populationExposure": {
-      "totalAffected": "Tổng bị Ảnh hưởng",
-      "affectedCount": "{{count}} bị ảnh hưởng",
-      "radiusKm": "bán kính {{km}}km",
-      "infoTooltip": "<strong>Ước tính Dân số bị Phơi nhiễm</strong> Dân số ước tính trong bán kính tác động sự kiện. Dựa trên dữ liệu mật độ quốc gia WorldPop.<ul><li>Xung đột: bán kính 50km</li><li>Động đất: bán kính 100km</li><li>Lũ lụt: bán kính 100km</li><li>Cháy rừng: bán kính 30km</li></ul>"
+      "estimateWithin": "Khoảng {{count}} người trong bán kính {{km}} km",
+      "method": "Ước tính dựa trên mật độ dân số trung bình của quốc gia.",
+      "empty": "Không có địa điểm sự kiện đủ điều kiện",
+      "infoTooltip": "Hiển thị các sự kiện có dữ liệu mật độ dân số quốc gia. Các vị trí từ dữ liệu cũ không có thông tin độ chính xác được đánh dấu đang chờ cập nhật. Các khu vực ước tính có thể chồng lấn.",
+      "eventCount_other": "{{count}} sự kiện",
+      "locationPending": "Độ chính xác vị trí đang chờ cập nhật",
+      "unrestCoverage": "Phạm vi dữ liệu bất ổn",
+      "ucdpPending": "Phạm vi dữ liệu UCDP đang chờ cập nhật",
+      "coverageShown": "Sự kiện được hiển thị: {{shown}} trên {{total}}",
+      "coverageLeftOut": "Không hiển thị: {{imprecise}} không có vị trí chính xác, {{noEstimate}} ở các quốc gia không có dữ liệu mật độ, {{otherPlaces}} sau 10 địa điểm đầu tiên của mỗi nguồn"
     },
     "securityAdvisories": {
       "loading": "Đang tải cảnh báo du lịch...",
@@ -2702,7 +2708,7 @@
     },
     "sanctionsPressure": {
       "title": "Trừng phạt & Chỉ định",
-      "infoTooltip": "Danh sách Công dân được Chỉ định Đặc biệt và Danh sách Hợp nhất của Văn phòng Kiểm soát Tài sản Nước ngoài cộng với các chỉ định SEMA/JVCFOA của Bộ Ngoại giao Toàn cầu. Hiển thị quốc gia nào phải chịu áp lực chỉ định cao nhất, chương trình nào đang thúc đẩy điều đó và chỉ định nào được thêm mới kể từ lần cập nhật cuối cùng.",
+      "infoTooltip": "Danh sách OFAC SDN và danh sách hợp nhất cùng các chỉ định SEMA/JVCFOA của Canada. Các hàng quốc gia dùng liên hệ trực tiếp. Cờ tàu và đăng ký máy bay được đếm riêng trong mục đăng ký; số tài sản bằng không của một quốc gia không có nghĩa là không có tài sản bị trừng phạt. Quốc gia của tổ chức mẹ được tách khỏi bằng chứng địa chỉ và không tính vào điểm rủi ro.",
       "loading": "Đang tải dữ liệu trừng phạt...",
       "unavailable": "Dữ liệu trừng phạt không khả dụng.",
       "summary": {
@@ -2714,7 +2720,9 @@
       "sections": {
         "countries": "Quốc gia bị trừng phạt",
         "entries": "Chỉ định gần đây",
-        "programs": "Chương trình"
+        "programs": "Chương trình",
+        "flagRegistries": "Sổ đăng ký cờ tàu và tàu bay",
+        "regulationTargets": "Các quốc gia mục tiêu của quy định SEMA"
       },
       "empty": {
         "countries": "Không có quy trách nhiệm quốc gia nào.",
@@ -2736,7 +2744,8 @@
         "unattributed": "Không xác định",
         "program": "Chương trình",
         "undated": "không có ngày tháng"
-      }
+      },
+      "targetExplanation": "Các quốc gia mục tiêu của quy định không phải là bằng chứng về quốc tịch hoặc địa chỉ. Không tính vào điểm rủi ro quốc gia và các bản tin tóm tắt."
     },
     "radiationWatch": {
       "title": "Theo dõi Bức xạ",
@@ -4472,7 +4481,17 @@
     "renameHint": "{{name}} — nhấp đúp để đổi tên",
     "deleteTab": "Xóa tab",
     "deleteTabAria": "Xóa tab {{name}}",
-    "tabNameAria": "Tên tab"
+    "tabNameAria": "Tên tab",
+    "addTabTitleSaved": "Tab mới (bắt đầu với các bảng điều khiển bạn đã lưu)",
+    "newTabOptions": "Tùy chọn tab mới",
+    "newTabStartsDefault": "Tab mới bắt đầu với các bảng điều khiển mặc định.",
+    "newTabStartsSaved": "Tab mới bắt đầu với các bảng điều khiển bạn đã lưu.",
+    "newTabOptionsHint": "Các tab bạn đã có sẵn sẽ không thay đổi.",
+    "useThisTabPanels": "Sử dụng các bảng điều khiển của tab này",
+    "useDefaultPanels": "Sử dụng các bảng điều khiển mặc định",
+    "newTabPanelsNotSaved": "Không thể lưu. Trình duyệt này đang chặn lưu trữ trang web.",
+    "team": "Nhóm",
+    "teamDashboards": "Dashboard của nhóm"
   },
   "theaterPresets": {
     "label": "Gói phủ khu vực",
@@ -4844,5 +4863,22 @@
     "close": "Đóng",
     "alertsHint": "Cài đặt World Monitor vào Màn hình chính để nhận cảnh báo trên iPhone hoặc iPad này.",
     "how": "Cách cài đặt"
+  },
+  "teamDashboards": {
+    "desc": "Dashboard mà nhóm của bạn chia sẻ. Mở một dashboard để thêm nó làm tab mới.",
+    "empty": "Nhóm của bạn chưa chia sẻ dashboard nào. Chia sẻ tab này để mọi người trong nhóm có thể xem các panel, kích thước và bản đồ của nó.",
+    "open": "Mở {{name}} làm tab mới",
+    "stopSharing": "Dừng chia sẻ {{name}}",
+    "confirmStop": "Dừng chia sẻ {{name}} với nhóm của bạn? Các tab mà mọi người đã mở từ nó sẽ giữ nguyên.",
+    "shareTab": "Chia sẻ tab này với nhóm của bạn",
+    "shareChanges": "Chia sẻ các thay đổi của tab này với nhóm của bạn",
+    "behind": "Nhóm của bạn đã thay đổi dashboard này sau khi bạn mở nó.",
+    "getLatest": "Lấy phiên bản mới nhất",
+    "opened": "Đã mở {{name}} từ nhóm của bạn.",
+    "shared": "Đã chia sẻ {{name}} với nhóm của bạn.",
+    "updated": "Tab này hiện có phiên bản mới nhất của nhóm của bạn.",
+    "stopped": "Đã dừng chia sẻ {{name}}.",
+    "failed": "Không thể kết nối tới dashboard của nhóm. Vui lòng thử lại.",
+    "limit": "Nhóm của bạn đã chia sẻ {{limit}} dashboard ở đây. Hãy dừng chia sẻ một dashboard trước."
   }
 }

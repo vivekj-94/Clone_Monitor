@@ -1676,10 +1676,17 @@
       "recentMissing": "Diesmal keine Daten für {{countries}}: Ihre Dateien konnten nicht geladen werden. Das heißt nicht, dass niemand vertrieben wurde."
     },
     "populationExposure": {
-      "totalAffected": "Insgesamt betroffen",
-      "affectedCount": "{{count}} betroffen",
-      "radiusKm": "{{km}}km Radius",
-      "infoTooltip": "<strong>Bevölkerungsexpositionsschätzungen</strong> Geschätzte Bevölkerung innerhalb des Ereignisauswirkungsradius. Basierend auf WorldPop-Länderdichtedaten.<ul><li>Konflikt: 50 km-Radius</li><li>Erdbeben: 100 km-Radius</li><li>Überschwemmung: 100 km-Radius</li><li>Wildbrand: 30 km-Radius</li></ul>"
+      "estimateWithin": "Etwa {{count}} Menschen im Umkreis von {{km}} km",
+      "method": "Die Schätzungen verwenden die durchschnittliche Bevölkerungsdichte des Landes.",
+      "empty": "Keine geeigneten Ereignisorte",
+      "infoTooltip": "Ereignisse mit Daten zur Bevölkerungsdichte des Landes werden angezeigt. Orte aus älteren Daten ohne Angaben zur Genauigkeit werden als ausstehend markiert. Die geschätzten Gebiete können sich überschneiden.",
+      "eventCount_one": "{{count}} Ereignis",
+      "eventCount_other": "{{count}} Ereignisse",
+      "locationPending": "Ortsgenauigkeit wartet auf Aktualisierung",
+      "unrestCoverage": "Abdeckung der Unruhen",
+      "ucdpPending": "UCDP-Abdeckung wartet auf Aktualisierung",
+      "coverageShown": "Angezeigte Ereignisse: {{shown}} von {{total}}",
+      "coverageLeftOut": "Nicht angezeigt: {{imprecise}} ohne genauen Ort, {{noEstimate}} in Ländern ohne Dichtedaten, {{otherPlaces}} nach den ersten 10 Orten je Quelle"
     },
     "countryTimeline": {
       "now": "Jetzt",
@@ -2712,7 +2719,7 @@
     },
     "sanctionsPressure": {
       "title": "Sanktionen & Listungen",
-      "infoTooltip": "Office of Foreign Assets Control Specially Designated Nationals and Consolidated Lists plus Global Affairs Canada SEMA/JVCFOA-Eintragungen. Zeigt, welche Länder dem höchsten Eintragungs-Druck ausgesetzt sind, welche Programme ihn antreiben und was seit der letzten Aktualisierung neu hinzugekommen ist.",
+      "infoTooltip": "OFAC-SDN- und konsolidierte Listen sowie kanadische SEMA/JVCFOA-Sanktionen. Länderzeilen verwenden direkte Zuordnungen. Schiffsflaggen und Flugzeugregister werden unter Registern separat gezählt; null Vermögenswerte bei einem Land bedeutet nicht, dass keine sanktionierten Vermögenswerte existieren. Länder übergeordneter Unternehmen bleiben von Adressnachweisen getrennt und fließen nicht in Risikowerte ein.",
       "loading": "Sanktionsdaten werden geladen...",
       "unavailable": "Sanktionsdaten nicht verfügbar.",
       "summary": {
@@ -2724,7 +2731,9 @@
       "sections": {
         "countries": "Sanktionierte Länder",
         "entries": "Aktuelle Listungen",
-        "programs": "Programme"
+        "programs": "Programme",
+        "flagRegistries": "Flaggen- und Luftfahrzeugregister",
+        "regulationTargets": "Zielstaaten der SEMA-Verordnungen"
       },
       "empty": {
         "countries": "Keine Landzuordnung verfügbar.",
@@ -2747,7 +2756,8 @@
         "unattributed": "Nicht zugeordnet",
         "program": "Programm",
         "undated": "ohne Datum"
-      }
+      },
+      "targetExplanation": "Zielstaaten der Verordnungen sind kein Nachweis für Staatsangehörigkeit oder Adresse. Sie werden bei Länderrisikobewertungen und Lageberichten nicht berücksichtigt."
     },
     "radiationWatch": {
       "title": "Strahlungsüberwachung",
@@ -4493,7 +4503,17 @@
     "renameHint": "{{name}} — Doppelklick zum Umbenennen",
     "deleteTab": "Tab löschen",
     "deleteTabAria": "Tab {{name}} löschen",
-    "tabNameAria": "Tab-Name"
+    "tabNameAria": "Tab-Name",
+    "addTabTitleSaved": "Neuer Tab (startet mit den gespeicherten Panels)",
+    "newTabOptions": "Optionen für neue Tabs",
+    "newTabStartsDefault": "Neue Tabs starten mit den Standard-Panels.",
+    "newTabStartsSaved": "Neue Tabs starten mit den gespeicherten Panels.",
+    "newTabOptionsHint": "Bereits vorhandene Tabs ändern sich nicht.",
+    "useThisTabPanels": "Panels dieses Tabs verwenden",
+    "useDefaultPanels": "Standard-Panels verwenden",
+    "newTabPanelsNotSaved": "Speichern fehlgeschlagen. Dieser Browser blockiert Website-Speicherung.",
+    "team": "Team",
+    "teamDashboards": "Team-Dashboards"
   },
   "theaterPresets": {
     "label": "Abdeckungs-Voreinstellungen",
@@ -4865,5 +4885,22 @@
     "close": "Schließen",
     "alertsHint": "Installieren Sie World Monitor auf dem Home-Bildschirm, um auf diesem iPhone oder iPad Warnungen zu erhalten.",
     "how": "Installationsanleitung"
+  },
+  "teamDashboards": {
+    "desc": "Dashboards, die dein Team teilt. Öffne eines, um es als neuen Tab hinzuzufügen.",
+    "empty": "Dein Team hat noch kein Dashboard geteilt. Teile diesen Tab, um alle Panels, Größen und die Karte mit deinem Team zu teilen.",
+    "open": "{{name}} als neuen Tab öffnen",
+    "stopSharing": "Sharing von {{name}} beenden",
+    "confirmStop": "Sharing von {{name}} mit deinem Team beenden? Tabs, die Personen bereits geöffnet haben, bleiben unverändert.",
+    "shareTab": "Diesen Tab mit deinem Team teilen",
+    "shareChanges": "Änderungen an diesem Tab mit deinem Team teilen",
+    "behind": "Dein Team hat dieses Dashboard nach dem Öffnen geändert.",
+    "getLatest": "Aktuelle Version abrufen",
+    "opened": "{{name}} von deinem Team geöffnet.",
+    "shared": "{{name}} mit deinem Team geteilt.",
+    "updated": "Dieser Tab hat jetzt die aktuelle Version deines Teams.",
+    "stopped": "Sharing von {{name}} beendet.",
+    "failed": "Konnte Team-Dashboards nicht erreichen. Versuche es erneut.",
+    "limit": "Dein Team teilt bereits {{limit}} Dashboards. Beende das Sharing von einem zuerst."
   }
 }

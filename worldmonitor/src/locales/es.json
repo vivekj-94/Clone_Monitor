@@ -1679,10 +1679,18 @@
       "recentMissing": "Sin datos en esta ocasión de {{countries}}; sus archivos no se cargaron, lo que no significa desplazamiento cero."
     },
     "populationExposure": {
-      "totalAffected": "Total de afectados",
-      "affectedCount": "{{count}} afectado",
-      "radiusKm": "{{km}}km de radio",
-      "infoTooltip": "<strong>Estimaciones de exposición de la población</strong> Población estimada dentro del radio de impacto del evento. Basado en datos de densidad de países de WorldPop.<ul><li>Conflicto: 50 km de radio</li><li>Terremoto: 100 km de radio</li><li>Inundación: 100 km de radio</li><li>Incendio forestal: 30 km de radio</li></ul>"
+      "estimateWithin": "Unas {{count}} personas en un radio de {{km}} km",
+      "method": "Las estimaciones se basan en la densidad media de población del país.",
+      "empty": "No hay ubicaciones de eventos que cumplan los criterios",
+      "infoTooltip": "Se muestran eventos con datos de densidad de población del país. Las ubicaciones de datos antiguos sin información de precisión se marcan como pendientes de actualización. Las áreas estimadas pueden superponerse.",
+      "eventCount_one": "{{count}} evento",
+      "eventCount_many": "{{count}} eventos",
+      "eventCount_other": "{{count}} eventos",
+      "locationPending": "Precisión de ubicación pendiente de actualización",
+      "unrestCoverage": "Cobertura de disturbios",
+      "ucdpPending": "Cobertura de UCDP pendiente de actualización",
+      "coverageShown": "Eventos mostrados: {{shown}} de {{total}}",
+      "coverageLeftOut": "No mostrados: {{imprecise}} sin ubicación precisa, {{noEstimate}} en países sin datos de densidad, {{otherPlaces}} después de los 10 primeros lugares por fuente"
     },
     "countryTimeline": {
       "now": "ahora",
@@ -2722,7 +2730,7 @@
     },
     "sanctionsPressure": {
       "title": "Sanciones y Designaciones",
-      "infoTooltip": "Oficina de Control de Activos Extranjeros Listas de Nacionales Especialmente Designados y Listas Consolidadas más designaciones SEMA/JVCFOA de Asuntos Globales de Canadá. Muestra qué países enfrentan la mayor presión de designación, qué programas la impulsan y qué se ha añadido recientemente desde la última actualización.",
+      "infoTooltip": "Listas OFAC SDN y consolidadas, junto con las designaciones SEMA/JVCFOA de Canadá. Las filas de países usan asociaciones directas. Las banderas de buques y los registros de aeronaves se cuentan por separado en registros; un recuento de activos de cero para un país no implica que no haya activos sancionados. Los países de las entidades matrices se separan de las pruebas de domicilio y se excluyen de las puntuaciones de riesgo.",
       "loading": "Cargando datos de sanciones...",
       "unavailable": "Datos de sanciones no disponibles.",
       "summary": {
@@ -2734,7 +2742,9 @@
       "sections": {
         "countries": "Países sancionados",
         "entries": "Designaciones recientes",
-        "programs": "Programas"
+        "programs": "Programas",
+        "flagRegistries": "Registros de banderas de buques y de aeronaves",
+        "regulationTargets": "Países objetivo de los reglamentos SEMA"
       },
       "empty": {
         "countries": "Sin atribución de país disponible.",
@@ -2758,7 +2768,8 @@
         "program": "Programa",
         "undated": "sin fecha"
       },
-      "designations_many": "{{count}} designaciones"
+      "designations_many": "{{count}} designaciones",
+      "targetExplanation": "Los países objetivo de los reglamentos no son pruebas de nacionalidad ni de domicilio. Se excluyen de las puntuaciones de riesgo de los países y de los informes."
     },
     "radiationWatch": {
       "title": "Monitoreo de Radiación",
@@ -4514,7 +4525,17 @@
     "renameHint": "{{name}} — doble clic para renombrar",
     "deleteTab": "Eliminar pestaña",
     "deleteTabAria": "Eliminar pestaña {{name}}",
-    "tabNameAria": "Nombre de pestaña"
+    "tabNameAria": "Nombre de pestaña",
+    "addTabTitleSaved": "Pestaña nueva (comienza con los paneles que guardaste)",
+    "newTabOptions": "Opciones de pestaña nueva",
+    "newTabStartsDefault": "Las pestañas nuevas comienzan con los paneles predeterminados.",
+    "newTabStartsSaved": "Las pestañas nuevas comienzan con los paneles que guardaste.",
+    "newTabOptionsHint": "Las pestañas que ya tienes no cambian.",
+    "useThisTabPanels": "Usa los paneles de esta pestaña",
+    "useDefaultPanels": "Usa los paneles predeterminados",
+    "newTabPanelsNotSaved": "No se pudo guardar. Este navegador está bloqueando el almacenamiento del sitio.",
+    "team": "Equipo",
+    "teamDashboards": "Dashboards del equipo"
   },
   "theaterPresets": {
     "label": "Paquetes de cobertura",
@@ -4886,5 +4907,22 @@
     "close": "Cerrar",
     "alertsHint": "Instala World Monitor en tu pantalla de inicio para recibir alertas en este iPhone o iPad.",
     "how": "Cómo instalar"
+  },
+  "teamDashboards": {
+    "desc": "Dashboards que comparte tu equipo. Abre uno para agregarlo como una nueva pestaña.",
+    "empty": "Tu equipo aún no ha compartido ningún dashboard. Comparte esta pestaña para darle a todos en tu equipo sus paneles, tamaños y mapa.",
+    "open": "Abrir {{name}} como una nueva pestaña",
+    "stopSharing": "Dejar de compartir {{name}}",
+    "confirmStop": "¿Dejar de compartir {{name}} con tu equipo? Las pestañas que las personas ya abrieron desde él permanecerán como están.",
+    "shareTab": "Compartir esta pestaña con tu equipo",
+    "shareChanges": "Compartir los cambios de esta pestaña con tu equipo",
+    "behind": "Tu equipo cambió este dashboard después de que lo abriste.",
+    "getLatest": "Obtener la versión más reciente",
+    "opened": "Se abrió {{name}} desde tu equipo.",
+    "shared": "Se compartió {{name}} con tu equipo.",
+    "updated": "Esta pestaña ahora tiene la versión más reciente de tu equipo.",
+    "stopped": "Se dejó de compartir {{name}}.",
+    "failed": "No se pudo acceder a los dashboards de tu equipo. Intenta de nuevo.",
+    "limit": "Tu equipo ya comparte {{limit}} dashboards aquí. Deja de compartir uno primero."
   }
 }

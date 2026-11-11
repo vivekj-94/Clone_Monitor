@@ -1618,10 +1618,18 @@
       "dataPreparing": "Actualisation des données de préparation tech — celles-ci apparaîtront bientôt."
     },
     "populationExposure": {
-      "totalAffected": "Total concerné",
-      "affectedCount": "{{count}} concerné",
-      "radiusKm": "Rayon de {{km}}km",
-      "infoTooltip": "<strong>Estimations de l'exposition de la population</strong> Population estimée dans le rayon d'impact de l'événement. Basé sur les données de densité des pays WorldPop.<ul><li>Conflit : rayon de 50 km</li><li>Tremblement de terre : rayon de 100 km</li><li>Inondation : rayon de 100 km</li><li>Incendies de forêt : rayon de 30 km</li></ul>"
+      "estimateWithin": "Environ {{count}} personnes dans un rayon de {{km}} km",
+      "method": "Les estimations reposent sur la densité moyenne de population du pays.",
+      "empty": "Aucun lieu d’événement ne répond aux critères",
+      "infoTooltip": "Les événements disposant de données de densité de population du pays sont affichés. Les lieux issus de données anciennes sans information de précision sont signalés en attente de mise à jour. Les zones estimées peuvent se chevaucher.",
+      "eventCount_one": "{{count}} événement",
+      "eventCount_many": "{{count}} événements",
+      "eventCount_other": "{{count}} événements",
+      "locationPending": "Précision du lieu en attente de mise à jour",
+      "unrestCoverage": "Couverture des troubles",
+      "ucdpPending": "Couverture UCDP en attente de mise à jour",
+      "coverageShown": "Événements affichés : {{shown}} sur {{total}}",
+      "coverageLeftOut": "Non affichés : {{imprecise}} sans localisation précise, {{noEstimate}} dans des pays sans données de densité, {{otherPlaces}} au-delà des 10 premiers lieux par source"
     },
     "satelliteFires": {
       "region": "Région",
@@ -2722,7 +2730,7 @@
     },
     "sanctionsPressure": {
       "title": "Sanctions et désignations",
-      "infoTooltip": "Liste des ressortissants désignés spécialement et listes consolidées de l'Office of Foreign Assets Control plus les désignations SEMA/JVCFOA d'Affaires mondiales Canada. Affiche les pays qui font face à la plus forte pression de désignation, les programmes qui la conduisent et ce qui a été nouvellement ajouté depuis la dernière mise à jour.",
+      "infoTooltip": "Listes OFAC SDN et consolidées, ainsi que les désignations SEMA/JVCFOA du Canada. Les lignes des pays utilisent les liens directs. Les pavillons des navires et les immatriculations des aéronefs sont comptés séparément dans les registres ; un nombre nul pour un pays ne signifie pas une absence d’actifs sanctionnés. Les pays des entités mères sont distincts des preuves d’adresse et exclus des scores de risque.",
       "loading": "Chargement des données de sanctions...",
       "unavailable": "Données de sanctions indisponibles.",
       "summary": {
@@ -2734,7 +2742,9 @@
       "sections": {
         "countries": "Pays sanctionnés",
         "entries": "Désignations récentes",
-        "programs": "Programmes"
+        "programs": "Programmes",
+        "flagRegistries": "Registres des pavillons et des aéronefs",
+        "regulationTargets": "Pays visés par les règlements SEMA"
       },
       "empty": {
         "countries": "Aucune attribution de pays disponible.",
@@ -2758,7 +2768,8 @@
         "program": "Programme",
         "undated": "sans date"
       },
-      "designations_many": "{{count}} désignations"
+      "designations_many": "{{count}} désignations",
+      "targetExplanation": "Les pays visés par les règlements ne constituent pas des preuves de nationalité ou d’adresse. Ils sont exclus des scores de risque des pays et des notes de synthèse."
     },
     "radiationWatch": {
       "title": "Surveillance des radiations",
@@ -4514,7 +4525,17 @@
     "renameHint": "{{name}} — double-cliquer pour renommer",
     "deleteTab": "Supprimer l'onglet",
     "deleteTabAria": "Supprimer l'onglet {{name}}",
-    "tabNameAria": "Nom de l'onglet"
+    "tabNameAria": "Nom de l'onglet",
+    "addTabTitleSaved": "Nouvel onglet (commence avec les panneaux que vous avez enregistrés)",
+    "newTabOptions": "Options des nouveaux onglets",
+    "newTabStartsDefault": "Les nouveaux onglets commencent avec les panneaux par défaut.",
+    "newTabStartsSaved": "Les nouveaux onglets commencent avec les panneaux que vous avez enregistrés.",
+    "newTabOptionsHint": "Les onglets que vous avez déjà ne changent pas.",
+    "useThisTabPanels": "Utiliser les panneaux de cet onglet",
+    "useDefaultPanels": "Utiliser les panneaux par défaut",
+    "newTabPanelsNotSaved": "Impossible d'enregistrer. Ce navigateur bloque le stockage des données du site.",
+    "team": "Équipe",
+    "teamDashboards": "Dashboards d'équipe"
   },
   "theaterPresets": {
     "label": "Packs de couverture",
@@ -4886,5 +4907,22 @@
     "close": "Fermer",
     "alertsHint": "Installez World Monitor sur votre écran d'accueil pour recevoir des alertes sur cet iPhone ou iPad.",
     "how": "Comment installer"
+  },
+  "teamDashboards": {
+    "desc": "Dashboards partagés par votre équipe. Ouvrez-en un pour l'ajouter comme nouvel onglet.",
+    "empty": "Votre équipe n'a pas encore partagé de dashboard. Partagez cet onglet pour donner à toute votre équipe ses panneaux, ses tailles et sa carte.",
+    "open": "Ouvrir {{name}} dans un nouvel onglet",
+    "stopSharing": "Arrêter le partage de {{name}}",
+    "confirmStop": "Arrêter le partage de {{name}} avec votre équipe ? Les onglets déjà ouverts à partir de ce dashboard restent tels quels.",
+    "shareTab": "Partager cet onglet avec votre équipe",
+    "shareChanges": "Partager les modifications de cet onglet avec votre équipe",
+    "behind": "Votre équipe a modifié ce dashboard depuis que vous l'avez ouvert.",
+    "getLatest": "Obtenir la dernière version",
+    "opened": "{{name}} ouvert depuis votre équipe.",
+    "shared": "{{name}} partagé avec votre équipe.",
+    "updated": "Cet onglet a maintenant la dernière version de votre équipe.",
+    "stopped": "Partage de {{name}} arrêté.",
+    "failed": "Impossible de se connecter aux dashboards de votre équipe. Réessayez.",
+    "limit": "Votre équipe partage déjà {{limit}} dashboards ici. Arrêtez d'abord d'en partager un."
   }
 }

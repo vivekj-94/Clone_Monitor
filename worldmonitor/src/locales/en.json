@@ -1862,10 +1862,17 @@
       "infoTooltip": "<strong>Technology readiness</strong> World Bank composite score, 0–100. Weights are research and development 35%, internet 30%, broadband 20%, and mobile 15%. Internet users are a population percentage; mobile subscriptions are per 100 people; research spending is a share of economic output. Missing values show a dash. Data spans 2019–2024."
     },
     "populationExposure": {
-      "totalAffected": "Total Affected",
-      "affectedCount": "{{count}} affected",
-      "radiusKm": "{{km}}km radius",
-      "infoTooltip": "<strong>Population Exposure Estimates</strong> Estimated population within event impact radius. Based on WorldPop country density data.<ul><li>Conflict: 50km radius</li><li>Earthquake: 100km radius</li><li>Flood: 100km radius</li><li>Wildfire: 30km radius</li></ul>"
+      "estimateWithin": "~{{count}} people within {{km}} km",
+      "eventCount_one": "{{count}} event",
+      "eventCount_other": "{{count}} events",
+      "method": "Estimates use country-average population density.",
+      "empty": "No eligible event locations",
+      "infoTooltip": "Events with country density data are shown. Locations from older data without precision information are marked pending update. The estimated areas can overlap.",
+      "locationPending": "Location precision pending update",
+      "unrestCoverage": "Unrest coverage",
+      "ucdpPending": "UCDP coverage pending update",
+      "coverageShown": "Events shown: {{shown}} of {{total}}",
+      "coverageLeftOut": "Not shown: {{imprecise}} with no precise location, {{noEstimate}} in countries without density data, {{otherPlaces}} past the first 10 places per source"
     },
     "securityAdvisories": {
       "loading": "Fetching travel advisories...",
@@ -2936,7 +2943,7 @@
     },
     "sanctionsPressure": {
       "title": "Sanctions & Designations",
-      "infoTooltip": "Office of Foreign Assets Control Specially Designated Nationals and Consolidated Lists plus Global Affairs Canada SEMA/JVCFOA designations. Shows which countries face the highest designation pressure, what programs are driving it, and what has been newly added since the last update.",
+      "infoTooltip": "OFAC SDN and Consolidated Lists plus Canada SEMA/JVCFOA designations. Country rows use direct associations. Vessel flags and aircraft registries are counted separately under registries; zero country asset counts do not mean no sanctioned assets. Parent countries are separate from address evidence and excluded from risk scores.",
       "loading": "Loading sanctions data...",
       "unavailable": "Sanctions data unavailable.",
       "summary": {
@@ -2947,9 +2954,12 @@
       },
       "sections": {
         "countries": "Sanctioned countries",
+        "flagRegistries": "Flag and aircraft registries",
+        "regulationTargets": "SEMA regulation targets",
         "entries": "Recent designations",
         "programs": "Programs"
       },
+      "targetExplanation": "Regulation targets are not nationality or address evidence. Excluded from country risk scores and briefs.",
       "empty": {
         "countries": "No country attribution available.",
         "entries": "No recent designations.",
@@ -4561,10 +4571,37 @@
     "tabDeleted": "Tab \"{{name}}\" deleted",
     "addTab": "Add tab",
     "addTabTitle": "New tab (starts with the default panels)",
+    "addTabTitleSaved": "New tab (starts with the panels you saved)",
+    "newTabOptions": "New tab options",
+    "newTabStartsDefault": "New tabs start with the default panels.",
+    "newTabStartsSaved": "New tabs start with the panels you saved.",
+    "newTabOptionsHint": "Tabs you already have don't change.",
+    "useThisTabPanels": "Use this tab's panels",
+    "useDefaultPanels": "Use the default panels",
+    "newTabPanelsNotSaved": "Couldn't save. This browser is blocking site storage.",
     "renameHint": "{{name}} — double-click to rename",
     "deleteTab": "Delete tab",
     "deleteTabAria": "Delete tab {{name}}",
-    "tabNameAria": "Tab name"
+    "tabNameAria": "Tab name",
+    "team": "Team",
+    "teamDashboards": "Team dashboards"
+  },
+  "teamDashboards": {
+    "desc": "Dashboards your team shares. Open one to add it as a new tab.",
+    "empty": "Your team hasn't shared a dashboard yet. Share this tab to give everyone on your team its panels, sizes and map.",
+    "open": "Open {{name}} as a new tab",
+    "stopSharing": "Stop sharing {{name}}",
+    "confirmStop": "Stop sharing {{name}} with your team? Tabs people already opened from it stay as they are.",
+    "shareTab": "Share this tab with your team",
+    "shareChanges": "Share this tab's changes with your team",
+    "behind": "Your team changed this dashboard after you opened it.",
+    "getLatest": "Get the latest version",
+    "opened": "Opened {{name}} from your team.",
+    "shared": "Shared {{name}} with your team.",
+    "updated": "This tab now has your team's latest version.",
+    "stopped": "Stopped sharing {{name}}.",
+    "failed": "Couldn't reach your team's dashboards. Try again.",
+    "limit": "Your team already shares {{limit}} dashboards here. Stop sharing one first."
   },
   "layerExplanation": {
     "labels": {

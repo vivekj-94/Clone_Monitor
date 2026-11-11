@@ -1662,10 +1662,16 @@
       "dataPreparing": "기술 준비도 데이터 새로고침 중 — 곧 표시됩니다."
     },
     "populationExposure": {
-      "totalAffected": "총 영향 인구",
-      "affectedCount": "{{count}}명 영향",
-      "radiusKm": "{{km}}km 반경",
-      "infoTooltip": "<strong>인구 노출 추정</strong> 사건 영향 반경 내 추정 인구. WorldPop 국가 밀도 데이터 기반.<ul><li>분쟁: 50km 반경</li><li>지진: 100km 반경</li><li>홍수: 100km 반경</li><li>산불: 30km 반경</li></ul>"
+      "estimateWithin": "반경 {{km}}km 내 약 {{count}}명",
+      "method": "추정에는 해당 국가의 평균 인구 밀도를 사용합니다.",
+      "empty": "조건에 맞는 사건 위치 없음",
+      "infoTooltip": "국가 인구 밀도 데이터가 있는 사건을 표시합니다. 정확도 정보가 없는 이전 데이터의 위치에는 업데이트 대기 중으로 표시됩니다. 추정 지역은 겹칠 수 있습니다.",
+      "eventCount_other": "{{count}}개 사건",
+      "locationPending": "위치 정확도 업데이트 대기 중",
+      "unrestCoverage": "소요 사태 집계 범위",
+      "ucdpPending": "UCDP 집계 업데이트 대기 중",
+      "coverageShown": "표시된 이벤트: {{total}}건 중 {{shown}}건",
+      "coverageLeftOut": "표시 안 됨: 정확한 위치 없음 {{imprecise}}건, 인구 밀도 데이터가 없는 국가 {{noEstimate}}건, 출처별 처음 10곳 이후 {{otherPlaces}}건"
     },
     "securityAdvisories": {
       "loading": "여행 주의보 가져오는 중...",
@@ -2702,7 +2708,7 @@
     },
     "sanctionsPressure": {
       "title": "제재 및 지정",
-      "infoTooltip": "외국자산통제실 지정 국가자(SDN) 및 통합 목록 + 캐나다 글로벌 문제부 SEMA/JVCFOA 지정. 지정 압력이 가장 높은 국가, 이를 주도하는 프로그램, 마지막 업데이트 이후 새로 추가된 사항을 표시.",
+      "infoTooltip": "OFAC SDN 및 통합 목록과 캐나다 SEMA/JVCFOA 제재 지정입니다. 국가별 행은 직접적인 연관성을 사용합니다. 선박 국기와 항공기 등록은 등록 항목에서 별도로 집계되므로, 국가별 자산 수가 0이라고 해서 제재 대상 자산이 없다는 뜻은 아닙니다. 모기업 국가는 주소 증거와 구분되며 위험 점수에서 제외됩니다.",
       "loading": "제재 데이터 로드 중...",
       "unavailable": "제재 데이터를 사용할 수 없습니다.",
       "summary": {
@@ -2714,7 +2720,9 @@
       "sections": {
         "countries": "제재 대상국",
         "entries": "최근 지정",
-        "programs": "프로그램"
+        "programs": "프로그램",
+        "flagRegistries": "선박 국적 및 항공기 등록부",
+        "regulationTargets": "SEMA 규정 대상 국가"
       },
       "empty": {
         "countries": "국가 귀속 정보가 없습니다.",
@@ -2736,7 +2744,8 @@
         "unattributed": "미귀속",
         "program": "프로그램",
         "undated": "날짜 미지정"
-      }
+      },
+      "targetExplanation": "규정 대상 국가는 국적이나 주소의 증거가 아닙니다. 국가 위험 점수와 브리핑 집계에서 제외됩니다."
     },
     "radiationWatch": {
       "title": "방사선 감시",
@@ -4472,7 +4481,17 @@
     "renameHint": "{{name}} — 더블 클릭하여 이름 변경",
     "deleteTab": "탭 삭제",
     "deleteTabAria": "탭 {{name}} 삭제",
-    "tabNameAria": "탭 이름"
+    "tabNameAria": "탭 이름",
+    "addTabTitleSaved": "새 탭 (저장한 패널로 시작)",
+    "newTabOptions": "새 탭 옵션",
+    "newTabStartsDefault": "새 탭은 기본 패널로 시작합니다.",
+    "newTabStartsSaved": "새 탭은 저장한 패널로 시작합니다.",
+    "newTabOptionsHint": "이미 있는 탭은 변경되지 않습니다.",
+    "useThisTabPanels": "이 탭의 패널 사용",
+    "useDefaultPanels": "기본 패널 사용",
+    "newTabPanelsNotSaved": "저장할 수 없습니다. 이 브라우저가 사이트 저장소를 차단하고 있습니다.",
+    "team": "팀",
+    "teamDashboards": "팀 대시보드"
   },
   "theaterPresets": {
     "label": "커버리지 프리셋",
@@ -4844,5 +4863,22 @@
     "close": "닫기",
     "alertsHint": "이 iPhone 또는 iPad에서 알림을 받으려면 World Monitor를 홈 화면에 설치하세요.",
     "how": "설치 방법"
+  },
+  "teamDashboards": {
+    "desc": "팀이 공유하는 대시보드입니다. 열어서 새 탭으로 추가하세요.",
+    "empty": "팀이 아직 대시보드를 공유하지 않았습니다. 이 탭을 공유하여 팀의 모든 사람이 패널, 크기 및 지도를 볼 수 있도록 하세요.",
+    "open": "{{name}}을(를) 새 탭으로 열기",
+    "stopSharing": "{{name}} 공유 중지",
+    "confirmStop": "{{name}}을(를) 팀과 공유하지 않으시겠습니까? 이미 열어본 탭은 그대로 유지됩니다.",
+    "shareTab": "이 탭을 팀과 공유",
+    "shareChanges": "이 탭의 변경사항을 팀과 공유",
+    "behind": "팀이 이 대시보드를 열은 후 변경했습니다.",
+    "getLatest": "최신 버전 가져오기",
+    "opened": "팀에서 {{name}}을(를) 열었습니다.",
+    "shared": "{{name}}을(를) 팀과 공유했습니다.",
+    "updated": "이 탭이 팀의 최신 버전으로 업데이트되었습니다.",
+    "stopped": "{{name}} 공유를 중지했습니다.",
+    "failed": "팀의 대시보드에 연결할 수 없습니다. 다시 시도하세요.",
+    "limit": "팀이 여기에서 이미 {{limit}}개의 대시보드를 공유 중입니다. 먼저 하나의 공유를 중지하세요."
   }
 }

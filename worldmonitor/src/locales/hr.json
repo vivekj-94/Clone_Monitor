@@ -1825,10 +1825,18 @@
       "infoTooltip": "<strong>Tehnološka spremnost</strong> Kompozitni rezultat Svjetske banke, 0–100. Težine su istraživanje i razvoj 35%, internet 30%, širokopojasna veza 20% i mobilni 15%. Korisnici interneta su postotak populacije; mobilne pretplate su na 100 osoba; rashodi istraživanja su dio ekonomskog rezultata. Nedostajuće vrijednosti prikazuju crtu. Podaci obuhvaćaju 2019–2024."
     },
     "populationExposure": {
-      "totalAffected": "Ukupno pogođenih",
-      "affectedCount": "{{count}} pogođenih",
-      "radiusKm": "Radijus od {{km}} km",
-      "infoTooltip": "<strong>Procjene izloženosti stanovništva</strong> Procijenjena populacija u radijusu utjecaja događaja. Na osnovu podataka gustoće stanovništva WorldPop.<ul><li>Konflikt: 50 km radijus</li><li>Potres: 100 km radijus</li><li>Poplava: 100 km radijus</li><li>Požar: 30 km radijus</li></ul>"
+      "estimateWithin": "Oko {{count}} ljudi u krugu od {{km}} km",
+      "method": "Procjene se temelje na prosječnoj gustoći stanovništva države.",
+      "empty": "Nema odgovarajućih lokacija događaja",
+      "infoTooltip": "Prikazuju se događaji s podacima o gustoći stanovništva zemlje. Lokacije iz starijih podataka bez informacija o preciznosti označene su kao one koje čekaju ažuriranje. Procijenjena područja mogu se preklapati.",
+      "eventCount_one": "{{count}} događaj",
+      "eventCount_few": "{{count}} događaja",
+      "eventCount_other": "{{count}} događaja",
+      "locationPending": "Preciznost lokacije čeka ažuriranje",
+      "unrestCoverage": "Obuhvat nemira",
+      "ucdpPending": "Obuhvat UCDP-a čeka ažuriranje",
+      "coverageShown": "Prikazani događaji: {{shown}} od {{total}}",
+      "coverageLeftOut": "Nisu prikazani: {{imprecise}} bez točne lokacije, {{noEstimate}} u zemljama bez podataka o gustoći, {{otherPlaces}} nakon prvih 10 mjesta po izvoru"
     },
     "securityAdvisories": {
       "loading": "Preuzimanje putnih savjeta...",
@@ -2798,7 +2806,7 @@
     },
     "sanctionsPressure": {
       "title": "Sankcije i Označavanja",
-      "infoTooltip": "Ured za nadzor inozemne imovine — popis posebno određenih građana i konsolidirani popisi plus izbor Global Affairs Canada SEMA/JVCFOA. Prikazuje koje zemlje suočavaju najveći pritisak dodavanja na popis, koji programi ga pogone i što je novododan od posljednje ažuriranja.",
+      "infoTooltip": "Popisi OFAC SDN i konsolidirani popisi te kanadske sankcije SEMA/JVCFOA. Redci država koriste izravne veze. Zastave plovila i registracije zrakoplova broje se zasebno u registrima; nula imovine za državu ne znači da nema sankcionirane imovine. Države matičnih subjekata odvojene su od dokaza o adresi i isključene iz ocjena rizika.",
       "loading": "Učitavanje podataka sankcija...",
       "unavailable": "Podaci sankcija nisu dostupni.",
       "summary": {
@@ -2810,7 +2818,9 @@
       "sections": {
         "countries": "Zemlje pod sankcijama",
         "entries": "Nedavne designacije",
-        "programs": "Programi"
+        "programs": "Programi",
+        "flagRegistries": "Registri zastava plovila i zrakoplova",
+        "regulationTargets": "Države na koje se odnose propisi SEMA"
       },
       "empty": {
         "countries": "Nema dostupne atribucije zemlje.",
@@ -2834,7 +2844,8 @@
         "program": "Program",
         "undated": "bez datuma"
       },
-      "designations_few": "{{count}} designacije"
+      "designations_few": "{{count}} designacije",
+      "targetExplanation": "Države na koje se propisi odnose nisu dokaz državljanstva ili adrese. Isključene su iz ocjena rizika država i sažetih izvješća."
     },
     "radiationWatch": {
       "title": "Nadzor zračenja",
@@ -4525,7 +4536,17 @@
     "renameHint": "{{name}} — dvaput kliknite za preimenovanje",
     "deleteTab": "Obriši karticu",
     "deleteTabAria": "Obriši karticu {{name}}",
-    "tabNameAria": "Naziv kartice"
+    "tabNameAria": "Naziv kartice",
+    "addTabTitleSaved": "Nova kartica (počinje s panelima koje ste spremili)",
+    "newTabOptions": "Opcije nove kartice",
+    "newTabStartsDefault": "Nove kartice počinju s zadanim panelima.",
+    "newTabStartsSaved": "Nove kartice počinju s panelima koje ste spremili.",
+    "newTabOptionsHint": "Kartice koje već imate se ne mijenjaju.",
+    "useThisTabPanels": "Koristi panele ove kartice",
+    "useDefaultPanels": "Koristi zadane panele",
+    "newTabPanelsNotSaved": "Nije moguće spremiti. Ovaj preglednik blokira spremanje podataka na web-mjestu.",
+    "team": "Tim",
+    "teamDashboards": "Timske nadzorne ploče"
   },
   "theaterPresets": {
     "label": "Paketi pokrivenosti",
@@ -4897,5 +4918,22 @@
     "close": "Zatvori",
     "alertsHint": "Instalirajte World Monitor na početni zaslon kako biste primali upozorenja na ovom iPhoneu ili iPadu.",
     "how": "Kako instalirati"
+  },
+  "teamDashboards": {
+    "desc": "Nadzorne ploče koje dijeli vaš tim. Otvorite jednu da je dodate kao novu karticu.",
+    "empty": "Vaš tim još nije podijelio nijednu nadzornu ploču. Podijelite ovu karticu kako bi svi u vašem timu dobili njezine panele, veličine i kartu.",
+    "open": "Otvori {{name}} kao novu karticu",
+    "stopSharing": "Prestani dijeliti {{name}}",
+    "confirmStop": "Prestati dijeliti {{name}} sa svojim timom? Kartice koje su ljudi već otvorili ostaju kakve jesu.",
+    "shareTab": "Podijelite ovu karticu sa svojim timom",
+    "shareChanges": "Podijelite promjene ove kartice sa svojim timom",
+    "behind": "Vaš tim je promijenio ovu nadzornu ploču nakon što ste je otvorili.",
+    "getLatest": "Preuzmite najnoviju verziju",
+    "opened": "{{name}} otvoreno iz vašeg tima.",
+    "shared": "{{name}} podijeljeno s vašim timom.",
+    "updated": "Ova kartica sada ima najnoviju verziju vašeg tima.",
+    "stopped": "Dijeljenje {{name}} je zaustavljeno.",
+    "failed": "Nije moguće dohvatiti nadzorne ploče vašeg tima. Pokušajte ponovno.",
+    "limit": "Vaš tim već dijeli {{limit}} nadzornih ploča ovdje. Prvo prestanite dijeliti jednu."
   }
 }

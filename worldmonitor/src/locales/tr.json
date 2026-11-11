@@ -1666,10 +1666,17 @@
       "dataPreparing": "Teknoloji hazırlık verileri yenileniyor — kısa süre içinde görüntülenecek."
     },
     "populationExposure": {
-      "totalAffected": "Toplam Etkilenen",
-      "affectedCount": "{{count}} etkilenen",
-      "radiusKm": "{{km}}km yaricap",
-      "infoTooltip": "<strong>Nufus Maruziyet Tahminleri</strong> Olay etki yaricapi icindeki tahmini nufus. WorldPop ulke yogunluk verilerine dayanmaktadir.<ul><li>Catisma: 50km yaricap</li><li>Deprem: 100km yaricap</li><li>Sel: 100km yaricap</li><li>Orman yangini: 30km yaricap</li></ul>"
+      "estimateWithin": "{{km}} km yarıçap içinde yaklaşık {{count}} kişi",
+      "method": "Tahminler ülkenin ortalama nüfus yoğunluğuna dayanır.",
+      "empty": "Ölçütleri karşılayan olay konumu yok",
+      "infoTooltip": "Ülkenin nüfus yoğunluğu verileri bulunan olaylar gösterilir. Doğruluk bilgisi olmayan eski verilerdeki konumlar, güncelleme bekliyor olarak işaretlenir. Tahmini alanlar örtüşebilir.",
+      "eventCount_one": "{{count}} olay",
+      "eventCount_other": "{{count}} olay",
+      "locationPending": "Konum doğruluğu güncelleme bekliyor",
+      "unrestCoverage": "Huzursuzluk verilerinin kapsamı",
+      "ucdpPending": "UCDP kapsamı güncelleme bekliyor",
+      "coverageShown": "Gösterilen olaylar: {{total}} olaydan {{shown}}",
+      "coverageLeftOut": "Gösterilmeyen: kesin konumu olmayan {{imprecise}}, yoğunluk verisi olmayan ülkelerde {{noEstimate}}, kaynak başına ilk 10 yerden sonra {{otherPlaces}}"
     },
     "securityAdvisories": {
       "loading": "Seyahat uyarıları yükleniyor...",
@@ -2712,7 +2719,7 @@
     },
     "sanctionsPressure": {
       "title": "Yaptırımlar ve Tanımlamalar",
-      "infoTooltip": "Yabancı Varlıklar Kontrol Ofisi Özel Olarak Belirlenen Vatandaşlar ve Birleştirilmiş Listeler artı Global İşler Kanada SEMA/JVCFOA listeleme ekleri. Hangi ülkelerin en yüksek listeleme baskısı altında olduğunu, hangi programların bunu çalıştırdığını ve son güncellemeden bu yana yeni eklenenler gösterir.",
+      "infoTooltip": "OFAC SDN ve birleştirilmiş listeler ile Kanada SEMA/JVCFOA yaptırımları. Ülke satırları doğrudan bağlantıları kullanır. Gemi bayrakları ve uçak tescilleri sicillerde ayrı sayılır; bir ülkenin varlık sayısının sıfır olması yaptırıma tabi varlık bulunmadığı anlamına gelmez. Ana kuruluşların ülkeleri adres kanıtlarından ayrı tutulur ve risk puanlarına katılmaz.",
       "loading": "Yaptırım verileri yükleniyor...",
       "unavailable": "Yaptırım verileri kullanılamıyor.",
       "summary": {
@@ -2724,7 +2731,9 @@
       "sections": {
         "countries": "Yaptırım altındaki ülkeler",
         "entries": "Son tanımlamalar",
-        "programs": "Programlar"
+        "programs": "Programlar",
+        "flagRegistries": "Gemi bayrağı ve hava aracı sicilleri",
+        "regulationTargets": "SEMA düzenlemelerinin hedef ülkeleri"
       },
       "empty": {
         "countries": "Ülke atılması mevcut değildir.",
@@ -2747,7 +2756,8 @@
         "unattributed": "Atlanmamış",
         "program": "Program",
         "undated": "tarihsiz"
-      }
+      },
+      "targetExplanation": "Düzenlemelerin hedef ülkeleri vatandaşlık veya adres kanıtı değildir. Ülke risk puanlarına ve özet raporlara dahil edilmez."
     },
     "radiationWatch": {
       "title": "Radyasyon İzlemesi",
@@ -4493,7 +4503,17 @@
     "renameHint": "{{name}} — yeniden adlandırmak için çift tıklayın",
     "deleteTab": "Sekmeyi sil",
     "deleteTabAria": "{{name}} sekmesini sil",
-    "tabNameAria": "Sekme adı"
+    "tabNameAria": "Sekme adı",
+    "addTabTitleSaved": "Yeni sekme (kaydettiğiniz panellerle başlar)",
+    "newTabOptions": "Yeni sekme seçenekleri",
+    "newTabStartsDefault": "Yeni sekmeler varsayılan panellerle başlar.",
+    "newTabStartsSaved": "Yeni sekmeler kaydettiğiniz panellerle başlar.",
+    "newTabOptionsHint": "Zaten sahip olduğunuz sekmeler değişmez.",
+    "useThisTabPanels": "Bu sekmenin panellerini kullan",
+    "useDefaultPanels": "Varsayılan panelleri kullan",
+    "newTabPanelsNotSaved": "Kaydedilemedi. Bu tarayıcı site depolamayı engelliyor.",
+    "team": "Takım",
+    "teamDashboards": "Takım panoları"
   },
   "theaterPresets": {
     "label": "Kapsama ön ayarları",
@@ -4865,5 +4885,22 @@
     "close": "Kapat",
     "alertsHint": "Bu iPhone veya iPad'de uyarı almak için World Monitor'ı ana ekranınıza yükleyin.",
     "how": "Nasıl yüklenir"
+  },
+  "teamDashboards": {
+    "desc": "Takımınızın paylaştığı panolar. Yeni sekme olarak eklemek için bir tanesini açın.",
+    "empty": "Takımınız henüz bir pano paylaşmamış. Panonun tüm panellerini, boyutlarını ve haritasını takımınızın herkes tarafından görmesi için bu sekmeyi paylaşın.",
+    "open": "{{name}} öğesini yeni sekme olarak aç",
+    "stopSharing": "{{name}} öğesini paylaşmayı durdur",
+    "confirmStop": "{{name}} öğesini takımınızla paylaşmayı durdursun? Kişilerin zaten açtıkları sekmeler olduğu gibi kalır.",
+    "shareTab": "Bu sekmeyi takımınızla paylaş",
+    "shareChanges": "Bu sekmedeki değişiklikleri takımınızla paylaş",
+    "behind": "Takımınız bu panoyu açtıktan sonra değiştirdi.",
+    "getLatest": "En son sürümü al",
+    "opened": "{{name}} öğesi takımınızdan açıldı.",
+    "shared": "{{name}} öğesi takımınızla paylaşıldı.",
+    "updated": "Bu sekme artık takımınızın en son sürümünü içeriyor.",
+    "stopped": "{{name}} öğesini paylaşmak durduruldu.",
+    "failed": "Takımınızın panolarına ulaşılamadı. Lütfen tekrar deneyin.",
+    "limit": "Takımınız burada zaten {{limit}} pano paylaşıyor. Önce bir tanesini paylaşmayı durdurun."
   }
 }

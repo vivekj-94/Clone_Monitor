@@ -2699,6 +2699,19 @@ if (!IRAN_EVENTS_ENABLED) {
   delete SEED_META.strikePressure;
 }
 
+// Sources whose content is a scheduled government release (food-price sheets
+// from ministries, statistics offices and FAO/FEWS NET). These publishers run
+// days or weeks late without anything being broken on our side, so a
+// STALE_CONTENT incident waits GOVERNMENT_RELEASE_INCIDENT_GRACE_MIN past the
+// content limit before it goes to Sentry (WORLDMONITOR-1DQ). Health status and
+// the panel's stale label still change at the limit itself.
+const GOVERNMENT_RELEASE_KEYS = new Set(
+  Object.entries(SEED_META)
+    .filter(([, meta]) => meta.key.startsWith('seed-meta:economic:food-prices-'))
+    .map(([name]) => name),
+);
+const GOVERNMENT_RELEASE_INCIDENT_GRACE_MIN = 30 * 24 * 60;
+
 // Standalone keys that are populated on-demand by RPC handlers (not seeds).
 // Empty = WARN not CRIT since they only exist after first request.
 //
@@ -3778,11 +3791,24 @@ function projectSourceFailure(meta, policy, now, maxStaleMin) {
   if (Array.isArray(policy)) policy = policy.find(candidate => candidate.failureCodePattern.test(meta?.errorCode));
   if (!policy || meta?.sourceState !== 'degraded') return null;
   let retainedUntil = Infinity;
+  let sourceHealth;
   if (policy.sources) {
     const failed = meta.failedSources;
     const states = Array.isArray(failed) && failed.length > 0 && failed.length < policy.sources.length
       && new Set(failed).size === failed.length && failed.every((source) => policy.sources.includes(source))
       ? failed.map((source) => meta.sourceHealth?.[source]) : [];
+    if (states.length > 0) {
+      sourceHealth = Object.fromEntries(failed.map((source, index) => {
+        const state = states[index];
+        const evidence = {};
+        for (const field of ['lastSuccessAt', 'firstFailureAt', 'retainedUntil', 'retainedRecordCount']) {
+          const value = state?.[field];
+          evidence[field] = Number.isSafeInteger(value) && value >= (field === 'retainedRecordCount' ? 0 : 1)
+            ? value : null;
+        }
+        return [source, evidence];
+      }));
+    }
     const valid = states.length > 0 && states.every((state) =>
       Number.isSafeInteger(state?.consecutiveFailures) && state.consecutiveFailures >= 1
       && [state.lastSuccessAt, state.firstFailureAt, state.retainedUntil].every((value) => Number.isSafeInteger(value) && value > 0)
@@ -3833,6 +3859,7 @@ function projectSourceFailure(meta, policy, now, maxStaleMin) {
     lastSourceFailureCode,
     pending,
     pendingUntil,
+    sourceHealth,
   };
 }
 
@@ -4545,6 +4572,7 @@ function classifyKey(name, redisKey, opts, ctx) {
   // sitting unread in seed-meta.
   if ((fault === 'SEED_ERROR' || sourceFailure) && errorCode) entry.errorCode = errorCode;
   if (sourceFailure) {
+    if (sourceFailure.sourceHealth) entry.sourceHealth = sourceFailure.sourceHealth;
     if (sourceFailure.consecutiveSourceFailures !== null) {
       entry.consecutiveSourceFailures = sourceFailure.consecutiveSourceFailures;
     }
@@ -5895,6 +5923,30 @@ function pendingIncidentKeys(alertedRaw, sigKeys) {
   return sigKeys.filter((key) => !alerted.has(key));
 }
 
+/**
+ * Whether a `<source>:<status>` incident should go to Sentry now. A late
+ * government release is held back until its content is more than
+ * GOVERNMENT_RELEASE_INCIDENT_GRACE_MIN past its limit. Without a readable
+ * content age, or with a future-dated one, nothing is held back: both point
+ * at our parser or bad upstream data, not a late publisher.
+ */
+function isReportableIncident(key, checks) {
+  const separator = key.lastIndexOf(':');
+  const name = key.slice(0, separator);
+  if (key.slice(separator + 1) !== 'STALE_CONTENT' || !GOVERNMENT_RELEASE_KEYS.has(name)) return true;
+  const { contentAgeMin, maxContentAgeMin } = checks[name] ?? {};
+  if (!Number.isFinite(contentAgeMin) || !Number.isFinite(maxContentAgeMin)) return true;
+  // A future-dated item (negative age) is bad data, not a late publisher.
+  if (contentAgeMin < 0) return true;
+  return contentAgeMin > maxContentAgeMin + GOVERNMENT_RELEASE_INCIDENT_GRACE_MIN;
+}
+
+// A held-back incident is never recorded as alerted, so each sweep re-checks
+// it and it reports on the first sweep after its grace runs out.
+function reportableIncidentKeys(keys, checks) {
+  return keys.filter((key) => isReportableIncident(key, checks));
+}
+
 // The next record: still-active incidents already accepted, plus the ones
 // accepted this sweep. Recovered and undelivered incidents are left out.
 function nextAlertedIncidents(alertedRaw, sigKeys, delivered) {
@@ -5910,6 +5962,7 @@ const SOURCE_INCIDENT_DIAGNOSTIC_FIELDS = [
   'minRecordCount', 'rankableRecordCount', 'minRankableRecordCount',
   'poolCounts', 'minPoolCounts', 'coverage', 'decisionGroups', 'failedDatasets',
   'dominantFailureMode', 'lastSourceFailureCode', 'consecutiveSourceFailures',
+  'sourceHealth',
   'chinaStatus', 'seedStatus', 'counts', 'problems', 'degradedStreak', 'degradedProblemKey', 'reason',
   // Set by the composers after classification: chokepoint transits missing
   // their measurable inputs, the CII input audit, the read-model gate, and the
@@ -6687,7 +6740,7 @@ export async function handleHealth(req, ctx, options = {}) {
       if (Array.isArray(result) && result[1] && !result[1].error
         && parseAlertedIncidents(result[1].result) !== null) {
         const alertedRaw = result[1].result ?? null;
-        const pending = pendingIncidentKeys(alertedRaw, diagnostics.sigKeys);
+        const pending = reportableIncidentKeys(pendingIncidentKeys(alertedRaw, diagnostics.sigKeys), checks);
         const outcomes = await Promise.all(pending.map((key) => (
           reportSourceIncident(key, checks, ctx, options.captureIncident).catch(() => false)
         )));
@@ -6828,6 +6881,10 @@ export const __testing__ = {
   healthResponseBody,
   collectFailureLogProblems,
   pendingIncidentKeys,
+  isReportableIncident,
+  reportableIncidentKeys,
+  GOVERNMENT_RELEASE_KEYS,
+  GOVERNMENT_RELEASE_INCIDENT_GRACE_MIN,
   nextAlertedIncidents,
   HEALTH_INCIDENT_ALERTS_KEY,
   dataStatusFromSummary,

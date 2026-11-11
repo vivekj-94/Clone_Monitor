@@ -1142,10 +1142,17 @@
       "recentMissing": "Ingen data denna gång från {{countries}}; deras filer misslyckades att läsas in, vilket inte betyder noll förskjutning."
     },
     "populationExposure": {
-      "totalAffected": "Totalt påverkad",
-      "affectedCount": "{{count}} påverkas",
-      "radiusKm": "{{km}}km radie",
-      "infoTooltip": "<strong>Befolkningsexponeringsuppskattningar</strong> Uppskattad population inom händelsens påverkansradie. Baserat på WorldPop-landstäthetsdata.<ul><li>Konflikt: 50 km radie</li><li>Jordbävning: 100 km radie</li><li>Översvämning: 100 km radie</li><li>Voldbrand: 5__4 km radie"
+      "estimateWithin": "Cirka {{count}} personer inom en radie på {{km}} km",
+      "method": "Uppskattningarna bygger på landets genomsnittliga befolkningstäthet.",
+      "empty": "Inga händelseplatser uppfyller kraven",
+      "infoTooltip": "Händelser med uppgifter om landets befolkningstäthet visas. Platser från äldre data utan precisionsuppgifter markeras som väntande på uppdatering. De uppskattade områdena kan överlappa.",
+      "eventCount_one": "{{count}} händelse",
+      "eventCount_other": "{{count}} händelser",
+      "locationPending": "Platsens precision väntar på uppdatering",
+      "unrestCoverage": "Täckning av oroligheter",
+      "ucdpPending": "UCDP-täckning väntar på uppdatering",
+      "coverageShown": "Visade händelser: {{shown}} av {{total}}",
+      "coverageLeftOut": "Visas inte: {{imprecise}} utan exakt plats, {{noEstimate}} i länder utan täthetsdata, {{otherPlaces}} efter de första 10 platserna per källa"
     },
     "countryTimeline": {
       "now": "nu",
@@ -2328,7 +2335,7 @@
     },
     "sanctionsPressure": {
       "title": "Sanktioner och beteckningar",
-      "infoTooltip": "Office of Foreign Assets Control särskilt utnämnda medborgare och konsoliderade listor plus Global Affairs Canada SEMA/JVCFOA-utseenden. Visar vilka länder som står inför högst utseendestryck, vilka program som driver det och vad som nyligen lagts till sedan senaste uppdateringen.",
+      "infoTooltip": "OFAC:s SDN- och konsoliderade listor samt Kanadas SEMA/JVCFOA-sanktioner. Landsrader använder direkta kopplingar. Fartygsflaggor och flygplansregistreringar räknas separat under register; noll tillgångar för ett land betyder inte att sanktionerade tillgångar saknas. Moderorganisationers länder hålls åtskilda från adressuppgifter och ingår inte i riskpoäng.",
       "loading": "Läser in sanktionsdata...",
       "unavailable": "Sanktionsdata är inte tillgänglig.",
       "summary": {
@@ -2340,7 +2347,9 @@
       "sections": {
         "countries": "Sanktionerade länder",
         "entries": "Senaste beteckningar",
-        "programs": "Program"
+        "programs": "Program",
+        "flagRegistries": "Flagg- och luftfartygsregister",
+        "regulationTargets": "Målländer för SEMA-förordningar"
       },
       "empty": {
         "countries": "Ingen landsattribution tillgänglig.",
@@ -2363,7 +2372,8 @@
         "unattributed": "Ej tillskrivet",
         "program": "Program",
         "undated": "utan datum"
-      }
+      },
+      "targetExplanation": "Förordningarnas målländer är inte belägg för nationalitet eller adress. De ingår inte i ländernas riskpoäng eller lägesrapporter."
     },
     "radiationWatch": {
       "title": "Strålningsbevakning",
@@ -4493,7 +4503,17 @@
     "renameHint": "{{name}} — dubbelklicka för att byta namn",
     "deleteTab": "Ta bort flik",
     "deleteTabAria": "Ta bort flik {{name}}",
-    "tabNameAria": "Fliknamn"
+    "tabNameAria": "Fliknamn",
+    "addTabTitleSaved": "Ny flik (startar med de paneler du sparade)",
+    "newTabOptions": "Alternativ för ny flik",
+    "newTabStartsDefault": "Nya flikar startar med standardpanelerna.",
+    "newTabStartsSaved": "Nya flikar startar med de paneler du sparade.",
+    "newTabOptionsHint": "Flikar du redan har ändras inte.",
+    "useThisTabPanels": "Använd denna fliks paneler",
+    "useDefaultPanels": "Använd standardpanelerna",
+    "newTabPanelsNotSaved": "Kunde inte spara. Den här webbläsaren blockerar webbplatslagring.",
+    "team": "Team",
+    "teamDashboards": "Team-instrumentpaneler"
   },
   "theaterPresets": {
     "label": "Täckningspaket",
@@ -4865,5 +4885,22 @@
     "close": "Stäng",
     "alertsHint": "Installera World Monitor på hemskärmen för att få aviseringar på denna iPhone eller iPad.",
     "how": "Så installerar du"
+  },
+  "teamDashboards": {
+    "desc": "Instrumentpaneler som ditt team delar. Öppna en för att lägga till den som en ny flik.",
+    "empty": "Ditt team har inte delat någon instrumentpanel än. Dela denna flik för att ge alla i ditt team dess paneler, storlekar och karta.",
+    "open": "Öppna {{name}} som en ny flik",
+    "stopSharing": "Sluta dela {{name}}",
+    "confirmStop": "Sluta dela {{name}} med ditt team? Flikar som människor redan har öppnat från den förblir som de är.",
+    "shareTab": "Dela denna flik med ditt team",
+    "shareChanges": "Dela denna fliks ändringar med ditt team",
+    "behind": "Ditt team ändrade denna instrumentpanel efter att du öppnade den.",
+    "getLatest": "Hämta den senaste versionen",
+    "opened": "Öppnade {{name}} från ditt team.",
+    "shared": "Delade {{name}} med ditt team.",
+    "updated": "Denna flik har nu din teams senaste version.",
+    "stopped": "Slutade dela {{name}}.",
+    "failed": "Kunde inte nå din teams instrumentpaneler. Försök igen.",
+    "limit": "Ditt team delar redan {{limit}} instrumentpaneler här. Sluta dela en först."
   }
 }

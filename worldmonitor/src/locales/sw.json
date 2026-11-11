@@ -1816,10 +1816,17 @@
       "infoTooltip": "<strong>Uandaaji wa teknolojia</strong> Alama ya jumla ya Bank Duniani, 0–100. Uzani ni utafiti na maendeleo 35%, mtandao 30%, mtandao wa broadband 20%, na simu 15%. Watumiaji wa mtandao ni asilimia ya idadi ya watu; uondoaji wa simu ni kwa watu 100; matumizi ya utafiti ni sehemu ya matokeo ya kiuchumi. Thamani zisizojulikana zinaonyesha mstari. Data inatoka 2019–2024."
     },
     "populationExposure": {
-      "totalAffected": "Jumla ya Walioathirika",
-      "affectedCount": "{{count}} walioathirika",
-      "radiusKm": "Radi ya kilomita {{km}}",
-      "infoTooltip": "<strong>Makadirio ya Mfichuo wa Idadi ya Watu</strong> Idadi ya watu inayokadiriwa ndani ya eneo la athari. Kulingana na data ya msongamano wa nchi za WorldPop.<ul><li>Migogoro: 50km radius</li><li>Tetemeko la ardhi: 100km radius</li><li>Mafuriko: 100km radius</li><li>Moto wa nyika: 30km radius</li></ul>"
+      "estimateWithin": "Takriban watu {{count}} ndani ya eneo la kilomita {{km}}",
+      "method": "Makadirio yanatumia wastani wa msongamano wa watu nchini.",
+      "empty": "Hakuna maeneo ya matukio yanayokidhi vigezo",
+      "infoTooltip": "Matukio yenye data ya msongamano wa watu wa nchi yanaonyeshwa. Maeneo kutoka data ya zamani bila taarifa za usahihi yanawekwa alama ya kusubiri sasisho. Maeneo yanayokadiriwa yanaweza kuingiliana.",
+      "eventCount_one": "{{count}} tukio",
+      "eventCount_other": "{{count}} matukio",
+      "locationPending": "Usahihi wa eneo unasubiri sasisho",
+      "unrestCoverage": "Ufunikaji wa machafuko",
+      "ucdpPending": "Ufunikaji wa UCDP unasubiri sasisho",
+      "coverageShown": "Matukio yaliyoonyeshwa: {{shown}} kati ya {{total}}",
+      "coverageLeftOut": "Hayajaonyeshwa: {{imprecise}} bila mahali sahihi, {{noEstimate}} katika nchi zisizo na data ya msongamano, {{otherPlaces}} baada ya maeneo 10 ya kwanza kwa kila chanzo"
     },
     "securityAdvisories": {
       "loading": "Inaleta mashauri ya usafiri...",
@@ -2677,7 +2684,7 @@
     },
     "sanctionsPressure": {
       "title": "Vikwazo na Uteuzi",
-      "infoTooltip": "Office of Foreign Assets Control Specially Designated Nationals na Consolidated Lists pamoja na Global Affairs Canada SEMA/JVCFOA designations. Inaonyesha nchi ipi inakabali mkazo wa juu wa designation, programu gani inayokamatisha, na nini kilichoongezwa mapya tangu sasisho la mwisho.",
+      "infoTooltip": "Orodha za OFAC SDN na zilizounganishwa pamoja na vikwazo vya Kanada vya SEMA/JVCFOA. Safu za nchi hutumia mahusiano ya moja kwa moja. Bendera za meli na usajili wa ndege huhesabiwa kando katika sajili; idadi ya mali ya nchi ikiwa sifuri haimaanishi hakuna mali iliyowekewa vikwazo. Nchi za taasisi mama hutenganishwa na ushahidi wa anwani na hazijumuishwi katika alama za hatari.",
       "loading": "Inapakia data ya vikwazo...",
       "unavailable": "Data ya vikwazo haipatikani.",
       "summary": {
@@ -2689,7 +2696,9 @@
       "sections": {
         "countries": "Nchi zilizoidhinishwa",
         "entries": "Majina ya hivi majuzi",
-        "programs": "Mipango"
+        "programs": "Mipango",
+        "flagRegistries": "Rejista za bendera za vyombo na za ndege",
+        "regulationTargets": "Nchi zinazolengwa na kanuni za SEMA"
       },
       "empty": {
         "countries": "Hakuna sifa ya nchi inayopatikana.",
@@ -2712,7 +2721,8 @@
         "unattributed": "Haijahusishwa",
         "program": "Mpango",
         "undated": "isiyo na tarehe"
-      }
+      },
+      "targetExplanation": "Nchi zinazolengwa na kanuni si ushahidi wa uraia au anwani. Hazijumuishwi katika alama za hatari za nchi na taarifa fupi."
     },
     "radiationWatch": {
       "title": "Saa ya Mionzi",
@@ -4493,7 +4503,17 @@
     "renameHint": "{{name}} - bofya mara mbili ili kubadilisha jina",
     "deleteTab": "Futa kichupo",
     "deleteTabAria": "Futa kichupo cha {{name}}",
-    "tabNameAria": "Jina la kichupo"
+    "tabNameAria": "Jina la kichupo",
+    "addTabTitleSaved": "Kichupo kipya (kinaanza na paneli ulizohifadhi)",
+    "newTabOptions": "Chaguzi za kichupo kipya",
+    "newTabStartsDefault": "Vichupo vipya huanza na paneli chaguo-msingi.",
+    "newTabStartsSaved": "Vichupo vipya huanza na paneli ulizohifadhi.",
+    "newTabOptionsHint": "Vichupo ulivyonavyo tayari havibadiliki.",
+    "useThisTabPanels": "Tumia paneli za kichupo hiki",
+    "useDefaultPanels": "Tumia paneli chaguo-msingi",
+    "newTabPanelsNotSaved": "Haikuweza kuhifadhi. Kivinjari hiki kinazuia uhifadhi wa tovuti.",
+    "team": "Timu",
+    "teamDashboards": "Dashboards za timu"
   },
   "theaterPresets": {
     "label": "Mipangilio ya ufuatiliaji",
@@ -4865,5 +4885,22 @@
     "close": "Funga",
     "alertsHint": "Sakinisha World Monitor kwenye Skrini ya Mwanzo ili kupata arifa kwenye iPhone au iPad hii.",
     "how": "Jinsi ya kusakinisha"
+  },
+  "teamDashboards": {
+    "desc": "Dashboards ambazo timu yako inashiriki. Fungua moja ili kuiongeza kama kichupo kipya.",
+    "empty": "Timu yako haijashiriki dashboard hata moja. Shiriki kichupo hiki ili kuwapa kila mtu katika timu yako paneli zake, ukubwa na ramani.",
+    "open": "Fungua {{name}} kama kichupo kipya",
+    "stopSharing": "Acha kushiriki {{name}}",
+    "confirmStop": "Acha kushiriki {{name}} na timu yako? Micheza ambayo watu tayari waliyofungua kutoka hapo itabaki kama ilivyokuwa.",
+    "shareTab": "Shiriki kichupo hiki na timu yako",
+    "shareChanges": "Shiriki mabadiliko ya kichupo hiki na timu yako",
+    "behind": "Timu yako ilibadilisha dashboard hii baada ya kulifungua.",
+    "getLatest": "Pata toleo la hivi karibuni",
+    "opened": "Ilifungua {{name}} kutoka timu yako.",
+    "shared": "Ilishiriki {{name}} na timu yako.",
+    "updated": "Kichupo hiki sasa kina toleo la hivi karibuni la timu yako.",
+    "stopped": "Ikacha kushiriki {{name}}.",
+    "failed": "Haikuweza kufikia dashboards za timu yako. Jaribu tena.",
+    "limit": "Timu yako tayari inashiriki dashboards {{limit}} hapa. Acha kushiriki moja kwanza."
   }
 }

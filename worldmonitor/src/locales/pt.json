@@ -1143,10 +1143,18 @@
       "recentMissing": "Sem dados desta vez de {{countries}}; seus arquivos falharam ao carregar, o que não significa deslocamento zero."
     },
     "populationExposure": {
-      "totalAffected": "Total afetado",
-      "affectedCount": "{{count}} afetado",
-      "radiusKm": "Raio de {{km}}km",
-      "infoTooltip": "<strong>Estimativas de exposição populacional</strong> População estimada dentro do raio de impacto do evento. Com base nos dados de densidade do país WorldPop.<ul><li>Conflito: raio de 50 km</li><li>Terremoto: raio de 100 km</li><li>Inundação: raio de 100 km</li><li>Incêndio: raio de 30 km</li></ul>"
+      "estimateWithin": "Cerca de {{count}} pessoas num raio de {{km}} km",
+      "method": "As estimativas usam a densidade populacional média do país.",
+      "empty": "Nenhum local de evento atende aos critérios",
+      "infoTooltip": "São mostrados eventos com dados de densidade populacional do país. Locais de dados antigos sem informações de precisão são marcados como aguardando atualização. As áreas estimadas podem se sobrepor.",
+      "eventCount_one": "{{count}} evento",
+      "eventCount_many": "{{count}} eventos",
+      "eventCount_other": "{{count}} eventos",
+      "locationPending": "Precisão da localização aguardando atualização",
+      "unrestCoverage": "Cobertura de distúrbios",
+      "ucdpPending": "Cobertura UCDP aguardando atualização",
+      "coverageShown": "Eventos mostrados: {{shown}} de {{total}}",
+      "coverageLeftOut": "Não mostrados: {{imprecise}} sem localização precisa, {{noEstimate}} em países sem dados de densidade, {{otherPlaces}} além dos 10 primeiros locais por fonte"
     },
     "countryTimeline": {
       "now": "agora",
@@ -2336,7 +2344,7 @@
     },
     "sanctionsPressure": {
       "title": "Sanções e Designações",
-      "infoTooltip": "Office of Foreign Assets Control Specially Designated Nationals and Consolidated Lists mais designações Global Affairs Canada SEMA/JVCFOA. Mostra quais países enfrentam a maior pressão de designação, quais programas estão impulsionando-a e o que foi adicionado recentemente desde a última atualização.",
+      "infoTooltip": "Listas OFAC SDN e consolidadas, além das designações SEMA/JVCFOA do Canadá. As linhas dos países usam associações diretas. Bandeiras de embarcações e registros de aeronaves são contados separadamente nos registros; uma contagem de ativos igual a zero para um país não significa ausência de ativos sancionados. Os países das entidades controladoras são separados das evidências de endereço e excluídos das pontuações de risco.",
       "loading": "Carregando dados de sanções...",
       "unavailable": "Dados de sanções indisponíveis.",
       "summary": {
@@ -2348,7 +2356,9 @@
       "sections": {
         "countries": "Países sancionados",
         "entries": "Designações recentes",
-        "programs": "Programas"
+        "programs": "Programas",
+        "flagRegistries": "Registos de bandeira de navios e de aeronaves",
+        "regulationTargets": "Países visados pelos regulamentos SEMA"
       },
       "empty": {
         "countries": "Nenhuma atribuição de país disponível.",
@@ -2372,7 +2382,8 @@
         "program": "Programa",
         "undated": "sem data"
       },
-      "designations_many": "{{count}} designações"
+      "designations_many": "{{count}} designações",
+      "targetExplanation": "Os países visados pelos regulamentos não são provas de nacionalidade ou morada. São excluídos das pontuações de risco dos países e dos relatórios resumidos."
     },
     "radiationWatch": {
       "title": "Monitoramento de Radiação",
@@ -4514,7 +4525,17 @@
     "renameHint": "{{name}} — duplo clique para renomear",
     "deleteTab": "Eliminar separador",
     "deleteTabAria": "Eliminar separador {{name}}",
-    "tabNameAria": "Nome do separador"
+    "tabNameAria": "Nome do separador",
+    "addTabTitleSaved": "Novo separador (começa com os painéis que guardou)",
+    "newTabOptions": "Opções de novo separador",
+    "newTabStartsDefault": "Os novos separadores começam com os painéis predefinidos.",
+    "newTabStartsSaved": "Os novos separadores começam com os painéis que guardou.",
+    "newTabOptionsHint": "Os separadores que já tem não mudam.",
+    "useThisTabPanels": "Usar os painéis deste separador",
+    "useDefaultPanels": "Usar os painéis predefinidos",
+    "newTabPanelsNotSaved": "Não foi possível guardar. Este navegador está a bloquear o armazenamento do site.",
+    "team": "Equipa",
+    "teamDashboards": "Dashboards da equipa"
   },
   "theaterPresets": {
     "label": "Predefinições de cobertura",
@@ -4886,5 +4907,22 @@
     "close": "Fechar",
     "alertsHint": "Instale o World Monitor na Tela de Início para receber alertas neste iPhone ou iPad.",
     "how": "Como instalar"
+  },
+  "teamDashboards": {
+    "desc": "Dashboards que a sua equipa partilha. Abra um para o adicionar como novo separador.",
+    "empty": "A sua equipa ainda não partilhou nenhum dashboard. Partilhe este separador para dar a toda a equipa os seus painéis, tamanhos e mapa.",
+    "open": "Abrir {{name}} num novo separador",
+    "stopSharing": "Deixar de partilhar {{name}}",
+    "confirmStop": "Deixar de partilhar {{name}} com a sua equipa? Os separadores que já foram abertos a partir dele ficam como estão.",
+    "shareTab": "Partilhar este separador com a sua equipa",
+    "shareChanges": "Partilhar as alterações deste separador com a sua equipa",
+    "behind": "A sua equipa alterou este dashboard depois de o abrir.",
+    "getLatest": "Obter a versão mais recente",
+    "opened": "{{name}} aberto a partir da sua equipa.",
+    "shared": "{{name}} partilhado com a sua equipa.",
+    "updated": "Este separador tem agora a versão mais recente da sua equipa.",
+    "stopped": "Deixou de partilhar {{name}}.",
+    "failed": "Não foi possível aceder aos dashboards da sua equipa. Tente novamente.",
+    "limit": "A sua equipa já partilha {{limit}} dashboards aqui. Deixe primeiro de partilhar um."
   }
 }

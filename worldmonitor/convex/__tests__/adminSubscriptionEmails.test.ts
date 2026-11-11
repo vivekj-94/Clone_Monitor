@@ -183,6 +183,44 @@ describe("admin new-subscription email: conversion context", () => {
     expect(html).not.toContain("Referrer:");
     expect(html).not.toContain("Billing Country:");
   });
+
+  test("the exact landing path from the checkout metadata reaches the admin email", async () => {
+    const sends = mockResend();
+    const t = convexTest(schema, modules);
+    await seedPlan(t);
+
+    await activate(t, {
+      metadata: {
+        wm_user_id: "user_buyer",
+        wm_acq_referrer: "chatgpt.com",
+        wm_acq_landing: "countries",
+        wm_acq_path: "/countries/iran/",
+      },
+    });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    const html = sends().find((send) => send.subject.startsWith("[WM] New User Subscribed"))?.html ?? "";
+    expect(html).toMatch(/Landing Page:<\/td><td[^>]*>\/countries\/iran\/ \(countries\)</);
+  });
+
+  test("a crafted landing path in the checkout metadata never reaches the admin email", async () => {
+    const sends = mockResend();
+    const t = convexTest(schema, modules);
+    await seedPlan(t);
+
+    await activate(t, {
+      metadata: {
+        wm_user_id: "user_buyer",
+        wm_acq_landing: "countries",
+        wm_acq_path: "/countries/<img src=x>/",
+      },
+    });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+
+    const html = sends().find((send) => send.subject.startsWith("[WM] New User Subscribed"))?.html ?? "";
+    expect(html).toMatch(/Landing Page:<\/td><td[^>]*>countries</);
+    expect(html).not.toContain("img");
+  });
 });
 
 describe("adminNewSubscriptionHtml", () => {
@@ -200,6 +238,59 @@ describe("adminNewSubscriptionHtml", () => {
     expect(html).toMatch(/Referrer:<\/td><td[^>]*>direct</);
     expect(html).toMatch(/First Visit:<\/td><td[^>]*>2026-03-21 \(same day as purchase\)</);
     expect(html).not.toContain("not captured");
+  });
+
+  test("a tagged link with no referrer header does not read as a direct visit", () => {
+    const html = adminNewSubscriptionHtml({
+      ...base,
+      conversion: {
+        purchasedAt: PURCHASED_AT,
+        acquisition: { source: "chatgpt-com", referrer: "direct", landing: "dashboard", firstSeen: "2026-03-20" },
+      },
+    });
+    expect(html).toMatch(/Source:<\/td><td[^>]*>ChatGPT \(chatgpt-com\)</);
+    expect(html).toMatch(/Referrer:<\/td><td[^>]*>none recorded \(source from utm tag\)</);
+    expect(html).not.toMatch(/Referrer:<\/td><td[^>]*>direct</);
+  });
+
+  test("a medium or campaign tag without utm_source keeps the direct referrer", () => {
+    const html = adminNewSubscriptionHtml({
+      ...base,
+      conversion: { purchasedAt: PURCHASED_AT, acquisition: { medium: "email", referrer: "direct" } },
+    });
+    expect(html).toMatch(/Referrer:<\/td><td[^>]*>direct</);
+  });
+
+  test("an AI assistant source reads by its product name, with the stored tag beside it", () => {
+    const sourceRow = (source: string, extra: Record<string, string> = {}) => adminNewSubscriptionHtml({
+      ...base,
+      conversion: { purchasedAt: PURCHASED_AT, acquisition: { source, ...extra } },
+    }).match(/Source:<\/td><td[^>]*>([^<]*)</)?.[1];
+    expect(sourceRow("chatgpt-com")).toBe("ChatGPT (chatgpt-com)");
+    expect(sourceRow("perplexity-ai")).toBe("Perplexity (perplexity-ai)");
+    expect(sourceRow("claude-ai", { medium: "referral" })).toBe("Claude (claude-ai) / referral");
+    expect(sourceRow("twitter", { medium: "social" })).toBe("twitter / social");
+    expect(sourceRow("constructor")).toBe("constructor");
+    expect(sourceRow("tostring")).toBe("tostring");
+  });
+
+  test("the landing page row names the exact path and its family", () => {
+    const html = adminNewSubscriptionHtml({
+      ...base,
+      conversion: {
+        purchasedAt: PURCHASED_AT,
+        acquisition: { referrer: "direct", landing: "countries", path: "/countries/iran/" },
+      },
+    });
+    expect(html).toMatch(/Landing Page:<\/td><td[^>]*>\/countries\/iran\/ \(countries\)</);
+  });
+
+  test("a record written before the path existed shows the family alone", () => {
+    const html = adminNewSubscriptionHtml({
+      ...base,
+      conversion: { purchasedAt: PURCHASED_AT, acquisition: { referrer: "direct", landing: "countries" } },
+    });
+    expect(html).toMatch(/Landing Page:<\/td><td[^>]*>countries</);
   });
 
   test("a referral alone counts as a captured source", () => {

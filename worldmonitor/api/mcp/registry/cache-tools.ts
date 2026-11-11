@@ -1,6 +1,8 @@
 import { spokenChokepointStatus, spokenForecastPredictions, spokenPredictionMarkets } from '../spoken-narrators';
 import { CROSS_BORDER_SOURCES, projectCrossBorderSnapshots } from '../../../server/worldmonitor/displacement/v1/cross-border-data';
 import { screenSanctions } from '../../../server/_shared/sanctions-screen';
+import { normalizeFlagRegistries, splitSanctionsAttribution } from '../../../shared/sanctions-attribution';
+import type { ListSanctionsPressureResponse } from '../../../src/generated/server/worldmonitor/sanctions/v1/service_server';
 import { COUNTRY_HISTORY_TOOL } from './country-history-tool';
 import { projectSupplyChainData } from './_shipping-freight';
 import { CAPITAL_FLOW_PAIR_LEG_SCHEMA, CAPITAL_FLOWS_MAX_COUNTRIES, CAPITAL_FLOWS_PAIRS_LABEL, CAPITAL_FLOWS_SORTS, projectCapitalFlows, type CapitalFlowsSort } from './_capital-flows';
@@ -1042,7 +1044,7 @@ export const CACHE_TOOLS: ToolDef[] = [
     name: 'get_market_data',
     title: 'Market quotes and commodity prices',
     _outputBudgetBytes: 131072,
-    description: 'Return the seeded market snapshot: equity, commodity, crypto and Gulf-market quotes, sector performance with explicit valuation coverage, ETF flows and the Fear & Greed index; subscriptions also get SGE physical-vs-COMEX premiums and physical-divergence regimes, which a free account receives as `locked` with an upgradeUrl. Quotes are flagged stale after 30 minutes. Covers the curated symbol universe only: symbols filters that snapshot and cannot look up arbitrary tickers. Seeded-cache read with no live fetch: weight 1 on API plans, included in the signed-in free allowance. asset_class selects classes, limit caps each per-class list (default 30, 0 for no cap). Dedicated paid plans open or reuse one market panel allocation across filters; refresh with request_id starts a new one. API plans retain per-tool billing.',
+    description: 'Return the seeded market snapshot: equity, commodity, crypto and Gulf-market quotes, sector performance with explicit valuation coverage, ETF flows and the Fear & Greed index; subscriptions also get SGE physical-vs-COMEX premiums and physical-divergence regimes, which a free account receives as `locked` with an upgradeUrl. Quotes stale after 30m. Brent/WTI: spot 4d; futures normal NYMEX breaks plus 30m restart grace. Covers the curated symbol universe only: symbols filters that snapshot and cannot look up arbitrary tickers. Seeded-cache read with no live fetch: weight 1 on API plans, included in the signed-in free allowance. asset_class selects classes, limit caps each per-class list (default 30, 0 for no cap). Dedicated paid plans open or reuse one market panel allocation across filters; refresh with request_id starts a new one. API plans retain per-tool billing.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1225,7 +1227,7 @@ export const CACHE_TOOLS: ToolDef[] = [
         data['commodities-bootstrap'] = {
           ...commodities,
           quotes: commodities.quotes.map(quote => isCrudeOilTicker(quote.symbol) ? {
-            ...quote, stale: isStaleOilPrice(quote.priceAt, oilTapeMaxAgeMs(quote.priceBasis), now),
+            ...quote, stale: isStaleOilPrice(quote.priceAt, oilTapeMaxAgeMs(quote.priceBasis, now), now),
           } : quote),
         };
       }
@@ -2567,9 +2569,22 @@ export const CACHE_TOOLS: ToolDef[] = [
         properties: {
           entries: { type: 'array', items: { type: 'object', properties: {
             countryCodes: { type: ['array', 'string'] }, entityType: { type: 'string' },
+            parentCountryCodes: { type: 'array', items: { type: 'string' }, description: 'Linked-parent countries for addressless entities, separate from direct country evidence and excluded from country risk counts.' },
+            parentCountryNames: { type: 'array', items: { type: 'string' } },
           } } },
-          countries: { type: 'array', items: { type: 'object', properties: {
+          countries: { type: 'array', description: 'Direct country associations. Asset counts here exclude flags and aircraft registries; zero does not imply no sanctioned assets in a registry. Use flagRegistries for registry counts.', items: { type: 'object', properties: {
             countryCode: { type: 'string' }, pressureScore: { type: 'number' },
+          } } },
+          unattributed: { type: 'object', description: 'Counts across the full pressure snapshot before country or entity filters.', properties: {
+            entryCount: { type: 'integer' }, vesselCount: { type: 'integer' }, aircraftCount: { type: 'integer' },
+          } },
+          flagRegistries: { type: 'array', description: 'Top vessel flag and aircraft registries. A flag or registry is often one of convenience and is not counted in countries.', items: { type: 'object', properties: {
+            countryCode: { type: 'string' }, countryName: { type: 'string' }, vesselCount: { type: 'integer' }, newVesselCount: { type: 'integer' },
+            aircraftCount: { type: 'integer' }, newAircraftCount: { type: 'integer' },
+          } } },
+          regulationTargets: { type: 'array', description: 'Top SEMA regulation target states for people and entities; excluded from country risk and brief counts.', items: { type: 'object', properties: {
+            countryCode: { type: 'string' }, countryName: { type: 'string' }, entryCount: { type: 'integer' }, newEntryCount: { type: 'integer' },
+            vesselCount: { type: 'integer' }, aircraftCount: { type: 'integer' },
           } } },
         },
       },
@@ -2597,6 +2612,15 @@ export const CACHE_TOOLS: ToolDef[] = [
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     _postFilter: (data, params) => {
       const { countries, days, cursor } = sanctionsArguments(params);
+      const pressure = data.pressure as ListSanctionsPressureResponse | null | undefined;
+      if (pressure) {
+        data.pressure = {
+          ...pressure,
+          regulationTargets: pressure.regulationTargets ?? [],
+          ...(Array.isArray(pressure.countries) ? splitSanctionsAttribution(pressure.countries, pressure.unattributed) : {}),
+          ...(Array.isArray(pressure.flagRegistries) ? { flagRegistries: normalizeFlagRegistries(pressure.flagRegistries) } : {}),
+        };
+      }
       const etype = argStr(params.entity_type);
       const query = argStr(params.query);
       const limit = (argNum(params.limit) ?? DEFAULT_LIST_LIMIT);
@@ -2634,6 +2658,7 @@ export const CACHE_TOOLS: ToolDef[] = [
         narrowArray(data, 'entities', (e) => matchesCode(e.cc, countries));
         narrowNested(data, 'pressure', 'entries', (e) => matchesCode(e.countryCodes, countries));
         narrowNested(data, 'pressure', 'countries', (c) => matchesCode(c.countryCode, countries));
+        narrowNested(data, 'pressure', 'flagRegistries', (c) => matchesCode(c.countryCode, countries));
       }
       if (etype) {
         narrowArray(data, 'entities', (e) => ciIncludes(e.et, etype));
@@ -3058,7 +3083,7 @@ export const CACHE_TOOLS: ToolDef[] = [
           date: { type: 'string', description: 'EIA observation date. For spot prices, the week ending date.' },
           unit: { type: 'string', description: 'Source unit. Stocks and production use thousand barrels and thousand barrels per day; prices use USD per barrel.' },
           priceSource: { const: 'EIA' }, priceBasis: { const: 'spot' }, frequency: { const: 'weekly' },
-          stale: { type: 'boolean', description: 'Spot observation is undated or older than 10 days.' },
+          stale: { type: 'boolean', description: 'Weekly spot observation is missing, invalid, future-dated, or past the next scheduled EIA release plus a 24-hour refresh grace.' },
         },
       } },
       index: { type: ['object', 'null'], properties: { regions: { type: 'array', items: { type: 'object' } } } },

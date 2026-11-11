@@ -1142,10 +1142,17 @@
       "recentMissing": "Geen gegevens dit keer van {{countries}}; hun bestanden konden niet worden geladen, wat niet nul verplaatsing betekent."
     },
     "populationExposure": {
-      "totalAffected": "Totaal getroffen",
-      "affectedCount": "{{count}} getroffen",
-      "radiusKm": "straal van {{km}}km",
-      "infoTooltip": "<strong>Blootstellingsschattingen van de bevolking</strong> Geschatte populatie binnen de impactradius van de gebeurtenis. Gebaseerd op gegevens over de landdichtheid van WorldPop.<ul><li>Conflict: straal van 50 km</li><li>Aardbeving: straal van 100 km</li><li>Overstroming: straal van 100 km</li><li>Natuurbrand: straal van 30 km</li></ul>"
+      "estimateWithin": "Ongeveer {{count}} mensen binnen een straal van {{km}} km",
+      "method": "De schattingen zijn gebaseerd op de gemiddelde bevolkingsdichtheid van het land.",
+      "empty": "Geen geschikte gebeurtenislocaties",
+      "infoTooltip": "Gebeurtenissen met gegevens over de bevolkingsdichtheid van het land worden getoond. Locaties uit oudere gegevens zonder nauwkeurigheidsinformatie worden gemarkeerd als wachtend op een update. De geschatte gebieden kunnen overlappen.",
+      "eventCount_one": "{{count}} gebeurtenis",
+      "eventCount_other": "{{count}} gebeurtenissen",
+      "locationPending": "Locatienauwkeurigheid wacht op update",
+      "unrestCoverage": "Dekking van onrust",
+      "ucdpPending": "UCDP-dekking wacht op update",
+      "coverageShown": "Getoonde gebeurtenissen: {{shown}} van {{total}}",
+      "coverageLeftOut": "Niet getoond: {{imprecise}} zonder precieze locatie, {{noEstimate}} in landen zonder dichtheidsgegevens, {{otherPlaces}} na de eerste 10 plaatsen per bron"
     },
     "countryTimeline": {
       "now": "nu",
@@ -2328,7 +2335,7 @@
     },
     "sanctionsPressure": {
       "title": "Sancties & Aanwijzingen",
-      "infoTooltip": "Office of Foreign Assets Control Specially Designated Nationals and Consolidated Lists plus Global Affairs Canada SEMA/JVCFOA-toevoegingen. Toont welke landen het meeste druk ervaren voor toevoegingen, welke programma's dit aansturen en wat sinds de laatste update is toegevoegd.",
+      "infoTooltip": "OFAC SDN- en geconsolideerde lijsten plus Canadese SEMA/JVCFOA-sancties. Landrijen gebruiken directe koppelingen. Scheepsvlaggen en vliegtuigregistraties worden apart geteld onder registers; nul activa bij een land betekent niet dat er geen gesanctioneerde activa zijn. Landen van moederorganisaties staan los van adresgegevens en tellen niet mee voor risicoscores.",
       "loading": "Sanctiegegevens laden...",
       "unavailable": "Sanctiegegevens niet beschikbaar.",
       "summary": {
@@ -2340,7 +2347,9 @@
       "sections": {
         "countries": "Gesanctioneerde landen",
         "entries": "Recente aanwijzingen",
-        "programs": "Programma's"
+        "programs": "Programma's",
+        "flagRegistries": "Vlaggen- en luchtvaartuigregisters",
+        "regulationTargets": "Doellanden van SEMA-regelgeving"
       },
       "empty": {
         "countries": "Geen landenattributie beschikbaar.",
@@ -2363,7 +2372,8 @@
         "unattributed": "Niet toegewezen",
         "program": "Programma",
         "undated": "zonder datum"
-      }
+      },
+      "targetExplanation": "Doellanden van regelgeving zijn geen bewijs van nationaliteit of adres. Ze worden uitgesloten van landenrisicoscores en samenvattingen."
     },
     "radiationWatch": {
       "title": "Stralingsbewaking",
@@ -4493,7 +4503,17 @@
     "renameHint": "{{name}} — dubbelklik om te hernoemen",
     "deleteTab": "Tabblad verwijderen",
     "deleteTabAria": "Tabblad {{name}} verwijderen",
-    "tabNameAria": "Tabbladnaam"
+    "tabNameAria": "Tabbladnaam",
+    "addTabTitleSaved": "Nieuw tabblad (begint met de panelen die je hebt opgeslagen)",
+    "newTabOptions": "Opties voor nieuw tabblad",
+    "newTabStartsDefault": "Nieuwe tabbladen beginnen met de standaardpanelen.",
+    "newTabStartsSaved": "Nieuwe tabbladen beginnen met de panelen die je hebt opgeslagen.",
+    "newTabOptionsHint": "Tabbladen die je al hebt, veranderen niet.",
+    "useThisTabPanels": "Gebruik de panelen van dit tabblad",
+    "useDefaultPanels": "Gebruik de standaardpanelen",
+    "newTabPanelsNotSaved": "Kon niet opslaan. Deze browser blokkeert sitegegevens.",
+    "team": "Team",
+    "teamDashboards": "Teamdashboards"
   },
   "theaterPresets": {
     "label": "Dekkingspresets",
@@ -4865,5 +4885,22 @@
     "close": "Sluiten",
     "alertsHint": "Installeer World Monitor op je beginscherm om meldingen te ontvangen op deze iPhone of iPad.",
     "how": "Installatie-instructies"
+  },
+  "teamDashboards": {
+    "desc": "Dashboards die je team deelt. Open er een om het als nieuw tabblad toe te voegen.",
+    "empty": "Je team heeft nog geen dashboard gedeeld. Deel dit tabblad om iedereen in je team de panelen, groottes en kaart ervan te geven.",
+    "open": "Open {{name}} als nieuw tabblad",
+    "stopSharing": "Stoppen met delen van {{name}}",
+    "confirmStop": "Stoppen met het delen van {{name}} met je team? Tabbladen die mensen er al van hebben geopend, blijven zoals ze zijn.",
+    "shareTab": "Deel dit tabblad met je team",
+    "shareChanges": "Deel de wijzigingen van dit tabblad met je team",
+    "behind": "Je team heeft dit dashboard gewijzigd nadat je het opende.",
+    "getLatest": "Haal de nieuwste versie op",
+    "opened": "{{name}} van je team geopend.",
+    "shared": "{{name}} gedeeld met je team.",
+    "updated": "Dit tabblad heeft nu de nieuwste versie van je team.",
+    "stopped": "Gestopt met delen van {{name}}.",
+    "failed": "Kan de dashboards van je team niet bereiken. Probeer het opnieuw.",
+    "limit": "Je team deelt hier al {{limit}} dashboards. Stop eerst met het delen van een ervan."
   }
 }

@@ -1679,10 +1679,18 @@
       "recentMissing": "Nessun dato in questo momento da {{countries}}; i loro file non si sono caricati, il che non significa zero sfollati."
     },
     "populationExposure": {
-      "totalAffected": "Totale esposto",
-      "affectedCount": "{{count}} interessati",
-      "radiusKm": "raggio {{km}} km",
-      "infoTooltip": "<strong>Stime di esposizione della popolazione</strong> Popolazione stimata nel raggio di impatto dell'evento. In base ai dati sulla densità dei paesi WorldPop.<ul><li>Conflitto: raggio di 50 km</li><li>Terremoto: raggio di 100 km</li><li>Alluvione: raggio di 100 km</li><li>Incendio: raggio di 30 km</li></ul>"
+      "estimateWithin": "Circa {{count}} persone entro {{km}} km",
+      "method": "Le stime si basano sulla densità media di popolazione del paese.",
+      "empty": "Nessun luogo di evento soddisfa i criteri",
+      "infoTooltip": "Sono mostrati gli eventi con dati sulla densità di popolazione del paese. Le posizioni di dati precedenti senza informazioni sulla precisione sono contrassegnate come in attesa di aggiornamento. Le aree stimate possono sovrapporsi.",
+      "eventCount_one": "{{count}} evento",
+      "eventCount_many": "{{count}} eventi",
+      "eventCount_other": "{{count}} eventi",
+      "locationPending": "Precisione della posizione in attesa di aggiornamento",
+      "unrestCoverage": "Copertura dei disordini",
+      "ucdpPending": "Copertura UCDP in attesa di aggiornamento",
+      "coverageShown": "Eventi mostrati: {{shown}} su {{total}}",
+      "coverageLeftOut": "Non mostrati: {{imprecise}} senza posizione precisa, {{noEstimate}} in paesi senza dati di densità, {{otherPlaces}} oltre i primi 10 luoghi per fonte"
     },
     "countryTimeline": {
       "now": "ora",
@@ -2722,7 +2730,7 @@
     },
     "sanctionsPressure": {
       "title": "Sanzioni e designazioni",
-      "infoTooltip": "Office of Foreign Assets Control Specially Designated Nationals and Consolidated Lists più designazioni Global Affairs Canada SEMA/JVCFOA. Mostra quali paesi affrontano la massima pressione di designazione, quali programmi la guidano e cosa è stato aggiunto di recente dall'ultimo aggiornamento.",
+      "infoTooltip": "Liste OFAC SDN e consolidate, oltre alle designazioni SEMA/JVCFOA del Canada. Le righe dei paesi usano associazioni dirette. Le bandiere delle navi e i registri degli aeromobili sono conteggiati separatamente nei registri; un conteggio pari a zero per un paese non indica assenza di beni sanzionati. I paesi delle entità madri sono separati dalle prove di indirizzo ed esclusi dai punteggi di rischio.",
       "loading": "Caricamento dati sanzioni in corso...",
       "unavailable": "Dati sanzioni non disponibili.",
       "summary": {
@@ -2734,7 +2742,9 @@
       "sections": {
         "countries": "Paesi sanzionati",
         "entries": "Designazioni recenti",
-        "programs": "Programmi"
+        "programs": "Programmi",
+        "flagRegistries": "Registri di bandiera delle navi e degli aeromobili",
+        "regulationTargets": "Paesi destinatari dei regolamenti SEMA"
       },
       "empty": {
         "countries": "Nessuna attribuzione di paese disponibile.",
@@ -2758,7 +2768,8 @@
         "program": "Programma",
         "undated": "senza data"
       },
-      "designations_many": "{{count}} designazioni"
+      "designations_many": "{{count}} designazioni",
+      "targetExplanation": "I paesi destinatari dei regolamenti non costituiscono prove di nazionalità o indirizzo. Sono esclusi dai punteggi di rischio dei paesi e dai rapporti sintetici."
     },
     "radiationWatch": {
       "title": "Monitoraggio radiazioni",
@@ -4514,7 +4525,17 @@
     "renameHint": "{{name}} — doppio clic per rinominare",
     "deleteTab": "Elimina scheda",
     "deleteTabAria": "Elimina scheda {{name}}",
-    "tabNameAria": "Nome scheda"
+    "tabNameAria": "Nome scheda",
+    "addTabTitleSaved": "Nuova scheda (inizia con i pannelli che hai salvato)",
+    "newTabOptions": "Opzioni nuova scheda",
+    "newTabStartsDefault": "Le nuove schede iniziano con i pannelli predefiniti.",
+    "newTabStartsSaved": "Le nuove schede iniziano con i pannelli che hai salvato.",
+    "newTabOptionsHint": "Le schede che hai già non cambiano.",
+    "useThisTabPanels": "Usa i pannelli di questa scheda",
+    "useDefaultPanels": "Usa i pannelli predefiniti",
+    "newTabPanelsNotSaved": "Impossibile salvare. Questo browser blocca l'archiviazione del sito.",
+    "team": "Team",
+    "teamDashboards": "Dashboard del team"
   },
   "theaterPresets": {
     "label": "Preset di copertura",
@@ -4886,5 +4907,22 @@
     "close": "Chiudi",
     "alertsHint": "Installa World Monitor sulla schermata Home per ricevere avvisi su questo iPhone o iPad.",
     "how": "Come installare"
+  },
+  "teamDashboards": {
+    "desc": "Dashboard che il tuo team condivide. Aprine uno per aggiungerlo come nuova scheda.",
+    "empty": "Il tuo team non ha ancora condiviso nessun dashboard. Condividi questa scheda per dare a tutti nel team i suoi pannelli, dimensioni e mappa.",
+    "open": "Apri {{name}} come nuova scheda",
+    "stopSharing": "Interrompi la condivisione di {{name}}",
+    "confirmStop": "Interrompere la condivisione di {{name}} con il tuo team? Le schede che le persone hanno già aperto rimangono come sono.",
+    "shareTab": "Condividi questa scheda con il tuo team",
+    "shareChanges": "Condividi i cambiamenti di questa scheda con il tuo team",
+    "behind": "Il tuo team ha modificato questo dashboard dopo che l'hai aperto.",
+    "getLatest": "Ottieni la versione più recente",
+    "opened": "Aperto {{name}} dal tuo team.",
+    "shared": "Condiviso {{name}} con il tuo team.",
+    "updated": "Questa scheda ora ha la versione più recente del tuo team.",
+    "stopped": "Interrotta la condivisione di {{name}}.",
+    "failed": "Impossibile raggiungere i dashboard del tuo team. Riprova.",
+    "limit": "Il tuo team condivide già {{limit}} dashboard qui. Interrompi la condivisione di uno prima."
   }
 }

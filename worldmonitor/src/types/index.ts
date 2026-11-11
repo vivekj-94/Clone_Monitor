@@ -260,6 +260,10 @@ export interface MarketData {
   priceSource?: string;
   priceBasis?: string;
   priceAt?: number;
+  /** Width of each sparkline bar in seconds (300 intraday, 86400 daily closes). */
+  sparklineIntervalSeconds?: number;
+  /** Start of the first sparkline bar in epoch ms; closed periods are left out after it. */
+  sparklineStartAt?: number;
 }
 
 export interface CryptoData {
@@ -427,6 +431,8 @@ export interface UcdpGeoEvent {
   date_end: string;
   latitude: number;
   longitude: number;
+  hasPreciseLocation?: boolean;
+  locationName?: string;
   country: string;
   side_a: string;
   side_b: string;
@@ -437,7 +443,7 @@ export interface UcdpGeoEvent {
   source_original: string;
 }
 
-// WorldPop Population Exposure
+// Population Exposure
 export interface CountryPopulation {
   code: string;
   name: string;
@@ -453,6 +459,18 @@ export interface PopulationExposure {
   lon: number;
   exposedPopulation: number;
   exposureRadiusKm: number;
+  eventCount: number;
+  locationPending?: boolean;
+}
+
+// Every feed event lands in exactly one bucket: a shown row or one of the three left-out reasons.
+export interface ExposureCoverage {
+  totalEvents: number;
+  withoutPreciseLocation: number;
+  withoutEstimate: number;
+  atOtherPlaces: number;
+  // When true, these counts cover unrest only, not the older UCDP projection.
+  ucdpPending?: boolean;
 }
 
 // Military base operator types
@@ -872,6 +890,7 @@ export interface SocialUnrestEvent {
   summary?: string;
   eventType: ProtestEventType;
   city?: string;
+  hasPreciseLocation?: boolean;
   country: string;
   region?: string;
   lat: number;

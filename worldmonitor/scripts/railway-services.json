@@ -104,6 +104,7 @@
       "scripts/shared/ucdp-candidate.cjs",
       "scripts/_ucdp-dashboard.mjs",
       "scripts/shared/yahoo-closed-session.cjs",
+      "scripts/shared/quote-sparkline.cjs",
       "scripts/source-attribution.mjs",
       "public/.well-known/mcp/server-card.json",
       "shared/compare-and-delete-script.cjs",
@@ -1237,6 +1238,7 @@
       "scripts/shared/stablecoin-classifier.cjs",
       "scripts/shared/stablecoins.json",
       "scripts/shared/yahoo-closed-session.cjs",
+      "scripts/shared/quote-sparkline.cjs",
       "shared/ai-tokens.json",
       "shared/crypto.json",
       "shared/defi-tokens.json",
@@ -1393,6 +1395,8 @@
       "scripts/seed-usa-spending.mjs",
       "scripts/seed-wb-indicators.mjs",
       "scripts/shared/compare-and-delete-script.cjs",
+      "scripts/shared/country-name-to-iso2.cjs",
+      "scripts/shared/country-names.json",
       "scripts/shared/iso3-to-iso2.json",
       "scripts/shared/ucdp-candidate.cjs",
       "scripts/shared/world-bank-rpc-cache.js"
@@ -1661,6 +1665,7 @@
       "scripts/shared/compare-and-delete-script.cjs",
       "scripts/shared/oil-quote-provenance.cjs",
       "scripts/shared/yahoo-closed-session.cjs",
+      "scripts/shared/quote-sparkline.cjs",
       "shared/commodities.json"
     ],
     "documentedAt": "docs/railway-seed-consolidation-runbook.md#standalone-seed-crons-added-after-this-snapshot"
@@ -2056,6 +2061,7 @@
       "scripts/seed-fx-yoy.mjs",
       "scripts/shared/oil-quote-provenance.cjs",
       "scripts/shared/yahoo-closed-session.cjs",
+      "scripts/shared/quote-sparkline.cjs",
       "scripts/shared/compare-and-delete-script.cjs"
     ],
     "documentedAt": "docs/railway-seed-consolidation-runbook.md#standalone-seed-crons-added-after-this-snapshot"
@@ -2316,6 +2322,7 @@
       "scripts/package.json",
       "scripts/railpack.json",
       "scripts/seed-sanctions-pressure.mjs",
+      "scripts/shared/aircraft-registration-country.mjs",
       "scripts/shared/compare-and-delete-script.cjs",
       "scripts/shared/country-name-to-iso2.cjs",
       "scripts/shared/country-names.json",

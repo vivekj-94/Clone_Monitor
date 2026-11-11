@@ -65,6 +65,8 @@ export interface CommodityQuote {
   priceSource?: string;
   priceBasis?: string;
   priceAt?: number;
+  sparklineIntervalSeconds?: number;
+  sparklineStartAt?: number;
 }
 
 export interface GetPhysicalPremiumsRequest {
@@ -703,6 +705,8 @@ export interface GetGoldIntelligenceResponse {
   drivers: GoldDriver[];
   etfFlows?: GoldEtfFlows;
   cbReserves?: GoldCbReserves;
+  goldSparklineIntervalSeconds?: number;
+  goldSparklineStartAt?: number;
 }
 
 export interface GoldCrossCurrencyPrice {

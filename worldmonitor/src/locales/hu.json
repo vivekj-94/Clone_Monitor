@@ -1816,10 +1816,17 @@
       "infoTooltip": "<strong>Technológiai felkészültség</strong> Világbank összetett pontszáma, 0–100. A súlyozások: kutatás és fejlesztés 35%, internet 30%, szélessáv 20% és mobil 15%. Az internetes felhasználók a lakosság százaléka; a mobil előfizetések száma 100 emberenként; a kutatási kiadások a gazdasági kibocsátás aránya. A hiányzó értékeket kötőjel jelzi. Az adatok 2019–2024 közötti időszakot foglalnak magukban."
     },
     "populationExposure": {
-      "totalAffected": "Érintett összesen",
-      "affectedCount": "{{count}} érintett",
-      "radiusKm": "{{km}} km sugár",
-      "infoTooltip": "<strong>Népességi expozícióbecslések</strong> Becsült népesség az esemény hatásvonalán belül. A WorldPop országsűrűség-adatok alapján.<ul><li>Konfliktus: 50 km sugár</li><li>Földrengés: 100 km sugár</li><li>Árvíz: 100 km sugár</li><li>Erdőtűz: 30 km sugár</li></ul>"
+      "estimateWithin": "Körülbelül {{count}} ember {{km}} km-es körzetben",
+      "method": "A becslések az ország átlagos népsűrűségén alapulnak.",
+      "empty": "Nincs megfelelő eseményhelyszín",
+      "infoTooltip": "Az ország népsűrűségi adataival rendelkező események jelennek meg. A régebbi adatokból származó, pontossági információ nélküli helyek frissítésre váró jelölést kapnak. A becsült területek átfedhetik egymást.",
+      "eventCount_one": "{{count}} esemény",
+      "eventCount_other": "{{count}} esemény",
+      "locationPending": "A hely pontossága frissítésre vár",
+      "unrestCoverage": "Zavargások lefedettsége",
+      "ucdpPending": "Az UCDP lefedettsége frissítésre vár",
+      "coverageShown": "Megjelenített események: {{shown}} / {{total}}",
+      "coverageLeftOut": "Nem látható: {{imprecise}} pontos hely nélkül, {{noEstimate}} sűrűségadat nélküli országokban, {{otherPlaces}} a forrásonkénti első 10 helyen túl"
     },
     "securityAdvisories": {
       "loading": "Utazási tanácsok letöltése...",
@@ -2781,7 +2788,7 @@
     },
     "sanctionsPressure": {
       "title": "Szankciók & Kijelölések",
-      "infoTooltip": "Az Office of Foreign Assets Control Kijelölt Nationals és Consolidated Lists, valamint a Global Affairs Canada SEMA/JVCFOA lezárások. Megmutatja, mely országok szembesülnek a legmagasabb lezárási nyomással, mely programok hajtják azt, és mi volt az utolsó frissítés óta új hozzáadott.",
+      "infoTooltip": "OFAC SDN és összevont listák, valamint Kanada SEMA/JVCFOA szankciói. Az országok sorai közvetlen kapcsolatokat használnak. A hajólobogók és a repülőgép-lajstromok külön szerepelnek a nyilvántartásokban; egy ország nulla eszközszáma nem jelenti a szankcionált eszközök hiányát. Az anyaszervezetek országai elkülönülnek a címadatoktól, és nem számítanak bele a kockázati pontszámokba.",
       "loading": "Szankció adatok betöltése...",
       "unavailable": "Szankció adatok nem érhetőek el.",
       "summary": {
@@ -2793,7 +2800,9 @@
       "sections": {
         "countries": "Szankcionált országok",
         "entries": "Legutóbbi bejelentések",
-        "programs": "Programok"
+        "programs": "Programok",
+        "flagRegistries": "Hajólobogó- és légijármű-nyilvántartások",
+        "regulationTargets": "A SEMA-rendeletek célországai"
       },
       "empty": {
         "countries": "Nincs országattribúció elérhető.",
@@ -2816,7 +2825,8 @@
         "unattributed": "Nem tulajdonított",
         "program": "Program",
         "undated": "Dátum nélkül"
-      }
+      },
+      "targetExplanation": "A rendeletek célországai nem igazolják az állampolgárságot vagy a címet. Nem szerepelnek az országkockázati pontszámokban és az összefoglalókban."
     },
     "radiationWatch": {
       "title": "Sugárzásfigyelés",
@@ -4493,7 +4503,17 @@
     "renameHint": "{{name}} — dupla kattintás az átnevezéshez",
     "deleteTab": "Fül törlése",
     "deleteTabAria": "{{name}} fül törlése",
-    "tabNameAria": "Fül neve"
+    "tabNameAria": "Fül neve",
+    "addTabTitleSaved": "Új fül (az elmentett panelek alapján indít)",
+    "newTabOptions": "Új fül beállításai",
+    "newTabStartsDefault": "Az új fülek az alapértelmezett panelek alapján indulnak.",
+    "newTabStartsSaved": "Az új fülek az elmentett panelek alapján indulnak.",
+    "newTabOptionsHint": "A meglévő fülek nem változnak.",
+    "useThisTabPanels": "E fül paneljeit használja",
+    "useDefaultPanels": "Az alapértelmezett panelek használata",
+    "newTabPanelsNotSaved": "Nem sikerült menteni. A böngésző letiltotta a webhelytárolást.",
+    "team": "Csapat",
+    "teamDashboards": "Csapat-irányítópultok"
   },
   "theaterPresets": {
     "label": "Lefedettségi csomagok",
@@ -4865,5 +4885,22 @@
     "close": "Bezárás",
     "alertsHint": "Telepítse a World Monitort a főképernyőre, hogy értesítéseket kapjon ezen az iPhone-on vagy iPaden.",
     "how": "Telepítési útmutató"
+  },
+  "teamDashboards": {
+    "desc": "A csapatod által megosztott irányítópultok. Nyiss meg egyet, és új fülként kerül a többi mellé.",
+    "empty": "A csapatod még nem osztott meg irányítópultot. Oszd meg ezt a fület, és a csapat minden tagja megkapja a paneljeit, méreteit és térképét.",
+    "open": "{{name}} megnyitása új fülön",
+    "stopSharing": "{{name}} megosztásának leállítása",
+    "confirmStop": "Leállítod a(z) {{name}} megosztását a csapattal? A belőle már megnyitott fülek változatlanok maradnak.",
+    "shareTab": "Oszd meg ezt a fület a csapattal",
+    "shareChanges": "Oszd meg a fül módosításait a csapattal",
+    "behind": "A csapat megváltoztatta ezt az irányítópultot, miután megnyitottad.",
+    "getLatest": "Legújabb verzió letöltése",
+    "opened": "{{name}} megnyitva a csapattól.",
+    "shared": "{{name}} megosztva a csapattal.",
+    "updated": "Ez a fül most a csapat legújabb verzióját tartalmazza.",
+    "stopped": "{{name}} megosztása leállítva.",
+    "failed": "Nem sikerült elérni a csapat irányítópultjait. Próbáld újra.",
+    "limit": "A csapat már {{limit}} irányítópultot oszt meg itt. Előbb állítsd le az egyik megosztását."
   }
 }

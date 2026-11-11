@@ -2714,12 +2714,86 @@ const collectingHomepageProvider = (registered) => ({
   },
 });
 
+// Parses the homepage script and lists every way it strays from the shape
+// static WebMCP readers can trace: registerTool called only on `current`
+// (four times) or `legacy`, `current` written only with plain `=` from
+// document.modelContext or null (a conditional may pick between them), and
+// no function that takes the provider as a parameter.
+function homepageProviderViolations(source) {
+  const file = ts.createSourceFile('homepage.js', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const unwrap = (node) => {
+    while (ts.isParenthesizedExpression(node)) node = node.expression;
+    return node;
+  };
+  const allowedValue = (node) => {
+    node = unwrap(node);
+    if (node.kind === ts.SyntaxKind.NullKeyword) return true;
+    if (ts.isConditionalExpression(node)) return allowedValue(node.whenTrue) && allowedValue(node.whenFalse);
+    return ts.isPropertyAccessExpression(node) && node.getText(file).replace(/\s+/g, '') === 'document.modelContext';
+  };
+  const isCurrent = (node) => ts.isIdentifier(unwrap(node)) && unwrap(node).text === 'current';
+  const violations = [];
+  const receivers = [];
+  let readsDocument = false;
+  const recordWrite = (operator, value) => {
+    if (operator !== '=') violations.push(`compound write ${operator}`);
+    else if (!allowedValue(value)) violations.push(`current = ${value.getText(file)}`);
+    else if (/document\.modelContext/.test(value.getText(file))) readsDocument = true;
+  };
+  const visit = (node) => {
+    if (ts.isCallExpression(node)) {
+      const callee = unwrap(node.expression);
+      if (ts.isPropertyAccessExpression(callee) && callee.name.text === 'registerTool') {
+        receivers.push(unwrap(callee.expression).getText(file));
+      }
+    }
+    if (ts.isVariableDeclaration(node) && isCurrent(node.name) && node.initializer) recordWrite('=', node.initializer);
+    if (
+      ts.isBinaryExpression(node)
+      && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment
+      && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment
+      && isCurrent(node.left)
+    ) {
+      recordWrite(node.operatorToken.getText(file), node.right);
+    }
+    if (ts.isParameter(node) && ts.isIdentifier(node.name) && node.name.text === 'modelContext') {
+      violations.push('modelContext parameter');
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  const stray = receivers.filter((name) => name !== 'current' && name !== 'legacy');
+  if (stray.length) violations.push(`registerTool on ${stray.join(', ')}`);
+  const currentCalls = receivers.filter((name) => name === 'current').length;
+  if (currentCalls !== WEBMCP_HOMEPAGE_TOOL_NAMES.length) violations.push(`${currentCalls} current.registerTool calls`);
+  if (!readsDocument) violations.push('current never reads document.modelContext');
+  return violations;
+}
+
 describe('homepage WebMCP source registration', () => {
 
   it('observes registerTool promises', () => {
     assert.ok(homepageSourceScript);
     assert.match(homepageSourceScript.body, /Promise\.resolve\(results\[i\]\)\.then\(/);
     assert.match(homepageSourceScript.body, /function \(\) \{ return false; \}/);
+  });
+
+  // ora.ai's static WebMCP reader credits only registerTool() calls whose
+  // receiver it can trace to document.modelContext. A helper that takes the
+  // provider as a parameter, or one variable that may hold either provider,
+  // dropped the homepage from 4.8/8 to 1.6/8.
+  it('keeps every registerTool call statically traceable to its provider', () => {
+    assert.deepEqual(homepageProviderViolations(homepageSourceScript.body), []);
+    const bad = [
+      'var current = null; current /* fallback */ ||= navigator.modelContext;',
+      'var current = null; (current) ||= legacy;',
+      'var current = null; current <<= 1;',
+      'var current = document.modelContext || legacy;',
+      'var current = typeof document !== "undefined" ? document.modelContext : legacy;',
+      'function registerTools(modelContext) { return modelContext.registerTool({}); }',
+      'var current = document.modelContext; (navigator.modelContext).registerTool({});',
+    ];
+    for (const source of bad) assert.notDeepEqual(homepageProviderViolations(source), [], source);
   });
 
   it('registers titled, annotated tools synchronously', () => {

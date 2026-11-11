@@ -1670,10 +1670,18 @@
       "dataPreparing": "Se reîmprospătează datele de tech readiness — vor apărea în scurt timp."
     },
     "populationExposure": {
-      "totalAffected": "Total afectat",
-      "affectedCount": "{{count}} afectat",
-      "radiusKm": "{{km}}km rază",
-      "infoTooltip": "<strong>Estimări ale expunerii populației</strong> Populația estimată în raza de impact a evenimentului. Pe baza datelor WorldPop despre densitatea țării.<ul><li>Conflict: rază de 50 km</li><li>Cutremur: rază de 100 km</li><li>Inundație: rază de 100 km</li><li>Incendiu: rază de 30 km</li></ul>"
+      "estimateWithin": "Aproximativ {{count}} de persoane pe o rază de {{km}} km",
+      "method": "Estimările se bazează pe densitatea medie a populației din țară.",
+      "empty": "Nicio locație de eveniment eligibilă",
+      "infoTooltip": "Sunt afișate evenimentele cu date despre densitatea populației țării. Locațiile din date mai vechi fără informații despre precizie sunt marcate ca așteptând actualizarea. Zonele estimate se pot suprapune.",
+      "eventCount_one": "{{count}} eveniment",
+      "eventCount_few": "{{count}} evenimente",
+      "eventCount_other": "{{count}} de evenimente",
+      "locationPending": "Precizia locației așteaptă actualizarea",
+      "unrestCoverage": "Acoperirea tulburărilor",
+      "ucdpPending": "Acoperirea UCDP așteaptă actualizarea",
+      "coverageShown": "Evenimente afișate: {{shown}} din {{total}}",
+      "coverageLeftOut": "Neafișate: {{imprecise}} fără locație precisă, {{noEstimate}} în țări fără date de densitate, {{otherPlaces}} după primele 10 locuri pe sursă"
     },
     "securityAdvisories": {
       "loading": "Se preiau avizele de călătorie...",
@@ -2722,7 +2730,7 @@
     },
     "sanctionsPressure": {
       "title": "Sancțiuni și Desemnări",
-      "infoTooltip": "Office of Foreign Assets Control Specially Designated Nationals și Consolidated Lists plus desemnări Global Affairs Canada SEMA/JVCFOA. Arată care țări se confruntă cu cea mai mare presiune de desemnare, ce programe o conduc și ce a fost nou adăugat de la ultima actualizare.",
+      "infoTooltip": "Listele OFAC SDN și consolidate, plus desemnările SEMA/JVCFOA ale Canadei. Rândurile țărilor folosesc asocieri directe. Pavilioanele navelor și înmatriculările aeronavelor sunt numărate separat în registre; zero active pentru o țară nu înseamnă absența activelor sancționate. Țările entităților-mamă sunt separate de dovezile de adresă și excluse din scorurile de risc.",
       "loading": "Se încarcă datele sancțiunilor...",
       "unavailable": "Datele sancțiunilor nu sunt disponibile.",
       "summary": {
@@ -2734,7 +2742,9 @@
       "sections": {
         "countries": "Țări sancționate",
         "entries": "Desemnări recente",
-        "programs": "Programe"
+        "programs": "Programe",
+        "flagRegistries": "Registre de pavilion ale navelor și de înmatriculare a aeronavelor",
+        "regulationTargets": "Țări vizate de reglementările SEMA"
       },
       "empty": {
         "countries": "Nicio atribuire de țară disponibilă.",
@@ -2758,7 +2768,8 @@
         "program": "Program",
         "undated": "fără dată"
       },
-      "designations_few": "{{count}} desemnări"
+      "designations_few": "{{count}} desemnări",
+      "targetExplanation": "Țările vizate de reglementări nu constituie dovezi privind naționalitatea sau adresa. Sunt excluse din scorurile de risc ale țărilor și din sinteze."
     },
     "radiationWatch": {
       "title": "Monitorizare Radiații",
@@ -4514,7 +4525,17 @@
     "renameHint": "{{name}} — dublu clic pentru redenumire",
     "deleteTab": "Șterge fila",
     "deleteTabAria": "Șterge fila {{name}}",
-    "tabNameAria": "Numele filei"
+    "tabNameAria": "Numele filei",
+    "addTabTitleSaved": "Filă nouă (începe cu panourile pe care le-ai salvat)",
+    "newTabOptions": "Opțiuni pentru fila nouă",
+    "newTabStartsDefault": "Filele noi încep cu panourile implicite.",
+    "newTabStartsSaved": "Filele noi încep cu panourile pe care le-ai salvat.",
+    "newTabOptionsHint": "Filele pe care le ai deja nu se schimbă.",
+    "useThisTabPanels": "Folosiți panourile acestei file",
+    "useDefaultPanels": "Folosiți panourile implicite",
+    "newTabPanelsNotSaved": "Nu s-a putut salva. Acest browser blochează stocarea pentru site.",
+    "team": "Echipă",
+    "teamDashboards": "Dashboard-uri de echipă"
   },
   "theaterPresets": {
     "label": "Preseturi de acoperire",
@@ -4886,5 +4907,22 @@
     "close": "Închide",
     "alertsHint": "Instalează World Monitor pe ecranul principal pentru a primi alerte pe acest iPhone sau iPad.",
     "how": "Cum se instalează"
+  },
+  "teamDashboards": {
+    "desc": "Dashboard-uri pe care echipa ta le partajează. Deschide unul pentru a-l adăuga ca o nouă filă.",
+    "empty": "Echipa ta nu a partajat încă niciun dashboard. Partajează această filă pentru a da tuturor din echipă panourile, dimensiunile și harta acesteia.",
+    "open": "Deschide {{name}} ca o nouă filă",
+    "stopSharing": "Oprește partajarea {{name}}",
+    "confirmStop": "Oprești partajarea {{name}} cu echipa ta? Filele pe care le-au deschis deja nu se vor schimba.",
+    "shareTab": "Partajează această filă cu echipa ta",
+    "behind": "Echipa ta a modificat acest dashboard după ce l-ai deschis.",
+    "getLatest": "Obține versiunea cea mai recentă",
+    "opened": "{{name}} deschis din echipa ta.",
+    "shared": "{{name}} partajat cu echipa ta.",
+    "updated": "Această filă are acum versiunea cea mai recentă a echipei tale.",
+    "stopped": "Partajarea {{name}} oprit.",
+    "failed": "Nu s-a putut contacta dashboard-urile echipei tale. Încearcă din nou.",
+    "limit": "Echipa ta partajează deja {{limit}} dashboard-uri aici. Oprește partajarea unuia mai întâi.",
+    "shareChanges": "Partajează modificările acestei file cu echipa ta"
   }
 }
