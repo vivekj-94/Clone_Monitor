@@ -492,7 +492,8 @@
     "marketBreadth": "Marktbreite",
     "climateNews": "Klimanachrichten",
     "fx": "Devisenkurse",
-    "ukmtoIncidents": "UKMTO-Vorfälle"
+    "ukmtoIncidents": "UKMTO-Vorfälle",
+    "reservoirLevels": "Strategische Wasserstände"
   },
   "commands": {
     "prefixes": {
@@ -1153,7 +1154,8 @@
         "canadaRoads": "Kanada-Straßen",
         "canadaAlerts": "Kanada-Warnungen",
         "notamAirspace": "NOTAM-Luftraumbeschränkungen",
-        "no2Activity": "Industrielle Aktivität"
+        "no2Activity": "Industrielle Aktivität",
+        "reservoirLevels": "Wasserstände"
       },
       "layersTitle": "Ebenen",
       "layerSearch": "Ebenen suchen...",
@@ -1277,7 +1279,8 @@
           "canadaRoads": "Offizielle Straßenvorkommnisse, Warnungen, Bedingungen, Sperrungen, Bauarbeiten und Gefahren in unterstützten Jurisdiktionen in Kanada",
           "canadaAlerts": "Provinzielle öffentliche Sicherheitswarnungen von Alberta Emergency Alert, B.C. Evacuation Orders and Alerts und SaskAlert",
           "notamAirspace": "Temporäre Flugbeschränkungen und beschränkter, Gefahren- und verbotener Luftraum aus FAA-NOTAMs, derzeit gültig oder innerhalb von 24 Stunden beginnend",
-          "no2Activity": "NO2-Aktivitätsrichtung aus Sentinel-5P für 167 Länder und 32 Industriecluster: das jüngste 56-Tage-Fenster gegenüber denselben Daten der Vorjahre, nach einem Totband von 10 %. Enthält modifizierte Copernicus-Sentinel-Daten."
+          "no2Activity": "NO2-Aktivitätsrichtung aus Sentinel-5P für 167 Länder und 32 Industriecluster: das jüngste 56-Tage-Fenster gegenüber denselben Daten der Vorjahre, nach einem Totband von 10 %. Enthält modifizierte Copernicus-Sentinel-Daten.",
+          "reservoirLevels": "Wasserspiegel strategischer Stauseen und Seen aus dem NASA-Satellitenlidar ICESat-2, verglichen mit dem üblichen Stand für den Monat. Die NASA veröffentlicht jeden Überflug etwa zwei Monate nach der Messung."
         },
         "notes": {
           "timeAffects": "Betrifft: Erdbeben, Wetter, Proteste, Ausfälle"
@@ -1679,7 +1682,7 @@
       "estimateWithin": "Etwa {{count}} Menschen im Umkreis von {{km}} km",
       "method": "Die Schätzungen verwenden die durchschnittliche Bevölkerungsdichte des Landes.",
       "empty": "Keine geeigneten Ereignisorte",
-      "infoTooltip": "Ereignisse mit Daten zur Bevölkerungsdichte des Landes werden angezeigt. Orte aus älteren Daten ohne Angaben zur Genauigkeit werden als ausstehend markiert. Die geschätzten Gebiete können sich überschneiden.",
+      "infoTooltip": "Ereignisse mit Daten zur Bevölkerungsdichte des Landes werden angezeigt. Orte von UCDP-Ereignissen ohne Angaben zur Genauigkeit werden als ausstehend markiert. Die geschätzten Gebiete können sich überschneiden. Unruhen benötigen einen genauen Standort; als ungenau markierte UCDP-Ereignisse werden ausgeschlossen. Ein Ort aus zwei Quellen (Unruhen und UCDP) erscheint in zwei Zeilen.",
       "eventCount_one": "{{count}} Ereignis",
       "eventCount_other": "{{count}} Ereignisse",
       "locationPending": "Ortsgenauigkeit wartet auf Aktualisierung",
@@ -2059,7 +2062,8 @@
       "channelUrlHint": "Kanal-URL (youtube.com/channel/UC…) oder Live-Video-URL einfügen",
       "youtubeChannel": "YouTube-Kanal",
       "insecureStream": "{{name}} verwendet einen unsicheren (http) Stream, den Browser blockieren. Fügen Sie ihn mit einer sicheren (https) Stream-URL erneut hinzu",
-      "httpsStreamHint": "Browser blockieren unsichere (http) Streams. Fügen Sie eine sichere (https) Stream-URL ein"
+      "httpsStreamHint": "Browser blockieren unsichere (http) Streams. Fügen Sie eine sichere (https) Stream-URL ein",
+      "tapToPlay": "Zum Abspielen antippen"
     },
     "securityAdvisories": {
       "loading": "Reisehinweise werden geladen...",
@@ -2719,7 +2723,7 @@
     },
     "sanctionsPressure": {
       "title": "Sanktionen & Listungen",
-      "infoTooltip": "OFAC-SDN- und konsolidierte Listen sowie kanadische SEMA/JVCFOA-Sanktionen. Länderzeilen verwenden direkte Zuordnungen. Schiffsflaggen und Flugzeugregister werden unter Registern separat gezählt; null Vermögenswerte bei einem Land bedeutet nicht, dass keine sanktionierten Vermögenswerte existieren. Länder übergeordneter Unternehmen bleiben von Adressnachweisen getrennt und fließen nicht in Risikowerte ein.",
+      "infoTooltip": "OFAC-SDN- und konsolidierte Listen sowie kanadische SEMA/JVCFOA-Sanktionen. Länderzeilen verwenden direkte Zuordnungen. Schiffsflaggen und Flugzeugregister werden unter Registern separat gezählt; null Vermögenswerte bei einem Land bedeutet nicht, dass keine sanktionierten Vermögenswerte existieren.",
       "loading": "Sanktionsdaten werden geladen...",
       "unavailable": "Sanktionsdaten nicht verfügbar.",
       "summary": {
@@ -3139,6 +3143,49 @@
       "body": "Ein Stern auf GitHub hilft anderen, es zu finden.",
       "star": "Auf GitHub mit Stern versehen",
       "dismiss": "Verwerfen und nicht mehr fragen"
+    },
+    "reservoirLevels": {
+      "note": "Wasserspiegel aus dem NASA-Satellitenlidar ICESat-2. Die NASA veröffentlicht jeden Überflug etwa zwei Monate nach der Messung, daher zeigt dies Veränderungen über Wochen und Jahreszeiten, nicht über Tage. Nur Wasserstand, kein Volumen.",
+      "source": "Quelle:",
+      "processedWith": "verarbeitet mit",
+      "empty": "Noch keine Messwerte",
+      "filterEmpty": "Keine Gewässer entsprechen diesem Filter",
+      "unavailable": "Wasserstandsdaten sind derzeit nicht verfügbar",
+      "filterLabel": "Gewässer filtern",
+      "filter": {
+        "all": "Alle",
+        "attention": "Auffällig",
+        "transboundary": "Grenzüberschreitend"
+      },
+      "status": {
+        "record_low": "Rekordtief",
+        "record_high": "Rekordhoch",
+        "falling_fast": "Fällt schnell",
+        "rising_fast": "Steigt schnell",
+        "low": "Niedrig für die Jahreszeit",
+        "high": "Hoch für die Jahreszeit",
+        "normal": "Im üblichen Bereich",
+        "insufficient_history": "Zu kurze Messreihe",
+        "no_recent_data": "Kein aktueller Überflug",
+        "lowInRange": "Niedrig in seiner Spanne",
+        "highInRange": "Hoch in seiner Spanne"
+      },
+      "vsUsual": "{{value}} gegenüber üblich im {{month}}",
+      "in12Months": "{{value}} in 12 Monaten",
+      "noComparison": "Noch kein Vergleich",
+      "measured": "gemessen am {{date}} ({{age}})",
+      "noPass": "Noch kein verwertbarer Überflug",
+      "popup": {
+        "level": "Wasserstand",
+        "levelValue": "{{value}} über dem Meeresspiegel (EGM2008)",
+        "anomaly": "Gegenüber üblich im {{month}}",
+        "anomalyPlain": "Gegenüber üblich im Monat",
+        "changePrev": "Seit dem letzten Überflug",
+        "change90": "In 90 Tagen",
+        "change365": "In 12 Monaten",
+        "measured": "Gemessen",
+        "sparkline": "Wasserstand über 36 Monate"
+      }
     }
   },
   "popups": {
@@ -4459,6 +4506,7 @@
   "auth": {
     "signIn": "Anmelden",
     "createAccount": "Konto erstellen",
+    "freeReason": "Gratis: Layout speichern, Ländern folgen, Alarme",
     "settings": "Einstellungen",
     "passkeyOffer": {}
   },
@@ -4606,6 +4654,21 @@
         "related": {
           "0": "China-Aktivitäts-Nowcast",
           "1": "Länderbrief"
+        }
+      },
+      "reservoirLevels": {
+        "category": "Klima",
+        "purpose": "Markiert strategische Stauseen und Seen danach, wie ihr Wasserspiegel im Vergleich zum üblichen Stand zur selben Jahreszeit liegt und wie schnell er sich ändert.",
+        "source": "Wasseroberflächenhöhe von Binnengewässern aus NASA ICESat-2 ATL13 über NSIDC, verarbeitet mit SlideRule Earth und je Satellitenüberflug vom Dienst seed-reservoir-levels zusammengefasst.",
+        "freshness": "Tägliche Aktualisierung. Die NASA veröffentlicht jeden Überflug 50 bis 70 Tage nach der Messung, und ein Stausee wird alle paar Tage bis etwa einmal im Monat erneut erfasst.",
+        "confidence": "Ein Überflug zählt nur, wenn mindestens 5 Wassersegmente innerhalb von 0,25 m übereinstimmen. Ein saisonaler Vergleich braucht Überflüge aus mindestens 3 früheren Jahren zur selben Jahreszeit.",
+        "limitations": {
+          "0": "Nur Wasserstand, kein Volumen: Derselbe Rückgang bedeutet in jedem Stausee einen anderen Speicherverlust.",
+          "1": "Ein Gewässer ohne Überflug seit 150 Tagen wird als ohne aktuellen Überflug markiert; sein letzter Wert, die Veränderungen und das Datum werden weiter angezeigt."
+        },
+        "related": {
+          "0": "Panel „Strategische Wasserstände“",
+          "1": "Klimaanomalien"
         }
       },
       "conflicts": {
@@ -4901,6 +4964,147 @@
     "updated": "Dieser Tab hat jetzt die aktuelle Version deines Teams.",
     "stopped": "Sharing von {{name}} beendet.",
     "failed": "Konnte Team-Dashboards nicht erreichen. Versuche es erneut.",
-    "limit": "Dein Team teilt bereits {{limit}} Dashboards. Beende das Sharing von einem zuerst."
+    "limit": "Dein Team teilt bereits {{limit}} Dashboards. Beende das Sharing von einem zuerst.",
+    "focusNotEntitled": "Ihr Plan beinhaltet keine gemeinsamen fokussierten Dashboards. Löschen Sie den Fokus dieses Tabs, um seine Panels zu teilen.",
+    "focusUnreadable": "{{name}} hat einen Fokus, den diese Version nicht anzeigen kann. Laden Sie neu, um zu aktualisieren, und öffnen Sie ihn dann erneut."
+  },
+  "focus": {
+    "barLabel": "Fokus",
+    "summary": "Fokussiert auf {{countries}}",
+    "neighboursOff": "Nachbarländer nicht einbezogen",
+    "chosenLabel": "Ausgewählt",
+    "neighboursLabel": "Nachbarländer",
+    "neighbourItem": "Nachbarland: {{name}}",
+    "range": "{{start}} bis {{end}}",
+    "windowEnded": "Zeitraum endete {{date}}",
+    "windowStarts": "Startet {{date}}",
+    "windowUntil": "Bis {{date}}",
+    "windowFrom": "Von {{date}}",
+    "edit": "Bearbeiten",
+    "clear": "Löschen",
+    "clearAria": "Fokus aufheben und ganze Welt anzeigen",
+    "clearFocus": "Fokus löschen",
+    "notFiltered": "Nicht gefiltert",
+    "notFilteredGlobal": "Globale Daten: nicht nach Land gefiltert",
+    "notFilteredYet": "Nach Land noch nicht gefiltert",
+    "gateSignedOutDesc": "Melden Sie sich an, um einen Dashboard-Tab auf die Länder zu fokussieren, die Sie überwachen.",
+    "gateUpgradeDesc": "Das Fokussieren eines Tabs auf ausgewählte Länder ist in Pro Business, API Business und Enterprise enthalten.",
+    "gateUpgradeCta": "Upgrade",
+    "tabButton": "Fokus",
+    "tabButtonTitle": "Fokussieren Sie diesen Tab auf ausgewählte Länder",
+    "tabButtonTitleActive": "Bearbeiten Sie den Fokus dieses Tabs",
+    "newTitle": "Diesen Tab fokussieren",
+    "editTitle": "Fokus bearbeiten",
+    "intro": "Panels, die nach Land filtern können, zeigen nur diese Länder an. Die anderen zeigen „Nicht gefiltert\".",
+    "countriesLabel": "Länder",
+    "count": "{{n}} von {{max}}",
+    "searchPlaceholder": "Länder durchsuchen",
+    "resultsLabel": "Gefilterte Länder",
+    "limitReached": "Sie haben {{max}} Länder ausgewählt, das Maximum für einen Fokus.",
+    "removeCountry": "{{name}} entfernen",
+    "includeNeighbours": "Nachbarländer einbeziehen",
+    "neighboursHint": "Risiken kennen keine Grenzen. Nachbarländer sind als solche gekennzeichnet und zählen nicht zu den {{max}}.",
+    "startLabel": "Von (optional)",
+    "endLabel": "Bis (optional)",
+    "datesHint": "Für eine Reise oder Aufgabe. Nach Ende des Zeitraums bleibt der Fokus erhalten und die Leiste zeigt dies an.",
+    "errorNoCountries": "Wählen Sie mindestens ein Land.",
+    "errorTooMany": "Ein Fokus kann bis zu {{max}} Länder enthalten.",
+    "errorDates": "Das Enddatum liegt vor dem Startdatum.",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "saved": "Dieser Tab ist auf {{countries}} fokussiert.",
+    "cleared": "Fokus gelöscht. Dieser Tab zeigt die ganze Welt.",
+    "notSaved": "Konnte nicht gespeichert werden. Dieser Browser blockiert die Webspeicherung.",
+    "plusNeighbours_one": "+ {{count}} Nachbarland",
+    "plusNeighbours_other": "+ {{count}} Nachbarländer",
+    "filter": {
+      "showing": "Zeigt {{countries}}",
+      "showingNeighbours": "Zeigt {{countries}} + Nachbarländer",
+      "showAll": "Alle anzeigen",
+      "focusOff": "Fokus in diesem Panel deaktiviert: zeigt alles",
+      "applyFocus": "Fokus anwenden",
+      "applyFocusAria": "Dieses Panel erneut auf den Fokus filtern",
+      "show": "Anzeigen",
+      "hide": "Verbergen",
+      "noCountryTag": "Kein Land",
+      "emptyHint": "Alles andere ist oben gezählt.",
+      "emptyNews": "Nichts für diese Länder in den aktuellen Schlagzeilen",
+      "emptyAdvisories": "Keine Reisewarnungen für diese Länder",
+      "emptyConflict": "Keine UCDP-Konfliktereignisse für diese Länder",
+      "emptyConflictPartial": "Keine Konfliktereignisse für diese Länder unter den neuesten Ereignissen. Die vollständige Liste wurde nicht geladen.",
+      "loadingConflict": "Lade alle Konfliktereignisse für diese Länder…",
+      "emptyAirports": "Keiner Ihrer überwachten Flughäfen liegt in diesen Ländern",
+      "emptyFlights": "Keine Flüge zu oder von diesen Ländern auf diesem Board",
+      "emptyAviationNews": "Keine Luftfahrtnachrichten für diese Länder in den letzten 24 Stunden",
+      "tabNotFiltered": "Diese Registerkarte wird nicht nach Land gefiltert",
+      "hidden_one": "{{count}} durch Fokus verborgen",
+      "hidden_other": "{{count}} durch Fokus verborgen",
+      "showAllAria_one": "Alles in diesem Panel anzeigen, einschließlich {{count}} Element außerhalb des Fokus",
+      "showAllAria_other": "Alles in diesem Panel anzeigen, einschließlich {{count}} Elemente außerhalb des Fokus",
+      "unattributed_one": "{{count}} Element ohne Land",
+      "unattributed_other": "{{count}} Elemente ohne Land",
+      "showUnattributedAria_one": "Das {{count}} Element ohne Land anzeigen",
+      "showUnattributedAria_other": "Die {{count}} Elemente ohne Land anzeigen",
+      "hideUnattributedAria_one": "Das {{count}} Element ohne Land verbergen",
+      "hideUnattributedAria_other": "Die {{count}} Elemente ohne Land verbergen",
+      "partialConflict": "Zeigt Konfliktereignisse nur aus den letzten 150 an. Die vollständige Liste konnte nicht geladen werden.",
+      "partialConflictLoading": "Zeige Konfliktereignisse aus den letzten 150, während die vollständige Liste geladen wird.",
+      "emptyInstability": "Keine Instabilitätswerte für diese Länder",
+      "emptyOutbreaks": "Keine Krankheitsausbrüche für diese Länder",
+      "emptyOutages": "Keine Internetunterbrechungen für diese Länder",
+      "emptyRadiation": "Keine Strahlungswerte für diese Länder",
+      "emptyFuelShortages": "Keine Treibstoffknappheit für diese Länder",
+      "emptyEnergyDisruptions": "Keine Energieunterbrechungen für diese Länder",
+      "emptyDisplacement": "Keine Fluchtlingsdaten für diese Länder",
+      "emptyCorrelation": "Keine Signale für diese Länder"
+    },
+    "draftAssessment": "Entwurf einer Bewertung",
+    "draftAssessmentAria": "Reisebewertung öffnen, vorgefüllt mit diesem Focus",
+    "draftCopied": "Anfrage kopiert. Füge sie in deinen KI-Assistenten ein.",
+    "draftCopiedPartial": "Anfrage für die ersten {{count}} Länder kopiert. Eine Bewertung umfasst höchstens {{max}} Länder.",
+    "draftCopyFailed": "Die Anfrage konnte nicht kopiert werden."
+  },
+  "tripAssessment": {
+    "heading": "Reisebewertung",
+    "intro": "Ein quellengestützter Entwurf einer Reiserisikobewertung für einen Analyst zur Fertigstellung. Er berichtet, was die Daten zeigen, und gibt keine Empfehlungen.",
+    "privacy": "Nur Länder, Städte und Daten. Geben Sie keine Reisendennamen, Hotels oder Straßenadressen ein. Nichts von dem, was Sie eingeben, wird gespeichert.",
+    "taskLabel": "Aufgabenkennzeichnung (optional)",
+    "taskLabelPlaceholder": "Regionale Standortbesuche",
+    "windowStart": "Reise beginnt",
+    "windowEnd": "Reise endet",
+    "countriesLabel": "Länder, in Reisereihenfolge",
+    "count": "{{n}} von {{max}}",
+    "searchPlaceholder": "Land hinzufügen",
+    "addCountry": "Land zur Reise hinzufügen",
+    "limit": "Eine Reise umfasst maximal {{max}} Länder.",
+    "omitted": "Ausgelassen, da eine Reise maximal {{max}} Länder umfasst: {{names}}.",
+    "cities": "Städte, kommagetrennt (bis zu {{max}})",
+    "arrive": "Ankunft",
+    "depart": "Abreise",
+    "moveEarlier": "{{name}} früher in der Reise verschieben",
+    "moveLater": "{{name}} später in der Reise verschieben",
+    "remove": "{{name}} aus der Reise entfernen",
+    "downloadMarkdown": "Markdown herunterladen",
+    "downloadWord": "Für Word herunterladen",
+    "print": "Drucken oder als PDF speichern",
+    "copyRequest": "Anfrage für einen KI-Assistenten kopieren",
+    "close": "Schließen",
+    "building": "Entwurf aus den neuesten Daten wird erstellt …",
+    "downloaded": "{{file}} heruntergeladen. Jeder Download wird neu erstellt und mit seiner eigenen Erfassungszeit versehen.",
+    "printOpened": "Druckdialog geöffnet. Wählen Sie „Als PDF speichern\", um eine Kopie zu behalten.",
+    "errNoCountries": "Fügen Sie mindestens ein Land hinzu.",
+    "errTooMany": "Eine Reise umfasst maximal {{max}} Länder.",
+    "errWindow": "Die Reise muss am selben Tag oder später enden, an dem sie beginnt.",
+    "errCities": "{{name}}: maximal {{max}} Städte.",
+    "errCountryDates": "{{name}}: Abreise muss am selben Tag oder später sein wie Ankunft.",
+    "errOutsideWindow": "{{name}}: Daten müssen im Reisezeitraum liegen.",
+    "errInvalid": "Der Entwurf konnte nicht aus dieser Reise erstellt werden:",
+    "errAuth": "Melden Sie sich erneut an, um den Entwurf zu erstellen.",
+    "errUpgrade": "Die Reisebewertung ist in den Plänen Pro Business, API Business und Enterprise enthalten.",
+    "errBusy": "Zu viele Anfragen. Versuchen Sie es in einer Minute erneut.",
+    "errUnavailable": "Die Daten hinter dem Entwurf sind gerade nicht verfügbar. Versuchen Sie es in einer Minute erneut.",
+    "errGeneric": "Der Entwurf konnte nicht erstellt werden. Versuchen Sie es erneut.",
+    "errDownload": "Die Datei konnte hier nicht heruntergeladen werden. Verwenden Sie stattdessen „Drucken\" oder „Als PDF speichern\".",
+    "errLoad": "Die Reisebewertung konnte nicht geöffnet werden. Laden Sie die Seite neu und versuchen Sie es erneut."
   }
 }

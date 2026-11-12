@@ -490,7 +490,8 @@
     "marketBreadth": "Độ rộng Thị trường",
     "climateNews": "Tin tức về Khí hậu",
     "fx": "Tỷ giá ngoại hối",
-    "ukmtoIncidents": "Sự cố UKMTO"
+    "ukmtoIncidents": "Sự cố UKMTO",
+    "reservoirLevels": "Mực nước chiến lược"
   },
   "commands": {
     "prefixes": {
@@ -1307,7 +1308,8 @@
         "canadaRoads": "Đường bộ Canada",
         "canadaAlerts": "Cảnh báo Canada",
         "notamAirspace": "Hạn chế không phận NOTAM",
-        "no2Activity": "Hoạt động công nghiệp"
+        "no2Activity": "Hoạt động công nghiệp",
+        "reservoirLevels": "Mực nước"
       },
       "tooltip": {
         "earthquake": "Động đất",
@@ -1424,7 +1426,8 @@
           "canadaRoads": "Sự cố giao thông chính thức, cảnh báo, tình trạng đường, đóng đường, thi công và mối nguy tại các khu vực tài phán Canada được hỗ trợ",
           "canadaAlerts": "Cảnh báo an toàn công cộng cấp tỉnh từ Alberta Emergency Alert, B.C. Evacuation Orders and Alerts và SaskAlert",
           "notamAirspace": "Hạn chế bay tạm thời và không phận bị hạn chế, nguy hiểm và bị cấm từ NOTAM của FAA, có hiệu lực ngay bây giờ hoặc bắt đầu trong vòng 24 giờ",
-          "no2Activity": "Hướng hoạt động NO2 từ Sentinel-5P cho 167 quốc gia và 32 cụm công nghiệp: cửa sổ 56 ngày gần nhất so với cùng các ngày trong những năm trước, sau dải chết 10%. Chứa dữ liệu Copernicus Sentinel đã sửa đổi."
+          "no2Activity": "Hướng hoạt động NO2 từ Sentinel-5P cho 167 quốc gia và 32 cụm công nghiệp: cửa sổ 56 ngày gần nhất so với cùng các ngày trong những năm trước, sau dải chết 10%. Chứa dữ liệu Copernicus Sentinel đã sửa đổi.",
+          "reservoirLevels": "Mực mặt nước của các hồ chứa và hồ chiến lược từ lidar vệ tinh ICESat-2 của NASA, so với mực nước thường lệ của tháng. NASA công bố mỗi lượt quét khoảng hai tháng sau khi đo."
         },
         "notes": {
           "timeAffects": "Ảnh hưởng: Động đất, Thời tiết, Biểu tình, Gián đoạn"
@@ -1665,7 +1668,7 @@
       "estimateWithin": "Khoảng {{count}} người trong bán kính {{km}} km",
       "method": "Ước tính dựa trên mật độ dân số trung bình của quốc gia.",
       "empty": "Không có địa điểm sự kiện đủ điều kiện",
-      "infoTooltip": "Hiển thị các sự kiện có dữ liệu mật độ dân số quốc gia. Các vị trí từ dữ liệu cũ không có thông tin độ chính xác được đánh dấu đang chờ cập nhật. Các khu vực ước tính có thể chồng lấn.",
+      "infoTooltip": "Hiển thị các sự kiện có dữ liệu mật độ dân số quốc gia. Các vị trí của sự kiện UCDP không có thông tin độ chính xác được đánh dấu đang chờ cập nhật. Các khu vực ước tính có thể chồng lấn. Các sự kiện bất ổn cần vị trí chính xác; sự kiện UCDP được đánh dấu không chính xác bị loại trừ. Một địa điểm từ hai nguồn (bất ổn và UCDP) hiển thị thành hai hàng.",
       "eventCount_other": "{{count}} sự kiện",
       "locationPending": "Độ chính xác vị trí đang chờ cập nhật",
       "unrestCoverage": "Phạm vi dữ liệu bất ổn",
@@ -2107,7 +2110,8 @@
       "channelUrlHint": "Dán URL kênh (youtube.com/channel/UC…) hoặc URL video trực tiếp",
       "youtubeChannel": "Kênh YouTube",
       "insecureStream": "{{name}} sử dụng luồng không an toàn (http), trình duyệt sẽ chặn. Thêm lại với URL luồng an toàn (https)",
-      "httpsStreamHint": "Trình duyệt chặn các luồng không an toàn (http). Dán URL luồng an toàn (https)"
+      "httpsStreamHint": "Trình duyệt chặn các luồng không an toàn (http). Dán URL luồng an toàn (https)",
+      "tapToPlay": "Nhấn để phát"
     },
     "map": {
       "showMap": "Hiển thị bản đồ",
@@ -2708,7 +2712,7 @@
     },
     "sanctionsPressure": {
       "title": "Trừng phạt & Chỉ định",
-      "infoTooltip": "Danh sách OFAC SDN và danh sách hợp nhất cùng các chỉ định SEMA/JVCFOA của Canada. Các hàng quốc gia dùng liên hệ trực tiếp. Cờ tàu và đăng ký máy bay được đếm riêng trong mục đăng ký; số tài sản bằng không của một quốc gia không có nghĩa là không có tài sản bị trừng phạt. Quốc gia của tổ chức mẹ được tách khỏi bằng chứng địa chỉ và không tính vào điểm rủi ro.",
+      "infoTooltip": "Danh sách OFAC SDN và danh sách hợp nhất cùng các chỉ định SEMA/JVCFOA của Canada. Các hàng quốc gia dùng liên hệ trực tiếp. Cờ tàu và đăng ký máy bay được đếm riêng trong mục đăng ký; số tài sản bằng không của một quốc gia không có nghĩa là không có tài sản bị trừng phạt.",
       "loading": "Đang tải dữ liệu trừng phạt...",
       "unavailable": "Dữ liệu trừng phạt không khả dụng.",
       "summary": {
@@ -3118,6 +3122,49 @@
       "body": "Một sao trên GitHub giúp những người khác tìm thấy nó.",
       "star": "Sao trên GitHub",
       "dismiss": "Bỏ qua và không hỏi lại"
+    },
+    "reservoirLevels": {
+      "note": "Mực mặt nước từ lidar vệ tinh ICESat-2 của NASA. NASA công bố mỗi lượt quét khoảng hai tháng sau khi đo, vì vậy dữ liệu này theo dõi thay đổi theo tuần và theo mùa, không theo ngày. Chỉ là mực nước, không phải thể tích.",
+      "source": "Nguồn:",
+      "processedWith": "xử lý bằng",
+      "empty": "Chưa có số đo",
+      "filterEmpty": "Không có vùng nước nào khớp bộ lọc này",
+      "unavailable": "Hiện không có dữ liệu mực nước",
+      "filterLabel": "Lọc vùng nước",
+      "filter": {
+        "all": "Tất cả",
+        "attention": "Cần chú ý",
+        "transboundary": "Xuyên biên giới"
+      },
+      "status": {
+        "record_low": "Thấp kỷ lục",
+        "record_high": "Cao kỷ lục",
+        "falling_fast": "Giảm nhanh",
+        "rising_fast": "Tăng nhanh",
+        "low": "Thấp so với mùa",
+        "high": "Cao so với mùa",
+        "normal": "Bình thường",
+        "insufficient_history": "Chưa đủ lịch sử",
+        "no_recent_data": "Không có lượt quét gần đây",
+        "lowInRange": "Thấp trong phạm vi",
+        "highInRange": "Cao trong phạm vi"
+      },
+      "vsUsual": "{{value}} so với thường lệ {{month}}",
+      "in12Months": "{{value}} trong 12 tháng",
+      "noComparison": "Chưa có so sánh",
+      "measured": "đo ngày {{date}} ({{age}})",
+      "noPass": "Chưa có lượt quét dùng được",
+      "popup": {
+        "level": "Mực nước",
+        "levelValue": "{{value}} trên mực nước biển (EGM2008)",
+        "anomaly": "So với thường lệ {{month}}",
+        "anomalyPlain": "So với thường lệ của tháng",
+        "changePrev": "Từ lượt quét trước",
+        "change90": "Trong 90 ngày",
+        "change365": "Trong 12 tháng",
+        "measured": "Ngày đo",
+        "sparkline": "Mực nước trong 36 tháng"
+      }
     }
   },
   "popups": {
@@ -4437,6 +4484,7 @@
   "auth": {
     "signIn": "Đăng nhập",
     "createAccount": "Tạo tài khoản",
+    "freeReason": "Miễn phí: lưu bố cục, theo dõi quốc gia, cảnh báo",
     "settings": "Cài đặt",
     "passkeyOffer": {}
   },
@@ -4584,6 +4632,21 @@
         "related": {
           "0": "Dự báo tức thời hoạt động Trung Quốc",
           "1": "Tóm tắt quốc gia"
+        }
+      },
+      "reservoirLevels": {
+        "category": "Khí hậu",
+        "purpose": "Đánh dấu các hồ chứa và hồ chiến lược theo mức chênh của mực nước so với mức thường lệ cùng thời điểm trong năm và tốc độ thay đổi.",
+        "source": "Độ cao mặt nước nội địa từ NASA ICESat-2 ATL13 qua NSIDC, được xử lý bằng SlideRule Earth và tổng hợp theo từng lượt quét vệ tinh bởi dịch vụ seed-reservoir-levels.",
+        "freshness": "Cập nhật hằng ngày. NASA công bố mỗi lượt quét 50 đến 70 ngày sau khi đo, và mỗi hồ chứa được đo lại sau vài ngày đến khoảng một tháng.",
+        "confidence": "Một lượt quét chỉ được tính khi ít nhất 5 đoạn mặt nước khớp nhau trong phạm vi 0,25 m. So sánh theo mùa cần lượt quét từ ít nhất 3 năm trước vào cùng thời điểm trong năm.",
+        "limitations": {
+          "0": "Chỉ là mực nước, không phải thể tích: cùng một mức giảm nghĩa là lượng trữ mất đi khác nhau ở mỗi hồ chứa.",
+          "1": "Vùng nước không có lượt quét trong 150 ngày được đánh dấu là không có lượt quét gần đây; số đo cuối cùng, các thay đổi và ngày đo vẫn được hiển thị."
+        },
+        "related": {
+          "0": "Bảng Mực nước chiến lược",
+          "1": "Dị thường khí hậu"
         }
       },
       "conflicts": {
@@ -4879,6 +4942,141 @@
     "updated": "Tab này hiện có phiên bản mới nhất của nhóm của bạn.",
     "stopped": "Đã dừng chia sẻ {{name}}.",
     "failed": "Không thể kết nối tới dashboard của nhóm. Vui lòng thử lại.",
-    "limit": "Nhóm của bạn đã chia sẻ {{limit}} dashboard ở đây. Hãy dừng chia sẻ một dashboard trước."
+    "limit": "Nhóm của bạn đã chia sẻ {{limit}} dashboard ở đây. Hãy dừng chia sẻ một dashboard trước.",
+    "focusNotEntitled": "Gói của bạn không bao gồm chia sẻ một dashboard tập trung. Xóa tiêu điểm của tab này để chia sẻ các panel của nó.",
+    "focusUnreadable": "{{name}} có một tiêu điểm mà phiên bản này không thể hiển thị. Tải lại để cập nhật, rồi mở lại."
+  },
+  "focus": {
+    "barLabel": "Tiêu điểm",
+    "summary": "Tập trung vào {{countries}}",
+    "neighboursOff": "Không bao gồm các nước lân cận",
+    "chosenLabel": "Đã chọn",
+    "neighboursLabel": "Nước lân cận",
+    "neighbourItem": "Nước lân cận: {{name}}",
+    "range": "{{start}} đến {{end}}",
+    "windowEnded": "Cửa sổ kết thúc {{date}}",
+    "windowStarts": "Bắt đầu {{date}}",
+    "windowUntil": "Cho đến {{date}}",
+    "windowFrom": "Từ {{date}}",
+    "edit": "Chỉnh sửa",
+    "clear": "Xóa tiêu điểm",
+    "clearAria": "Xóa tiêu điểm và hiển thị toàn bộ thế giới",
+    "clearFocus": "Xóa tiêu điểm",
+    "notFiltered": "Không được lọc",
+    "notFilteredGlobal": "Dữ liệu toàn cầu: không được lọc theo quốc gia",
+    "notFilteredYet": "Chưa được lọc theo quốc gia",
+    "gateSignedOutDesc": "Đăng nhập để tập trung một tab dashboard vào các quốc gia bạn theo dõi.",
+    "gateUpgradeDesc": "Tập trung một tab vào các quốc gia được chọn có sẵn với Pro Business, API Business và Enterprise.",
+    "gateUpgradeCta": "Nâng cấp",
+    "tabButton": "Tiêu điểm",
+    "tabButtonTitle": "Tập trung tab này vào các quốc gia được chọn",
+    "tabButtonTitleActive": "Chỉnh sửa tiêu điểm của tab này",
+    "newTitle": "Tập trung tab này",
+    "editTitle": "Chỉnh sửa tiêu điểm",
+    "intro": "Các panel có thể lọc theo quốc gia chỉ hiển thị các quốc gia này. Những panel khác sẽ nói \"Không được lọc\".",
+    "countriesLabel": "Quốc gia",
+    "count": "{{n}} của {{max}}",
+    "searchPlaceholder": "Tìm kiếm quốc gia",
+    "resultsLabel": "Quốc gia phù hợp",
+    "limitReached": "Bạn đã chọn {{max}} quốc gia, là số tối đa một tiêu điểm có thể chứa.",
+    "removeCountry": "Xóa {{name}}",
+    "includeNeighbours": "Bao gồm các nước lân cận",
+    "neighboursHint": "Rủi ro vượt qua biên giới. Các nước lân cận được đánh dấu và không tính vào {{max}}.",
+    "startLabel": "Từ (tùy chọn)",
+    "endLabel": "Đến (tùy chọn)",
+    "datesHint": "Cho một chuyến đi hoặc một nhiệm vụ. Khi cửa sổ kết thúc, tiêu điểm vẫn giữ nguyên và thanh sẽ cho biết.",
+    "errorNoCountries": "Chọn ít nhất một quốc gia.",
+    "errorTooMany": "Một tiêu điểm có thể chứa tối đa {{max}} quốc gia.",
+    "errorDates": "Ngày kết thúc trước ngày bắt đầu.",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "saved": "Tab này tập trung vào {{countries}}.",
+    "cleared": "Tiêu điểm đã xóa. Tab này hiển thị toàn bộ thế giới.",
+    "notSaved": "Không thể lưu. Trình duyệt này đang chặn lưu trữ trang web.",
+    "plusNeighbours_other": "+ {{count}} nước lân cận",
+    "filter": {
+      "showing": "Hiển thị {{countries}}",
+      "showingNeighbours": "Hiển thị {{countries}} + các nước lân cận",
+      "showAll": "Hiển thị tất cả",
+      "focusOff": "Đã tắt tiêu điểm trong bảng này: hiển thị mọi thứ",
+      "applyFocus": "Áp dụng tiêu điểm",
+      "applyFocusAria": "Lọc lại bảng này theo tiêu điểm",
+      "show": "Hiển thị",
+      "hide": "Ẩn",
+      "noCountryTag": "Không có quốc gia",
+      "emptyHint": "Mọi thứ khác được tính ở trên.",
+      "emptyNews": "Không có tin tức nào cho các quốc gia này trong các tiêu đề hiện tại",
+      "emptyAdvisories": "Không có cảnh báo du lịch nào cho các quốc gia này",
+      "emptyConflict": "Không có sự kiện xung đột UCDP nào cho các quốc gia này",
+      "emptyConflictPartial": "Không có sự kiện xung đột nào cho các quốc gia này trong các sự kiện mới nhất. Danh sách đầy đủ chưa được tải.",
+      "loadingConflict": "Đang tải tất cả các sự kiện xung đột cho các quốc gia này…",
+      "emptyAirports": "Không có sân bay theo dõi nào của bạn ở các quốc gia này",
+      "emptyFlights": "Không có chuyến bay đến hoặc từ các quốc gia này trên bảng này",
+      "emptyAviationNews": "Không có tin tức hàng không nào cho các quốc gia này trong 24 giờ qua",
+      "tabNotFiltered": "Tab này không được lọc theo quốc gia",
+      "hidden_other": "{{count}} mục bị ẩn bởi tiêu điểm",
+      "showAllAria_other": "Hiển thị mọi thứ trong bảng này, bao gồm {{count}} mục ngoài tiêu điểm",
+      "unattributed_other": "{{count}} mục không có quốc gia",
+      "showUnattributedAria_other": "Hiển thị {{count}} mục không có quốc gia",
+      "hideUnattributedAria_other": "Ẩn {{count}} mục không có quốc gia",
+      "partialConflict": "Hiển thị các sự kiện xung đột từ 150 sự kiện mới nhất. Danh sách đầy đủ không được tải.",
+      "partialConflictLoading": "Đang hiển thị các sự kiện xung đột từ 150 mới nhất trong khi danh sách đầy đủ đang tải.",
+      "emptyInstability": "Không có điểm số bất ổn định cho các quốc gia này",
+      "emptyOutbreaks": "Không có bùng phát dịch bệnh cho các quốc gia này",
+      "emptyOutages": "Không có gián đoạn internet cho các quốc gia này",
+      "emptyRadiation": "Không có số liệu phóng xạ cho các quốc gia này",
+      "emptyFuelShortages": "Không có thiếu hụt nhiên liệu cho các quốc gia này",
+      "emptyEnergyDisruptions": "Không có gián đoạn năng lượng cho các quốc gia này",
+      "emptyDisplacement": "Không có dữ liệu di cư cho các quốc gia này",
+      "emptyCorrelation": "Không có tín hiệu cho các quốc gia này"
+    },
+    "draftAssessment": "Bản đánh giá dự thảo",
+    "draftAssessmentAria": "Mở đánh giá chuyến đi, được điền sẵn với tiêu điểm này",
+    "draftCopied": "Đã sao chép yêu cầu. Dán nó vào trợ lý AI của bạn.",
+    "draftCopiedPartial": "Yêu cầu đã được sao chép cho {{count}} quốc gia đầu tiên. Một đánh giá bao gồm tối đa {{max}} quốc gia.",
+    "draftCopyFailed": "Không thể sao chép yêu cầu."
+  },
+  "tripAssessment": {
+    "heading": "Đánh giá chuyến đi",
+    "intro": "Dự thảo đầu tiên có nguồn gốc từ một đánh giá rủi ro du lịch, để nhà phân tích hoàn thành. Nó báo cáo những gì dữ liệu chứa đựng và không cung cấp lời khuyên.",
+    "privacy": "Chỉ quốc gia, thành phố và ngày tháng. Không nhập tên du khách, khách sạn hoặc địa chỉ đường phố. Không có gì bạn nhập được lưu trữ.",
+    "taskLabel": "Nhãn tác vụ (tùy chọn)",
+    "taskLabelPlaceholder": "Các chuyến thăm địa điểm khu vực",
+    "windowStart": "Chuyến đi bắt đầu",
+    "windowEnd": "Chuyến đi kết thúc",
+    "countriesLabel": "Quốc gia, theo thứ tự du lịch",
+    "count": "{{n}} trên {{max}}",
+    "searchPlaceholder": "Thêm một quốc gia",
+    "addCountry": "Thêm một quốc gia vào chuyến đi",
+    "limit": "Một chuyến đi bao gồm tối đa {{max}} quốc gia.",
+    "omitted": "Loại bỏ vì một chuyến đi bao gồm tối đa {{max}} quốc gia: {{names}}.",
+    "cities": "Thành phố, cách nhau bằng dấu phẩy (tối đa {{max}})",
+    "arrive": "Đến",
+    "depart": "Khởi hành",
+    "moveEarlier": "Chuyển {{name}} sớm hơn trong chuyến đi",
+    "moveLater": "Chuyển {{name}} muộn hơn trong chuyến đi",
+    "remove": "Loại bỏ {{name}} khỏi chuyến đi",
+    "downloadMarkdown": "Tải xuống Markdown",
+    "downloadWord": "Tải xuống cho Word",
+    "print": "In hoặc lưu dưới dạng PDF",
+    "copyRequest": "Sao chép yêu cầu cho trợ lý AI",
+    "close": "Đóng",
+    "building": "Xây dựng dự thảo từ dữ liệu mới nhất…",
+    "downloaded": "Đã tải xuống {{file}}. Mỗi lần tải xuống được xây dựng mới và được ghi dấu với thời gian nắm bắt riêng của nó.",
+    "printOpened": "Hộp thoại in đã mở. Chọn Lưu dưới dạng PDF để giữ một bản sao.",
+    "errNoCountries": "Thêm ít nhất một quốc gia.",
+    "errTooMany": "Một chuyến đi bao gồm tối đa {{max}} quốc gia.",
+    "errWindow": "Chuyến đi phải kết thúc vào hoặc sau ngày nó bắt đầu.",
+    "errCities": "{{name}}: liệt kê tối đa {{max}} thành phố.",
+    "errCountryDates": "{{name}}: ngày khởi hành phải là ngày đến hoặc sau đó.",
+    "errOutsideWindow": "{{name}}: ngày tháng phải nằm trong cửa sổ chuyến đi.",
+    "errInvalid": "Không thể xây dựng dự thảo từ chuyến đi này:",
+    "errAuth": "Đăng nhập lại để xây dựng dự thảo.",
+    "errUpgrade": "Đánh giá chuyến đi được bao gồm trong các kế hoạch Pro Business, API Business và Enterprise.",
+    "errBusy": "Quá nhiều yêu cầu. Thử lại trong một phút.",
+    "errUnavailable": "Dữ liệu đằng sau dự thảo hiện không khả dụng. Thử lại trong một phút.",
+    "errGeneric": "Không thể xây dựng dự thảo. Thử lại.",
+    "errDownload": "Không thể tải xuống tệp tại đây. Hãy sử dụng In hoặc lưu dưới dạng PDF.",
+    "errLoad": "Không thể mở đánh giá chuyến đi. Tải lại trang và thử lại."
   }
 }

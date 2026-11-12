@@ -15,6 +15,7 @@ import {
 } from '@/app/panel-mount-deferral';
 import {
   SPLIT_LAYOUT_MIN_WIDTH,
+  isSplitLayoutViewport,
   clampMapColWidthPercent,
   mapRightClassForVisualSide,
   type MapVisualSide,
@@ -34,6 +35,11 @@ import type { AviationCommandBar } from '@/components/AviationCommandBar';
 import { MobilePanelNav } from '@/components/MobilePanelNav';
 import { debounce, loadFromStorage, saveToStorage } from '@/utils';
 import { escapeHtml } from '@/utils/sanitize';
+import {
+  DASHBOARD_EXTERNAL_SITE_LINKS,
+  resolveDashboardSiteOrigin,
+} from '@/config/dashboard-reference-links';
+import { dashboardReferenceAnchorsHtml } from '@/utils/dashboard-site-links';
 import { safeStorageGet } from '@/utils/safe-storage';
 import {
   CANONICAL_FEEDS,
@@ -58,13 +64,13 @@ import { loadStoredMissionPreset } from '@/services/mission-presets';
 import { peekPendingMissionAttribution } from '@/services/analytics';
 import { getStoredMapModePreference } from '@/services/map-mode-preference';
 import { loadWidgets, saveWidget, isProUser, isProTierResolved, subscribeWidgetAccess } from '@/services/widget-store';
-import { LAYER_REGISTRY, sanitizeLockedLayers, shouldSanitizeLockedLayers } from '@/config/map-layer-definitions';
+import { LAYER_REGISTRY, getAllowedLayerKeys, sanitizeLockedLayers, shouldSanitizeLockedLayers, type MapVariant } from '@/config/map-layer-definitions';
 import type { CustomWidgetSpec } from '@/services/widget-store';
 import {
   panelGateStateChanged,
   sweepLegacyDisabledCustomWidgets,
 } from '@/app/free-tier-gate';
-import { initEntitlementSubscription, destroyEntitlementSubscription, markEntitlementVerificationUnavailable, isEntitlementActive, hasTier, getEntitlementState, onEntitlementChange } from '@/services/entitlements';
+import { initEntitlementSubscription, destroyEntitlementSubscription, markEntitlementVerificationUnavailable, isEntitlementActive, hasTier, getEntitlementState, onEntitlementChange, hasTravelRiskAssessmentForAccount } from '@/services/entitlements';
 import { createEntitlementReloadController } from '@/services/entitlement-reload-controller';
 import { initSubscriptionWatch, destroySubscriptionWatch, onSubscriptionChange } from '@/services/billing';
 import { initPaymentFailureBanner } from '@/components/payment-failure-banner';
@@ -81,6 +87,19 @@ import { PasskeyOfferBoot } from '@/app/passkey-offer-boot';
 import { bootGitHubStarPrompt } from '@/app/github-star-prompt-boot';
 import { showCheckoutFailureBanner } from '@/components/checkout-failure-banner';
 import { PanelTabBar, tabCapGateCopy } from '@/components/PanelTabBar';
+import type { FocusBar } from '@/components/FocusBar';
+import { FocusMapSync } from '@/app/focus-map-sync';
+import {
+  canSetFocus,
+  getActiveScope,
+  getResolvedScope,
+  restoreActiveScope,
+  setActiveScope,
+  subscribeScope,
+  type ResolvedScope,
+  type TabScope,
+} from '@/services/tab-focus';
+import { planPanelFilterApply, setPanelFilter, type PanelFilters } from '@/services/panel-filters';
 import {
   loadTabsState,
   saveTabsState,
@@ -92,11 +111,13 @@ import {
 } from '@/services/tab-store';
 import { TeamDashboardsStore, publishOrShareAsNew } from '@/services/team-dashboards-store';
 import {
+  canPublishTeamDashboardScope,
   captureTeamDashboardLayout,
   loadTeamDashboards,
   publishTeamDashboard,
   removeTeamDashboard,
   teamDashboardErrorKind,
+  teamDashboardFailureKey,
   toTeamDashboardTab,
   type PanelSize,
   type TeamDashboardMap,
@@ -258,13 +279,6 @@ const LATE_REGISTERED_PANEL_KEYS = new Set(['live-news']);
 const CW_PRO_GATE_TAB_RECOVERY_KEY = 'worldmonitor-cw-pro-gate-tab-recovery-v1';
 const STORAGE_ATLAS_PANEL_KEY = 'storage-facility-map';
 
-const DASHBOARD_REFERENCE_LINKS = [
-  { label: 'Countries', path: '/countries/' },
-  { label: 'Chokepoints', path: '/chokepoints/' },
-  { label: 'Crises', path: '/crises/' },
-  { label: 'Tools', path: '/tools/' },
-  { label: 'Accuracy', path: '/accuracy/' },
-] as const;
 
 export const VARIANT_SWITCHER_DASHBOARD_URLS = {
   full: 'https://www.worldmonitor.app/dashboard',
@@ -481,10 +495,51 @@ type ImportedPanel<M, K extends keyof M> = InstanceType<PanelExport<M, K>>;
 
 type HydrationSchedulePhase = 'visible' | 'near';
 
+type FocusUi = typeof import('@/components/focus-ui');
+
+// Dashboard focus (#10453). The focus UI (bar, gate copy, per-panel notices)
+// is a separate chunk most visitors never load; it arrives the first time a
+// tab is focused or Focus is pressed. Module-level because afterPanelMounted
+// runs with a stand-in `this` in tests.
+let focusUi: FocusUi | null = null;
+let focusUiLoad: Promise<FocusUi> | null = null;
+
+function loadFocusUi(): Promise<FocusUi> {
+  focusUiLoad ??= import('@/components/focus-ui').then(
+    (mod) => {
+      focusUi = mod;
+      return mod;
+    },
+    (err: unknown) => {
+      focusUiLoad = null; // A later focus change retries.
+      throw err;
+    },
+  );
+  return focusUiLoad;
+}
+
+/**
+ * Hand the active focus to one panel and, once the focus UI is loaded, label
+ * it when it does not follow the focus. Runs for every live panel on a focus
+ * change, and for each panel as it mounts. The scope itself is dispatched
+ * synchronously; only the label waits for the chunk.
+ */
+function applyScopeToPanel(key: string, panel: Panel): void {
+  if (typeof panel.applyScope !== 'function') return;
+  const resolved = getResolvedScope();
+  try {
+    panel.applyScope(resolved);
+  } catch (err) {
+    console.error(`[focus] ${key} failed to apply the focus`, err);
+  }
+  focusUi?.applyScopeNotice(key, panel, resolved);
+}
+
 export class PanelLayoutManager implements AppModule {
   private ctx: AppContext;
   private callbacks: PanelLayoutManagerCallbacks;
   private panelDragCleanupHandlers: Array<() => void> = [];
+  private variantPlacementCleanup: (() => void) | null = null;
   private deferredPanelMounts: Map<string, DeferredPanelMount> = new Map();
   private lazyPanelRegistrations: Map<string, LazyPanelRegistration> = new Map();
   private observedHydrationPanels = new WeakSet<Panel>();
@@ -496,6 +551,18 @@ export class PanelLayoutManager implements AppModule {
   private mobileMapCollapseBtn: HTMLButtonElement | null = null;
   private panelTabBar: PanelTabBar | null = null;
   private tabsState: TabsState | null = null;
+  // Dashboard focus (#10453): the bar above the grid, the active-scope
+  // subscription, and the editor while it is open.
+  private focusBar: FocusBar | null = null;
+  private unsubscribeScope: (() => void) | null = null;
+  private unsubscribeFocusEntitlement: (() => void) | null = null;
+  private focusEditor: { close(): void } | null = null;
+  // Panels the active tab has a filter choice for; see planPanelFilterApply.
+  private appliedPanelFilters = new Set<string>();
+  // Map outline and fit for the focus; see FocusMapSync for when it moves.
+  // Created on first use, like the other focus state, so a manager built
+  // without its constructor (test harnesses) still dispatches scopes.
+  private focusMapSync: FocusMapSync | null = null;
   private unregisterExportFlush: (() => void) | null = null;
   private aviationCommandBar: AviationCommandBar | null = null;
   private readonly applyTimeRangeFilterDebounced: (() => void) & { cancel(): void };
@@ -901,6 +968,8 @@ export class PanelLayoutManager implements AppModule {
 
   /** Retire panel resources and watches, then settle pending entitlement verification. */
   destroy(): void {
+    this.variantPlacementCleanup?.();
+    this.variantPlacementCleanup = null;
     this.pendingStorageFacilityId = null;
     this.checkoutReturnFocusController.abort();
     clearAllPendingCalls();
@@ -959,6 +1028,14 @@ export class PanelLayoutManager implements AppModule {
     this.mobileMapCollapseBtn = null;
     this.panelTabBar?.destroy();
     this.panelTabBar = null;
+    this.unsubscribeScope?.();
+    this.unsubscribeScope = null;
+    this.unsubscribeFocusEntitlement?.();
+    this.unsubscribeFocusEntitlement = null;
+    this.focusEditor?.close();
+    this.focusEditor = null;
+    this.focusBar?.destroy();
+    this.focusBar = null;
     this.unregisterExportFlush?.();
     this.unregisterExportFlush = null;
     // Clean up happy variant panels
@@ -1159,13 +1236,15 @@ export class PanelLayoutManager implements AppModule {
       return ` style="--map-col-width: ${clampMapColWidthPercent(stored, window.innerWidth).toFixed(1)}%"`;
     })();
     const bootShellFootprint = import.meta.env.DEV ? captureBootShellFootprint(this.ctx.container) : null;
-    const referenceOrigin = this.ctx.isDesktopApp || window.location.hostname.endsWith('.worldmonitor.app')
-      ? 'https://www.worldmonitor.app'
-      : '';
-    const referenceLinksHtml = DASHBOARD_REFERENCE_LINKS.map(({ label, path }) => {
-      const href = `${referenceOrigin}${path}`;
-      return `<a href="${href}" target="_blank" rel="noopener">${label}</a>`;
-    }).join('');
+    const referenceOrigin = resolveDashboardSiteOrigin({
+      isDesktopApp: this.ctx.isDesktopApp,
+      hostname: window.location.hostname,
+    });
+    const referenceLinksHtml = dashboardReferenceAnchorsHtml(referenceOrigin);
+    const pricingHref = `${referenceOrigin}/pro#pricing`;
+    const externalSiteLinksHtml = DASHBOARD_EXTERNAL_SITE_LINKS.map(({ label, href }) => (
+      `<a href="${href}" target="_blank" rel="noopener">${label}</a>`
+    )).join('');
 
     markLcpDebug('wm:layout:render-start');
     document.documentElement.classList.add('wm-layout-hydrated');
@@ -1337,10 +1416,8 @@ export class PanelLayoutManager implements AppModule {
         <div class="mobile-menu-divider"></div>
         <div class="mobile-menu-footer-links">
           ${referenceLinksHtml}
-          <a href="${referenceOrigin}/pro#pricing" target="_blank" rel="noopener">Pricing</a>
-          <a href="https://www.worldmonitor.app/blog/" target="_blank" rel="noopener">Blog</a>
-          <a href="https://www.worldmonitor.app/docs/documentation" target="_blank" rel="noopener">Docs</a>
-          <a href="https://status.worldmonitor.app/" target="_blank" rel="noopener">Status</a>
+          <a href="${pricingHref}" target="_blank" rel="noopener">Pricing</a>
+          ${externalSiteLinksHtml}
         </div>
         <div class="mobile-menu-version">v${__APP_VERSION__}</div>
       </nav>
@@ -1364,7 +1441,10 @@ export class PanelLayoutManager implements AppModule {
         </button>`
       ).join('')}
       </div>
-      <div class="dashboard-tabs-mount" id="panelTabsMount"></div>
+      <div class="dashboard-navigation-row">
+        <div class="dashboard-tabs-mount" id="panelTabsMount"></div>
+        <div class="tablet-variant-mount"></div>
+      </div>
       <main id="main" tabindex="-1" class="main-content${mapRightClassActive ? ' map-right' : ''}"${mapColWidthStyle}>
         <div class="map-section${mapStartsCollapsed ? ' collapsed' : ''}" id="mapSection">
           <div class="panel-header">
@@ -1415,27 +1495,28 @@ export class PanelLayoutManager implements AppModule {
           <span class="mobile-tab-icon" aria-hidden="true">•••</span><span>More</span>
         </button>
       </nav>
-      <footer class="site-footer">
-        <div class="site-footer-brand">
-          <img src="/favico/android-chrome-96x96.png" alt="" width="28" height="28" loading="lazy" decoding="async" class="site-footer-icon" />
-          <div class="site-footer-brand-text">
-            <span class="site-footer-name">WORLD MONITOR</span>
-            <span class="site-footer-sub">v${__APP_VERSION__} &middot; <a href="https://x.com/eliehabib" target="_blank" rel="noopener" class="site-footer-credit">@eliehabib</a></span>
-          </div>
-        </div>
-        <nav aria-label="World Monitor references">
-          ${referenceLinksHtml}
-          <a href="${referenceOrigin}/pro#pricing" target="_blank" rel="noopener">Pricing</a>
-          <a href="https://www.worldmonitor.app/blog/" target="_blank" rel="noopener">Blog</a>
-          <a href="https://www.worldmonitor.app/docs/documentation" target="_blank" rel="noopener">Docs</a>
-          <a href="https://status.worldmonitor.app/" target="_blank" rel="noopener">Status</a>
-          <a href="https://github.com/koala73/worldmonitor" target="_blank" rel="noopener">GitHub</a>
-          <a href="https://x.com/worldmonitorai" target="_blank" rel="noopener">X</a>
+      <footer class="site-footer" aria-label="World Monitor status">
+        <span class="site-footer-meta">
+          <span class="site-footer-version">v${__APP_VERSION__}</span>
+          <span class="site-footer-copy">&copy; ${new Date().getFullYear()} World Monitor</span>
           ${this.ctx.isDesktopApp ? '' : `<span id="footerDownloadMount"></span>`}
-        </nav>
-        <span class="site-footer-copy">&copy; ${new Date().getFullYear()} World Monitor</span>
+        </span>
       </footer>
     `, "legacy direct innerHTML migration"));
+    // Move the same links so navigation, analytics and focus targets stay shared.
+    this.variantPlacementCleanup?.();
+    const switcher = this.ctx.container.querySelector('.variant-switcher');
+    const headerLeft = this.ctx.container.querySelector('.header-left');
+    const tabletMount = this.ctx.container.querySelector('.tablet-variant-mount');
+    const tabletWidth = window.matchMedia('(min-width: 768px) and (max-width: 980px)');
+    const placeSwitcher = () => {
+      if (!switcher || !headerLeft || !tabletMount) return;
+      if (tabletWidth.matches) tabletMount.append(switcher);
+      else headerLeft.prepend(switcher);
+    };
+    placeSwitcher();
+    tabletWidth.addEventListener('change', placeSwitcher);
+    this.variantPlacementCleanup = () => tabletWidth.removeEventListener('change', placeSwitcher);
     // Mark AFTER the innerHTML swap so the timestamp reflects when the new shell
     // DOM is actually live — placing it before setTrustedHtml recorded a time
     // earlier than any LCP candidate in the new shell, making it useless for
@@ -1457,6 +1538,10 @@ export class PanelLayoutManager implements AppModule {
       }
     });
 
+    // Mount the chip nav before createPanels() yields: a nav added after that await paints one
+    // frame with #panelsGrid 49px too high, then shifts it down.
+    if (this.ctx.isMobile) this.setupMobilePanelNav();
+
     await this.createPanels();
 
     this.initPanelTabs();
@@ -1464,7 +1549,7 @@ export class PanelLayoutManager implements AppModule {
 
     if (this.ctx.isMobile) {
       this.setupMobileMapToggle();
-      this.setupMobilePanelNav();
+      this.mobilePanelNav?.refresh();
     }
   }
 
@@ -1534,9 +1619,224 @@ export class PanelLayoutManager implements AppModule {
         onUpdateTab: () => this.updateActiveTabFromTeam(),
         onStopSharing: (id) => { void this.stopSharingTeamDashboard(id); },
       },
+      focus: {
+        isFocused: () => !!this.activeTab()?.scope,
+        onClick: () => this.openFocusEditor('tabs'),
+      },
     });
     mount.appendChild(this.panelTabBar.getElement());
     this.updateTabCapLock();
+    this.initFocus();
+  }
+
+  // ============================================
+  // Dashboard focus (#10453): countries a tab is about
+  // ============================================
+
+  private initFocus(): void {
+    this.unsubscribeScope?.();
+    this.focusBar?.destroy();
+    this.focusBar = null;
+    this.unsubscribeScope = subscribeScope((resolved) => this.onScopeChanged(resolved));
+    // The bar's report action follows the plan, which can hydrate or lapse
+    // after the bar is drawn.
+    this.unsubscribeFocusEntitlement?.();
+    this.unsubscribeFocusEntitlement = onEntitlementChange(() => this.focusBar?.render(getResolvedScope()));
+    // Reload: the stored tab's focus becomes the active one. Not gated; see
+    // restoreActiveScope.
+    restoreActiveScope(this.activeTab()?.scope ?? null);
+    this.seedAppliedPanelFilters();
+    // createPanels() runs before the tabs load, so a panel that mounted
+    // eagerly found no active tab and kept its default.
+    this.applyTabPanelFilters(this.activeTab()?.panelFilters);
+    this.onScopeChanged(getResolvedScope());
+  }
+
+  private focusMap(): FocusMapSync {
+    return (this.focusMapSync ??= new FocusMapSync());
+  }
+
+  private onScopeChanged(resolved: ResolvedScope | null): void {
+    if (this.ctx.isDestroyed) return;
+    this.focusMap().onScopeChanged(resolved);
+    for (const [key, panel] of Object.entries(this.ctx.panels ?? {})) {
+      if (panel) applyScopeToPanel(key, panel);
+    }
+    this.panelTabBar?.refresh();
+    if (focusUi) {
+      this.renderFocusChrome(focusUi);
+    } else if (resolved) {
+      loadFocusUi().then(
+        (ui) => this.renderFocusChrome(ui),
+        (err: unknown) => console.error('[focus] focus UI failed to load', err),
+      );
+    }
+  }
+
+  /** The bar and every panel's "Not filtered" chip, for the focus active now. */
+  private renderFocusChrome(ui: FocusUi): void {
+    if (this.ctx.isDestroyed || !this.panelTabBar) return;
+    const resolved = getResolvedScope();
+    if (!this.focusBar) {
+      this.focusBar = new ui.FocusBar({
+        onEdit: () => this.openFocusEditor('bar'),
+        onClear: () => this.setActiveTabFocus(null),
+        canDraftAssessment: () => hasTravelRiskAssessmentForAccount(),
+        onDraftAssessment: () => {
+          const scope = getActiveScope();
+          if (scope) void ui.openTripAssessmentForScope(scope);
+        },
+      });
+      // Above the map and the grid, so it reads as a statement about the
+      // whole tab and stays visible however the grid scrolls.
+      document.getElementById('main')?.before(this.focusBar.getElement());
+    }
+    this.focusBar.render(resolved);
+    for (const [key, panel] of Object.entries(this.ctx.panels ?? {})) {
+      if (panel) ui.applyScopeNotice(key, panel, resolved);
+    }
+  }
+
+  /**
+   * Whether this account may set or edit a focus. The plan's own grant, or
+   * the server's word that this teammate may publish focused dashboards: an
+   * API Business seat holds a Pro snapshot locally, but its team plan
+   * includes focus. Client-side only: a personal focus narrows data the plan
+   * already receives, so this protects nothing (see src/services/tab-focus.ts).
+   */
+  private focusAllowed(): boolean {
+    return canSetFocus() || this.team.dashboards?.team.focus === true;
+  }
+
+  /** Whether this account may set a focus; the mission presets that ask for countries read it. */
+  public canFocus(): boolean {
+    return this.focusAllowed();
+  }
+
+  /** Open the focus editor on the active tab (a mission preset asks for its countries). */
+  public promptForFocus(): void {
+    this.openFocusEditor('tabs');
+  }
+
+  /** Say a focus needs a plan this account lacks (a gated mission preset). */
+  public showFocusGateNotice(): void {
+    this.showFocusGate('tabs');
+  }
+
+  private showFocusGate(from: 'tabs' | 'bar'): void {
+    trackGateHit('tab-focus');
+    const auth = getAuthState();
+    const reason = auth.user
+      ? resolveBillingAwareGateReason(PanelGateReason.FREE_TIER)
+      : PanelGateReason.ANONYMOUS;
+    const onAction = resolveGateAction(reason, { openAuthModal: () => this.ctx.authModal?.open() });
+    loadFocusUi().then(
+      (ui) => {
+        if (this.ctx.isDestroyed) return;
+        const copy = ui.focusGateCopy(reason);
+        if (from === 'bar' && this.focusBar) this.focusBar.showGate(copy, onAction);
+        else this.panelTabBar?.showFocusGateNotice(copy, onAction);
+      },
+      (err: unknown) => console.error('[focus] focus UI failed to load', err),
+    );
+  }
+
+  private openFocusEditor(from: 'tabs' | 'bar'): void {
+    if (!this.tabsState || this.focusEditor) return;
+    if (!this.focusAllowed()) {
+      this.showFocusGate(from);
+      return;
+    }
+    const tabId = this.tabsState.activeTabId;
+    void import('@/components/FocusEditor').then(({ openFocusEditor }) => {
+      // The tab can change while the chunk loads; edit only the tab it was opened for.
+      if (this.ctx.isDestroyed || this.focusEditor || this.tabsState?.activeTabId !== tabId) return;
+      this.focusEditor = openFocusEditor({
+        initial: getActiveScope(),
+        onSave: (scope) => {
+          if (this.tabsState?.activeTabId === tabId) this.setActiveTabFocus(scope);
+        },
+        onClear: () => {
+          if (this.tabsState?.activeTabId === tabId) this.setActiveTabFocus(null);
+        },
+        onClose: () => {
+          this.focusEditor = null;
+        },
+      });
+    }).catch((err) => {
+      console.error('[focus] editor failed to load', err);
+      showToast(t('teamDashboards.failed'));
+    });
+  }
+
+  // ============================================
+  // Panel filter choices (#10453, phase 2): saved with the tab
+  // ============================================
+
+  /**
+   * Hand the active tab's choice to a panel that owns one, and save the
+   * user's own changes to it back to the tab. Runs as each panel mounts.
+   */
+  private bindPanelFilterChoice(key: string, panel: Panel): void {
+    if (typeof panel.hasFilterChoice !== 'function' || !panel.hasFilterChoice()) return;
+    panel.onFilterChoiceChange((value) => this.onPanelFilterChanged(key, value));
+    const value = this.activeTab()?.panelFilters?.[key];
+    if (value !== undefined) {
+      panel.setFilterChoice(value);
+      // A panel that mounts after a reload restores its saved choice here, so
+      // the next tab switch must know to reset it.
+      this.appliedPanelFilters.add(key);
+    }
+  }
+
+  /** At startup the active tab's choices count as applied, whether or not their panels have mounted. */
+  private seedAppliedPanelFilters(): void {
+    this.appliedPanelFilters = new Set(Object.keys(this.activeTab()?.panelFilters ?? {}));
+  }
+
+  /** Give every mounted panel the choice the now-active tab holds, or reset it. */
+  private applyTabPanelFilters(filters: PanelFilters | undefined): void {
+    const panels = this.ctx.panels ?? {};
+    const plan = planPanelFilterApply(Object.keys(panels), filters, this.appliedPanelFilters);
+    for (const { key, value } of plan.updates) {
+      const panel = panels[key];
+      if (panel && typeof panel.setFilterChoice === 'function') panel.setFilterChoice(value);
+    }
+    this.appliedPanelFilters = plan.applied;
+  }
+
+  private onPanelFilterChanged(key: string, value: string | null): void {
+    const tab = this.activeTab();
+    if (!tab || !this.tabsState) return;
+    const next = setPanelFilter(tab.panelFilters, key, value);
+    if (next) tab.panelFilters = next;
+    else delete tab.panelFilters;
+    this.appliedPanelFilters = new Set(Object.keys(next ?? {}));
+    saveTabsState(this.tabsState);
+  }
+
+  /** Set (or with null, clear) the active tab's focus and persist it with the tab. */
+  private setActiveTabFocus(scope: TabScope | null): void {
+    const tab = this.activeTab();
+    if (!tab || !this.tabsState) return;
+    if (!setActiveScope(scope, scope === null || this.focusAllowed())) {
+      if (scope) this.showFocusGate('bar');
+      return;
+    }
+    const active = getActiveScope();
+    if (active) tab.scope = active;
+    else delete tab.scope;
+    const { persisted } = saveTabsState(this.tabsState);
+    this.panelTabBar?.refresh();
+    if (!persisted) showToast(t('focus.notSaved'));
+    else if (!active) showToast(t('focus.cleared'));
+    else {
+      // A focus was just applied, so onScopeChanged has the focus UI loading.
+      loadFocusUi().then(
+        (ui) => showToast(t('focus.saved', { countries: ui.formatCountryList(active.countries) })),
+        () => showToast(t('focus.saved', { countries: active.countries.join(', ') })),
+      );
+    }
   }
 
   private saveActiveTabAsNewTabPanels(): void {
@@ -1592,14 +1892,26 @@ export class PanelLayoutManager implements AppModule {
     }
 
     const built = toTeamDashboardTab(dashboard.layout, this.ctx.panelSettings);
-    this.createAndActivateTab(dashboard.name, {
-      panelSettings: built.panelSettings,
-      panelOrder: built.panelOrder,
-      bottomSet: built.bottomSet,
-      team: { id: dashboard.id, version: dashboard.version },
-    });
-    this.applyTeamPanelSizes(built.sizes);
-    this.applyTeamMap(built.map);
+    if (built.scopeInvalid) {
+      // Opened without its focus it would pass for the whole world.
+      showToast(t('teamDashboards.focusUnreadable', { name: dashboard.name }));
+      return;
+    }
+    // A stored map view wins over the focus fit; the outline still draws.
+    const open = () => {
+      this.createAndActivateTab(dashboard.name, {
+        panelSettings: built.panelSettings,
+        panelOrder: built.panelOrder,
+        bottomSet: built.bottomSet,
+        team: { id: dashboard.id, version: dashboard.version },
+        ...(built.scope ? { scope: built.scope } : {}),
+        ...(built.panelFilters ? { panelFilters: built.panelFilters } : {}),
+      });
+      this.applyTeamPanelSizes(built.sizes);
+      this.applyTeamMap(built.map);
+    };
+    if (built.map) this.focusMap().keepMapView(open);
+    else open();
     showToast(t('teamDashboards.opened', { name: dashboard.name }));
   }
 
@@ -1609,6 +1921,19 @@ export class PanelLayoutManager implements AppModule {
     if (!tab || !dashboard || !this.tabsState) return;
 
     const built = toTeamDashboardTab(dashboard.layout, this.ctx.panelSettings);
+    if (built.scopeInvalid) {
+      showToast(t('teamDashboards.focusUnreadable', { name: dashboard.name }));
+      return;
+    }
+    // The shared focus (and its neighbours switch) is part of the version.
+    if (built.scope) tab.scope = built.scope;
+    else delete tab.scope;
+    if (built.panelFilters) tab.panelFilters = built.panelFilters;
+    else delete tab.panelFilters;
+    this.applyTabPanelFilters(tab.panelFilters);
+    // A stored map view wins over the focus fit; the outline still draws.
+    if (built.map) this.focusMap().keepMapView(() => restoreActiveScope(built.scope));
+    else restoreActiveScope(built.scope);
     this.applyTabPanelState(built.panelSettings, built.panelOrder, built.bottomSet);
     this.applyTeamPanelSizes(built.sizes);
     this.applyTeamMap(built.map);
@@ -1624,10 +1949,17 @@ export class PanelLayoutManager implements AppModule {
     const tab = this.activeTab();
     const team = this.team.dashboards;
     if (!userId || !tab || !team || this.teamBusy) return;
+    // Refused before the round trip; `publish` enforces the same rule.
+    if (!canPublishTeamDashboardScope(team.team, tab.scope)) {
+      showToast(t('teamDashboards.focusNotEntitled'));
+      return;
+    }
 
     const mapState = this.ctx.map?.getState();
     const layout = captureTeamDashboardLayout({
       ...this.captureCurrentTabState().snapshot,
+      scope: tab.scope ?? null,
+      ...(team.team.focus === true && tab.panelFilters ? { panelFilters: tab.panelFilters } : {}),
       rowSpans: loadPanelSpans(),
       colSpans: loadPanelColSpans(),
       map: this.ctx.map && mapState
@@ -1669,9 +2001,9 @@ export class PanelLayoutManager implements AppModule {
         if (this.team.userId === userId) void this.team.reload({ fresh: true });
         return;
       }
-      showToast(kind === 'TEAM_DASHBOARD_LIMIT'
-        ? t('teamDashboards.limit', { limit: String((err as { data?: { limit?: number } }).data?.limit ?? 25) })
-        : t('teamDashboards.failed'));
+      showToast(t(teamDashboardFailureKey(kind), {
+        limit: String((err as { data?: { limit?: number } }).data?.limit ?? 25),
+      }));
     } finally {
       this.teamBusy = false;
       this.panelTabBar?.refresh();
@@ -2206,7 +2538,7 @@ export class PanelLayoutManager implements AppModule {
 
   private createAndActivateTab(
     name: string,
-    preset?: Pick<PanelTab, 'panelSettings' | 'panelOrder' | 'bottomSet' | 'team'>,
+    preset?: Pick<PanelTab, 'panelSettings' | 'panelOrder' | 'bottomSet' | 'team' | 'scope' | 'panelFilters'>,
   ): { tab: PanelTab; persisted: boolean } {
     if (!this.tabsState) {
       throw new Error('Dashboard tabs are not available.');
@@ -2226,10 +2558,14 @@ export class PanelLayoutManager implements AppModule {
       panelOrder: defaults.panelOrder,
       bottomSet: preset?.bottomSet ?? [],
       ...(preset?.team ? { team: preset.team } : {}),
+      ...(preset?.scope ? { scope: preset.scope } : {}),
+      ...(preset?.panelFilters ? { panelFilters: preset.panelFilters } : {}),
     };
     this.tabsState.tabs.push(tab);
     this.tabsState.activeTabId = tab.id;
     const persist = saveTabsState(this.tabsState);
+    restoreActiveScope(tab.scope ?? null);
+    this.applyTabPanelFilters(tab.panelFilters);
     this.applyTabPanelState(tab.panelSettings, tab.panelOrder, tab.bottomSet);
     this.panelTabBar?.refresh();
     this.updateTabCapLock();
@@ -2336,6 +2672,8 @@ export class PanelLayoutManager implements AppModule {
     this.tabsState.activeTabId = tabId;
     const persist = saveTabsState(this.tabsState);
 
+    restoreActiveScope(target.scope ?? null);
+    this.applyTabPanelFilters(target.panelFilters);
     this.applyTabPanelState(target.panelSettings, target.panelOrder, target.bottomSet);
     this.panelTabBar?.refresh();
     return persist;
@@ -2410,6 +2748,8 @@ export class PanelLayoutManager implements AppModule {
       const fallback = this.tabsState.tabs[Math.max(0, idx - 1)]!;
       this.tabsState.activeTabId = fallback.id;
       persist = saveTabsState(this.tabsState);
+      restoreActiveScope(fallback.scope ?? null);
+      this.applyTabPanelFilters(fallback.panelFilters);
       this.applyTabPanelState(fallback.panelSettings, fallback.panelOrder, fallback.bottomSet);
     } else {
       persist = saveTabsState(this.tabsState);
@@ -3036,6 +3376,8 @@ export class PanelLayoutManager implements AppModule {
     }
     const config = this.ctx.panelSettings[key];
     if (config) panel.toggle(config.enabled);
+    applyScopeToPanel(key, panel);
+    this.bindPanelFilterChoice(key, panel);
     if (key === STORAGE_ATLAS_PANEL_KEY) this.deliverPendingStorageFacility(panel);
     this.observePanelForHydration(panel);
     if (config?.enabled) {
@@ -3320,6 +3662,22 @@ export class PanelLayoutManager implements AppModule {
       panel.setLocationClickHandler((lat: number, lon: number) => {
         if (this.ctx.isMobile) this.revealMobileMap();
         this.ctx.map?.setCenter(lat, lon, 6);
+      });
+      return panel;
+    });
+
+    this.lazyImportedPanel('reservoir-levels', () => import('@/components/ReservoirLevelsPanel'), 'ReservoirLevelsPanel', (ReservoirLevelsPanel) => {
+      const panel = new ReservoirLevelsPanel();
+      panel.setSelectHandler((reservoir) => {
+        const map = this.ctx.map;
+        if (!map) return;
+        if (this.ctx.isMobile) this.revealMobileMap();
+        if (!this.ctx.mapLayers.reservoirLevels && getAllowedLayerKeys(SITE_VARIANT as MapVariant).has('reservoirLevels')) {
+          map.enableLayer('reservoirLevels');
+          this.ctx.mapLayers.reservoirLevels = true;
+          saveToStorage(STORAGE_KEYS.mapLayers, this.ctx.mapLayers);
+        }
+        map.openReservoir(reservoir);
       });
       return panel;
     });
@@ -3881,6 +4239,8 @@ export class PanelLayoutManager implements AppModule {
 
     this.applyPanelSettings();
     this.applyInitialUrlState();
+    // After the URL's view, so a focused tab's fit is the later command.
+    this.focusMap().attachMap(this.ctx.map);
 
     // Observe each panel for viewport entry. As soon as a panel scrolls
     // within ~200px of the viewport it fires loadAllData() once
@@ -4278,7 +4638,7 @@ export class PanelLayoutManager implements AppModule {
   private getEffectiveUltraWide(): boolean {
     const mapSection = document.getElementById('mapSection');
     const mapEnabled = !mapSection?.classList.contains('hidden');
-    return window.innerWidth >= this.getUltraWideMinWidth() && mapEnabled;
+    return isSplitLayoutViewport(window) && mapEnabled;
   }
 
   private insertByOrder(grid: HTMLElement, el: HTMLElement, key: string): void {

@@ -152,6 +152,7 @@ const plans = publicCatalogEntries.map(([planKey, entry]) => ({
   // freshness gate — which only diffs the generator against its own output —
   // could never see the drift.
   dashboardAiCallsPerDay: entry.features?.planLimits?.dashboardAiCallsPerDay,
+  travelRiskAssessment: entry.features?.travelRiskAssessment === true,
   description: [
     ...entry.marketingFeatures,
     ...(entry.highlightFeatures ?? []),
@@ -421,6 +422,11 @@ transform('public/.well-known/mcp/server-card.json', (source) => {
   if (!disasterTool) throw new Error('get_natural_disasters must exist in TOOL_REGISTRY');
   const disasterFilename = disasterTool._uiResourceUri?.match(/^ui:\/\/worldmonitor\/(natural-disasters(?:-v\d+)?\.html)$/)?.[1];
   if (!disasterFilename) throw new Error('get_natural_disasters must advertise a ui://worldmonitor/natural-disasters HTML resource');
+  const viewFilename = (toolName, stem) => {
+    const filename = TOOL_REGISTRY.find((tool) => tool.name === toolName)?._uiResourceUri?.match(new RegExp(`^ui://worldmonitor/(${stem}(?:-v\\d+)?\\.html)$`))?.[1];
+    if (!filename) throw new Error(`${toolName} must advertise a ui://worldmonitor/${stem} HTML resource`);
+    return filename;
+  };
   card.metadata.mcpApps.note = card.metadata.mcpApps.note.replace(
     /get_market_data → market-radar(?:-v\d+)?\.html/,
     'get_market_data → market-radar-v3.html',
@@ -451,6 +457,12 @@ transform('public/.well-known/mcp/server-card.json', (source) => {
   ).replace(
     /get_country_risk → country-risk(?:-v\d+)?\.html/,
     'get_country_risk → country-risk-v3.html',
+  ).replace(
+    /open_news_dashboard → news-dashboard(?:-v\d+)?\.html/,
+    `open_news_dashboard → ${viewFilename('open_news_dashboard', 'news-dashboard')}`,
+  ).replace(
+    /open_country_brief → country-view(?:-v\d+)?\.html/,
+    `open_country_brief → ${viewFilename('open_country_brief', 'country-view')}`,
   );
   card.metadata.mcpApps.uiResources = UI_RESOURCE_LIST_RESPONSE.map(resource => resource.uri);
   // Categories and tags come from api/mcp/domains.ts. The per-tool category is
@@ -598,6 +610,10 @@ function pricingSummary() {
     }
     return `${limit.toLocaleString('en-US')} dashboard-AI requests/day`;
   };
+  const TRAVEL_RISK_SUMMARY = 'travel risk assessment drafts in the dashboard and over MCP';
+  const withTravelRisk = (planKey, features) => (
+    byKey[planKey]?.travelRiskAssessment === true ? [...features, TRAVEL_RISK_SUMMARY] : features
+  );
   return {
     product: PUBLIC_PRODUCT_METADATA.name,
     lifecycle: PUBLIC_PRODUCT_METADATA.lifecycle,
@@ -609,37 +625,37 @@ function pricingSummary() {
         name: 'Free',
         price_usd_monthly: 0,
         signup_required: false,
-        features: ['global map coverage (Resilience is Pro)', 'curated feeds', 'country briefs', 'chokepoints', 'instability scores', 'watchlists', '3 dashboard tabs', FREE_ACCOUNT_MCP_LINE],
+        features: withTravelRisk('free', ['global map coverage (Resilience is Pro)', 'curated feeds', 'country briefs', 'chokepoints', 'instability scores', 'watchlists', '3 dashboard tabs', FREE_ACCOUNT_MCP_LINE]),
       },
       {
         name: 'Pro',
         price_usd_monthly: byKey.pro_monthly.price,
         price_usd_yearly: byKey.pro_annual.price,
-        features: ['WM Analyst', 'Scenario Engine', 'Route Explorer', 'AI digest', 'custom widget builder', dashboardAi('pro_monthly'), 'MCP', '10 custom dashboards', 'personal license'],
+        features: withTravelRisk('pro_monthly', ['WM Analyst', 'Scenario Engine', 'Route Explorer', 'AI digest', 'custom widget builder', dashboardAi('pro_monthly'), 'MCP', '10 custom dashboards', 'personal license']),
       },
       {
         name: 'Pro Business',
         price_usd_monthly: byKey.pro_business_monthly.price,
         price_usd_yearly: byKey.pro_business_annual.price,
-        features: ['Everything in Pro', 'commercial license', 'data export — CSV, JSON & PDF reports', '25 custom dashboards', dashboardAi('pro_business_monthly'), '250 MCP calls/day', 'priority support'],
+        features: withTravelRisk('pro_business_monthly', ['Everything in Pro', 'commercial license', 'data export — CSV, JSON & PDF reports', '25 custom dashboards', dashboardAi('pro_business_monthly'), '250 MCP calls/day', 'priority support']),
       },
       {
         name: 'API',
         price_usd_monthly: byKey.api_starter.price,
         price_usd_yearly: byKey.api_starter_annual.price,
-        features: ['full Pro dashboard (1 named user)', 'REST API', 'license / API key included', '1,000 requests/day starter limit (REST + MCP combined; a live MCP call counts as 2-3)', dashboardAi('api_starter'), 'webhooks', 'structured JSON', 'OpenAPI docs', 'commercial license — internal use in your organization, not customer-facing products'],
+        features: withTravelRisk('api_starter', ['full Pro dashboard (1 named user)', 'REST API', 'license / API key included', '1,000 requests/day starter limit (REST + MCP combined; a live MCP call counts as 2-3)', dashboardAi('api_starter'), 'webhooks', 'structured JSON', 'OpenAPI docs', 'commercial license — internal use in your organization, not customer-facing products']),
       },
       {
         name: 'API Business',
         price_usd_monthly: byKey.api_business.price,
         price_usd_yearly: byKey.api_business_annual.price,
-        features: ['Everything in API Starter', '300 requests/minute', '10,000 requests/day (REST + MCP combined; a live MCP call counts as 2-3)', dashboardAi('api_business'), '5 Pro licenses — invite users at any corporate email domain', 'commercial license — for your customers', 'priority support'],
+        features: withTravelRisk('api_business', ['Everything in API Starter', '300 requests/minute', '10,000 requests/day (REST + MCP combined; a live MCP call counts as 2-3)', dashboardAi('api_business'), '5 Pro licenses — invite users at any corporate email domain', 'team dashboards (up to 25 per variant)', 'commercial license — for your customers', 'priority support']),
       },
       {
         name: 'Enterprise',
         price: 'Custom',
         contact: 'enterprise@worldmonitor.app',
-        features: ['team workspaces', 'white-label', 'on-premises', 'air-gapped', 'dedicated support', 'SSO/MFA/RBAC (by contract)'],
+        features: withTravelRisk('enterprise', ['team dashboards (up to 25 per variant)', 'team workspaces', 'white-label', 'on-premises', 'air-gapped', 'dedicated support', 'SSO/MFA/RBAC (by contract)']),
       },
     ],
   };

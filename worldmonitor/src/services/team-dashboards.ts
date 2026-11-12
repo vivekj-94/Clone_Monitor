@@ -5,6 +5,8 @@ import { isDynamicPanel } from '@/services/mission-presets';
 import { getConvexApi, getConvexClient, waitForConvexAuthForUser } from '@/services/convex-client';
 import { settleAccountOperation } from '@/services/account-operation';
 import { DASHBOARD_MAP_VIEWS, DASHBOARD_TIME_RANGES } from '../../shared/agent-bus-contract';
+import { normalizeScope, type TabScope } from '../../shared/tab-scope';
+import { filtersFromEntries, filtersToEntries, type PanelFilters } from './panel-filters';
 import type { TeamDashboardLayout } from '../../convex/lib/teamDashboardLayout';
 import type { Id } from '../../convex/_generated/dataModel';
 
@@ -25,7 +27,8 @@ export interface TeamDashboard {
 }
 
 export interface TeamDashboards {
-  team: { kind: 'business' | 'enterprise' };
+  /** `focus`: whether this user may publish a focused dashboard (#10453). */
+  team: { kind: 'business' | 'enterprise'; focus?: boolean };
   dashboards: TeamDashboard[];
 }
 
@@ -75,6 +78,27 @@ export interface TeamDashboardCaptureInput extends TabPanels {
     timeRange: string;
     layers: Readonly<Record<string, boolean | undefined>>;
   } | null;
+  /** The tab's focus (#10453). */
+  scope?: TabScope | null;
+  /** The tab's per-panel filter choices (forecast region, webcam region). */
+  panelFilters?: PanelFilters;
+}
+
+/**
+ * The scope as the server stores it: chosen countries and the neighbours
+ * switch, never an expanded list (so an adjacency correction reaches stored
+ * dashboards). Absent dates are left out rather than sent as undefined. Null
+ * for no scope or one `normalizeScope` rejects, which publish would refuse.
+ */
+function captureScope(raw: TabScope | null | undefined): NonNullable<TeamDashboardLayout['scope']> | null {
+  const scope = raw ? normalizeScope(raw) : null;
+  if (!scope) return null;
+  return {
+    countries: scope.countries,
+    neighbours: scope.neighbours,
+    ...(scope.start ? { start: scope.start } : {}),
+    ...(scope.end ? { end: scope.end } : {}),
+  };
 }
 
 /**
@@ -99,10 +123,17 @@ export function captureTeamDashboardLayout(input: TeamDashboardCaptureInput): Te
     panels.push(entry);
   }
 
+  const scope = captureScope(input.scope);
+  const filterEntries = filtersToEntries(input.panelFilters);
+  const extras = {
+    ...(scope ? { scope } : {}),
+    ...(filterEntries.length > 0 ? { panelFilters: filterEntries } : {}),
+  };
   const map = input.map;
-  if (!map?.center || !Number.isFinite(map.zoom)) return { panels };
+  if (!map?.center || !Number.isFinite(map.zoom)) return { panels, ...extras };
   return {
     panels,
+    ...extras,
     map: {
       view: map.view,
       zoom: map.zoom,
@@ -120,6 +151,15 @@ export interface TeamDashboardTab extends TabPanels {
   bottomSet: string[];
   sizes: PanelSize[];
   map: TeamDashboardMap | null;
+  /** The shared focus (#10453), or null for a whole-world dashboard. */
+  scope: TabScope | null;
+  /** The shared per-panel filter choices, or undefined when there are none. */
+  panelFilters: PanelFilters | undefined;
+  /**
+   * The row carries a scope this build cannot read. The caller must not open
+   * it: shown unfocused, a filtered dashboard would pass for the whole world.
+   */
+  scopeInvalid: boolean;
 }
 
 function isOneOf<T extends string>(values: readonly T[], value: string): value is T {
@@ -154,7 +194,38 @@ export function toTeamDashboardTab(
     ? { view: raw.view, zoom: raw.zoom, lat: raw.lat, lon: raw.lon, timeRange: raw.timeRange, layers: [...raw.layers] }
     : null;
 
-  return { panelSettings, panelOrder, bottomSet, sizes, map };
+  const scope = layout.scope ? normalizeScope(layout.scope) : null;
+  return {
+    panelSettings,
+    panelOrder,
+    bottomSet,
+    sizes,
+    map,
+    scope,
+    panelFilters: filtersFromEntries(layout.panelFilters),
+    scopeInvalid: !!layout.scope && !scope,
+  };
+}
+
+/**
+ * Whether the tab may be shared as it is. A focused tab needs `team.focus`
+ * (the server's answer for this caller), checked here so the user gets the
+ * reason before a round trip; `publish` enforces the same rule.
+ */
+export function canPublishTeamDashboardScope(
+  team: TeamDashboards['team'],
+  scope: TabScope | null | undefined,
+): boolean {
+  return !scope || team.focus === true;
+}
+
+/** The message for a failed share, by ConvexError kind. */
+export function teamDashboardFailureKey(kind: string | null): string {
+  switch (kind) {
+    case 'FOCUS_NOT_ENTITLED': return 'teamDashboards.focusNotEntitled';
+    case 'TEAM_DASHBOARD_LIMIT': return 'teamDashboards.limit';
+    default: return 'teamDashboards.failed';
+  }
 }
 
 /** The ConvexError `kind` of a failed call, when it has one. */
@@ -181,7 +252,10 @@ export async function loadTeamDashboards(userId: string): Promise<TeamDashboards
   const action = 'loading team dashboards';
   const { client, api } = await convexForUser(userId, action);
   const result = await settleAccountOperation(userId, action,
-    () => client.query(api.teamDashboards.listForVariant, { variant: SITE_VARIANT }));
+    // "focus": this build understands a layout's `scope`, so the server may
+    // include focused dashboards (#10453). Older builds omit it and do not
+    // receive them.
+    () => client.query(api.teamDashboards.listForVariant, { variant: SITE_VARIANT, capabilities: ['focus'] }));
   if (!result.team) return null;
   return {
     team: result.team,

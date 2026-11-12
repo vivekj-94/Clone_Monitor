@@ -138,6 +138,9 @@ const SOURCE_DOMAIN_OVERRIDES = new Map([
   ['SaskAlert', 'environment'],
   ['Hyperliquid', 'finance'],
   ['Barchart', 'finance'],
+  // ICESat-2 ATL13 granule search and subsetting for Strategic Water Levels.
+  ['NASA Earthdata CMR', 'environment'],
+  ['SlideRule Earth', 'environment'],
   ['TradingView', 'finance'],
   ['api.rainviewer.com', 'environment'],
   // #6229: NVD CVE reference store for the cyber surface (scripts/seed-cve-reference.mjs).
@@ -482,14 +485,20 @@ const US_EMBASSY_COUNTRIES = new Map([
   ['co', 'Colombia'],
   ['de', 'Germany'],
   ['do', 'the Dominican Republic'],
+  ['id', 'Indonesia'],
   ['in', 'India'],
   ['it', 'Italy'],
+  ['kh', 'Cambodia'],
   ['mm', 'Myanmar'],
   ['mx', 'Mexico'],
+  ['my', 'Malaysia'],
+  ['ph', 'the Philippines'],
   ['pk', 'Pakistan'],
   ['pl', 'Poland'],
+  ['sg', 'Singapore'],
   ['th', 'Thailand'],
   ['ua', 'Ukraine'],
+  ['vn', 'Vietnam'],
 ]);
 
 const BRAND_TOKEN_OVERRIDES = new Map([

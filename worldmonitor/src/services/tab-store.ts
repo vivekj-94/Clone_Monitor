@@ -3,6 +3,8 @@ import { SITE_VARIANT } from '@/config/variant';
 import { ALL_PANELS } from '@/config/panels';
 import { isDynamicPanel, resetMissionPresetState } from '@/services/mission-presets';
 import { safeStorageGet, safeStorageRemove, safeStorageSet } from '@/utils/safe-storage';
+import { normalizeScope, type TabScope } from '../../shared/tab-scope';
+import { normalizePanelFilters, type PanelFilters } from './panel-filters';
 
 /**
  * Dashboard tabs — named, persistent panel workspaces.
@@ -25,6 +27,19 @@ export interface PanelTab {
    * this tab holds.
    */
   team?: { id: string; version: number };
+  /**
+   * Dashboard focus (#10453): the countries (and optional date window) this
+   * tab is about. Unlike panel settings it is never snapshotted from live
+   * state; `PanelLayoutManager` writes it here when the user changes it, and
+   * `src/services/tab-focus.ts` holds the active tab's copy at runtime.
+   */
+  scope?: TabScope;
+  /**
+   * Panels' own filter choices (forecast region, webcam region; #10453
+   * phase 2). Written by `PanelLayoutManager` when a panel reports a change,
+   * applied when the tab becomes active, and shared with a team dashboard.
+   */
+  panelFilters?: PanelFilters;
 }
 
 export interface TabsState {
@@ -76,6 +91,18 @@ export function normalizeTabsState(parsed: unknown): TabsState | null {
       && typeof (team as { id?: unknown }).id === 'string'
       && Number.isInteger((team as { version?: unknown }).version);
     if (!ok) delete tab.team;
+  }
+  for (const tab of tabs) {
+    if (tab.scope === undefined) continue;
+    const scope = normalizeScope(tab.scope);
+    if (scope) tab.scope = scope;
+    else delete tab.scope;
+  }
+  for (const tab of tabs) {
+    if (tab.panelFilters === undefined) continue;
+    const filters = normalizePanelFilters(tab.panelFilters);
+    if (filters) tab.panelFilters = filters;
+    else delete tab.panelFilters;
   }
   const activeTabId = tabs.some((t) => t.id === candidate.activeTabId)
     ? candidate.activeTabId

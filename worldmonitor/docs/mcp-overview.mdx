@@ -110,8 +110,9 @@ Dynamic Client Registration is **not** open to arbitrary redirects. A `redirect_
 | Conductor | `https://api.conductor.build/oauth/callback` ([client metadata](https://api.conductor.build/oauth/client-metadata.json)) |
 | Skydive | `https://www.skydive.com/api/v1/external-oauth/callback` ([client metadata](https://www.skydive.com/api/v1/external-oauth/client-metadata)) |
 | MCPJam | `https://app.mcpjam.com/oauth/callback`, `https://score.mcpjam.com/oauth/callback` ([client metadata](https://www.mcpjam.com/.well-known/oauth/client-metadata.json)) |
+| Manufact Cloud | `https://manufact.com/inspector/oauth/callback` ([client metadata](https://manufact.com/oauth/client-metadata.json)) |
 
-Claude Code, Cursor desktop, VS Code desktop, Codex, Gemini CLI, goose, Zed, and MCP Inspector use the loopback form. Notion, Linear, Lovable, Factory, Conductor, Skydive, and MCPJam prefer Client ID Metadata Documents and now connect that way (see below); their callbacks stay listed for clients that still register. A registration may list up to 8 `redirect_uris`, and one unlisted entry rejects the whole request with `400 invalid_redirect_uri`. Gemini is the one prefix match, on the six prefixes Google publishes. Other clients with per-user or per-tenant callbacks, such as Microsoft Copilot Studio, cannot be exact-matched and are not supported.
+Claude Code, Cursor desktop, VS Code desktop, Codex, Gemini CLI, goose, Zed, and MCP Inspector use the loopback form. Notion, Linear, Lovable, Factory, Conductor, Skydive, MCPJam, and Manufact Cloud prefer Client ID Metadata Documents and now connect that way (see below); their callbacks stay listed for clients that still register. A registration may list up to 8 `redirect_uris`, and one unlisted entry rejects the whole request with `400 invalid_redirect_uri`. Gemini is the one prefix match, on the six prefixes Google publishes. Other clients with per-user or per-tenant callbacks, such as Microsoft Copilot Studio, cannot be exact-matched and are not supported.
 
 ### Client ID Metadata Documents
 
@@ -143,6 +144,7 @@ The document is fetched over HTTPS with redirects refused, a 3-second timeout, a
 | Conductor | `https://api.conductor.build/oauth/client-metadata.json` |
 | Skydive | `https://www.skydive.com/api/v1/external-oauth/client-metadata` |
 | MCPJam | `https://www.mcpjam.com/.well-known/oauth/client-metadata.json` |
+| Manufact Cloud | `https://manufact.com/oauth/client-metadata.json` |
 | Vercel Connect | `https://connect.vercel.com/connectors/<connector id>`, one document per connector, with the callback pinned to `https://connect.vercel.com/callback` ([Vercel Connect provider docs](https://vercel.com/docs/connect/providers)) |
 
 ChatGPT's document prefers `private_key_jwt` but also lists `none`; WorldMonitor advertises only `none`, so ChatGPT uses PKCE without a client assertion. Make.com's published client URL redirects instead of serving a document, so it is not on the list. A client whose document is not listed gets an "Unknown Client" error; ask for it to be added.
@@ -424,6 +426,7 @@ Every record's `title`, `summary` and `sourceUrl` are verbatim third-party feed 
 |------|-------------|
 | `get_natural_disasters` | USGS and Earthquakes Canada / NRCan earthquakes, NASA FIRMS wildfires, hazard events. |
 | `get_climate_data` | Temp/precip anomalies vs WMO normals, GDACS/FIRMS alerts, Mauna Loa CO2, OpenAQ PM2.5, sea ice, ocean heat. |
+| `get_reservoir_levels` | ICESat-2 lidar water levels for 50 strategic reservoirs and lakes, metres above the EGM2008 geoid; status, change windows, seasonal anomaly, optional 36-month series. |
 | `get_imd_cyclone_marine` | Bounded IMD sea-area and coastal marine bulletins with storm warnings and port signals. Cyclone track, wind, and cone are API-only and disabled. Always read `coverageState`; disabled or degraded is not an all-clear. |
 | `get_radiation_data` | Global radiation monitoring station readings + anomaly flags. |
 | `get_research_signals` | Emerging technology events from curated research feeds. |
@@ -497,6 +500,7 @@ Reverse lookup workflow:
 | `get_five_factor_scorecard` | `GET /api/scorecard/v1/get-five-factor-scorecard`<br/>`GET /api/scorecard/v1/get-bloc-scorecard` |
 | `list_five_factor_scorecards` | `GET /api/scorecard/v1/list-five-factor-scorecards` |
 | `get_climate_data` | `GET /api/climate/v1/get-co2-monitoring`<br/>`GET /api/climate/v1/get-ocean-ice-data`<br/>`GET /api/climate/v1/list-air-quality-data`<br/>`GET /api/climate/v1/list-climate-anomalies`<br/>`GET /api/climate/v1/list-climate-disasters`<br/>`GET /api/climate/v1/list-climate-news` |
+| `get_reservoir_levels` | `GET /api/climate/v1/list-reservoir-levels` |
 | `get_health_signals` | `GET /api/health/v1/list-air-quality-alerts`<br/>`GET /api/health/v1/list-disease-outbreaks` |
 | `get_conflict_events` | `GET /api/conflict/v1/list-iran-events`<br/>`GET /api/conflict/v1/list-ucdp-events`<br/>`GET /api/unrest/v1/list-unrest-events` |
 | `get_news_intelligence` | `GET /api/intelligence/v1/list-cross-source-signals`<br/>`GET /api/intelligence/v1/search-gdelt-documents` |
@@ -583,6 +587,7 @@ Resources have three access classes. **Public concrete resources** are surfaced 
 | Resource URI | Backing data |
 |--------------|--------------|
 | `worldmonitor://seed-meta/freshness` | Stock market-data bootstrap write-age only: `cached_at` and `stale` for `seed-meta:market:stocks`. Does **not** certify sector valuation completeness — use `get_market_data` `valuationCoverage` (`sourceStatus`, unavailable/last-good/diagnostics). Cheap seeder health probe — no auth, no quota. |
+| `worldmonitor://guide/agents` | The full agent guide (`text/markdown`): which tool fits which question, availability flags, access and weight metering, JMESPath limits, and webcam and market-data semantics. The `initialize` instructions stay under 2 KB, the point where Claude Code truncates them, and name this resource for the rest. Static text — no auth, no quota. |
 
 Authenticated `resources/list` additionally exposes `worldmonitor://account/mcp-allowance`. Its read returns the current account's `used`, `limit`, `remaining`, `resetsAt`, and `sharedWithRestApi` fields. `sharedWithRestApi` is `true` when the budget being reported is the account's REST allowance, which means `used` counts REST requests as well as tool calls — read it before treating that number as your own call history. Free accounts also receive request-window usage, remaining windows, the idle-gap duration, and the active-window expiry. The read uses the enforcement counters directly and never reserves an allowance slot. Hosts that expose tools without `resources/read` can call `get_mcp_allowance({})` for the same snapshot. It requires verified user-bound OAuth or `wm_…` credentials, accepts only optional `jmespath`, and rejects account selectors and `panel_request` before admission. It remains available at the daily cap, spends no daily allowance, and uses the shared 192/minute protocol bucket. Unreadable counters return an error instead of a zero snapshot. Account totals do not identify individual callers.
 
@@ -616,8 +621,8 @@ The server supports [MCP Apps](https://modelcontextprotocol.io/extensions/apps/b
 | `ui://worldmonitor/natural-disasters-v3.html` | `get_natural_disasters` | Recent M4.5+ earthquakes (USGS and Earthquakes Canada / NRCan: magnitude, place, time, source) and active wildfires (NASA FIRMS), grouped. |
 | `ui://worldmonitor/prediction-markets-v3.html` | `get_prediction_markets` | Active event-contract odds grouped by category (geopolitical, tech, finance) with a probability bar per market. Full-envelope projections and summary samples preserve loaded contracts and snapshot metadata. Missing or malformed categories and unknown freshness remain explicit. |
 | `ui://worldmonitor/forecasts-v4.html` | `get_forecast_predictions` | Loaded forecast cards and local filters, with original case evidence read under the same signed opening allocation. |
-| `ui://worldmonitor/news-dashboard-v3.html` | `open_news_dashboard` | Dashboard news panels and interactive map. |
-| `ui://worldmonitor/country-view-v3.html` | `open_country_brief` | Shared country sections, topics, evidence and exports. |
+| `ui://worldmonitor/news-dashboard-v4.html` | `open_news_dashboard` | Dashboard news panels and interactive map. |
+| `ui://worldmonitor/country-view-v4.html` | `open_country_brief` | Shared country sections, topics, evidence and exports. |
 
 Country Risk v2 preserves supplied original and projected objects, including nested CII components and upstream availability. Missing or malformed advisory values remain unknown; an explicit empty native string still means no advisory. Result replacement clears prior risk details. The original `ui://worldmonitor/country-risk.html` remains a private read alias for installed metadata and can be removed when that metadata is retired.
 

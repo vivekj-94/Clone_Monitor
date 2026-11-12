@@ -149,6 +149,15 @@ describe('mobile P0 navigation shell (#5201)', () => {
     assert.match(css, /\.mobile-tab-bar\s*\{[^}]*position:\s*fixed[^}]*z-index:\s*10003/);
   });
 
+  it('stacks the focus editor dialog above the fixed tab bar (#10453)', () => {
+    // It inherits .modal-overlay's 9999; on a short phone screen the tab bar
+    // (10003) then covered the editor's Save and Cancel and took their taps.
+    const rule = css.match(/\n\.focus-editor-overlay \{([^}]*)\}/);
+    assert.ok(rule, '.focus-editor-overlay rule');
+    const zIndex = Number(rule[1].match(/z-index:\s*(\d+)/)?.[1]);
+    assert.ok(zIndex > 10003, `z-index ${zIndex} is above the tab bar`);
+  });
+
   it('shows first-time mobile visitors the map, and keeps it collapsed only for viewers who collapsed it', () => {
     // The map is the product's first impression; a first visit landed on a
     // paused player and a black webcam box instead. Tapping Today or the
@@ -160,5 +169,17 @@ describe('mobile P0 navigation shell (#5201)', () => {
     assert.equal(shellReads.length, 2, 'both pre-paint scripts read the preference');
     for (const read of shellReads) assert.equal(read, "localStorage.getItem('mobile-map-collapsed')==='true'");
     assert.doesNotMatch(shell, /var mapCollapsed=true;/);
+  });
+
+  it('caps the expanded mobile map to a short strip so a content panel shows on the first screen (#10457)', () => {
+    // The Map tab opens the section fullscreen, which restates its own height,
+    // so the in-flow map never needs to fill the viewport.
+    const rule = css.match(/\n  \.map-section \{([^}]*)\}/);
+    assert.ok(rule, 'mobile .map-section rule');
+    assert.match(rule[1], /height:\s*calc\(100dvh \* 0\.32\) !important/);
+    assert.doesNotMatch(rule[1], /min-height:\s*60vh/);
+    assert.match(css, /\.map-section\.live-news-fullscreen \{\s*height: auto !important;/);
+    // The ruler's panel does not fit the strip, so it is hidden there only.
+    assert.match(css, /\.map-section:not\(\.live-news-fullscreen\) \.map-distance-control \{\s*display: none;/);
   });
 });

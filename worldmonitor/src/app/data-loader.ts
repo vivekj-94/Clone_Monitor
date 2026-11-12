@@ -1,5 +1,6 @@
 import type { AppContext, AppModule } from '@/app/app-context';
 import { enqueueSentryCall } from '@/bootstrap/sentry-defer';
+import { isAnalyticsHost, track } from '@/services/analytics';
 import { isPageUnloading } from '@/bootstrap/page-unload-signal';
 import { fetchUkmtoIncidents } from '@/services/ukmto-incidents';
 import { getRpcBaseUrl } from '@/services/rpc-client';
@@ -123,9 +124,9 @@ import { fetchSatelliteTLEs, initSatRecs, propagatePositions, startPropagationLo
 import type { SatRecEntry } from '@/services/satellites';
 import { dataFreshness, type DataSourceId } from '@/services/data-freshness';
 import type { CorrelationSignal } from '@/services/correlation';
-import { currentUcdpCountryName, fetchConflictEvents, fetchUcdpEvents, fetchIranEvents, type UcdpExposureInput } from '@/services/conflict';
+import { fetchConflictEvents, fetchUcdpEvents, fetchIranEvents, type UcdpExposureInput } from '@/services/conflict';
 import { fetchCrossBorderArrivals, fetchDisplacementEvents, fetchInternalDisplacement, fetchUnhcrPopulation } from '@/services/displacement';
-import { fetchClimateAnomalies } from '@/services/climate';
+import { fetchClimateAnomalies, fetchReservoirLevels } from '@/services/climate';
 import { fetchImdCycloneMarine } from '@/services/imd-cyclone-marine';
 import { fetchSecurityAdvisories } from '@/services/security-advisories';
 import { fetchThermalEscalations } from '@/services/thermal-escalation';
@@ -502,6 +503,8 @@ export class DataLoaderManager implements AppModule {
   private readonly digestBreakerCooldownMs = 5 * 60 * 1000;
   /** Failure kinds already sent to Sentry this page load (one event per kind). */
   private readonly reportedDigestFailures = new Set<DigestFetchFailureKind>();
+  /** Same bound for the analytics count, kept apart so a degraded outcome cannot use up the Sentry slot of a later empty one. */
+  private readonly countedDigestDegradations = new Set<DigestFetchFailureKind>();
   private readonly persistedDigestMaxAgeMs = 6 * 60 * 60 * 1000;
   private readonly outageFallbackCategoryFeedLimit = 3;
   private readonly outageFallbackIntelFeedLimit = 6;
@@ -878,7 +881,9 @@ export class DataLoaderManager implements AppModule {
         return fallback ? { digest: fallback, servedStale: true } : null;
       }
       this.lastGoodDigest = retainRicherScopedDigest(this.lastGoodDigest, requestKey, data);
-      if (firstFailure) this.reportDigestFetchFailure(firstFailure.error, 'none', firstFailure.deadlineExpired, 'recovered');
+      // A retry that answered with no stories left the panels as empty as the
+      // failure did, so it is not a recovery.
+      if (firstFailure) this.reportDigestFetchFailure(firstFailure.error, 'none', firstFailure.deadlineExpired, digestHasItems(data) ? 'recovered' : 'failed');
       this.reportDigestCoverage(data);
       return { digest: data, servedStale: data.coverage?.servedStale === true };
     } catch (e) {
@@ -912,9 +917,11 @@ export class DataLoaderManager implements AppModule {
         return this.tryFetchDigest({ error: e, deadlineExpired });
       }
       const reported = firstFailure ?? { error: e, deadlineExpired };
+      // A copy with no items puts nothing on screen, so it is not a fallback.
+      const shownFallback = digestHasItems(fallback) ? (retained ? 'retained' : 'saved') : 'none';
       this.reportDigestFetchFailure(
         reported.error,
-        retained ? 'retained' : fallback ? 'saved' : 'none',
+        shownFallback,
         reported.deadlineExpired,
         firstFailure ? 'failed' : 'none',
         firstFailure ? classifyDigestFetchFailure(e, deadlineExpired) : undefined,
@@ -940,6 +947,18 @@ export class DataLoaderManager implements AppModule {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     if (isPageUnloading()) return;
     const kind = classifyDigestFetchFailure(error, deadlineExpired);
+    // Sentry WORLDMONITOR-1D4: only a failure that left the panels empty is an
+    // incident. Every other outcome had news on screen, so it is a rate to
+    // watch, not an issue to triage: counted in analytics instead. Hosts the
+    // analytics tracker is disabled on (tech, commodity, energy, self-host)
+    // keep reporting to Sentry, because the count would be dropped there.
+    const outcome = digestFailureOutcome(fallback, retry);
+    if (outcome !== 'empty' && isAnalyticsHost()) {
+      if (this.countedDigestDegradations.has(kind)) return;
+      this.countedDigestDegradations.add(kind);
+      track('news-digest-degraded', { outcome, failure: kind, variant: SITE_VARIANT });
+      return;
+    }
     if (this.reportedDigestFailures.has(kind)) return;
     this.reportedDigestFailures.add(kind);
     enqueueSentryCall((s) => s.captureMessage('News digest fetch failed', {
@@ -1400,6 +1419,9 @@ export class DataLoaderManager implements AppModule {
       tasks.push({ name: 'sanctions', task: () => runGuarded('sanctions', () => this.loadSanctionsPressure()) });
     }
     if (this.ctx.mapLayers.no2Activity) tasks.push({ name: 'no2Activity', task: () => runGuarded('no2Activity', () => this.loadNo2Activity()) });
+    if (this.ctx.mapLayers.reservoirLevels || (this.ctx.panelSettings['reservoir-levels']?.enabled && shouldLoad('reservoir-levels'))) {
+      tasks.push({ name: 'reservoirLevels', task: () => runGuarded('reservoirLevels', () => this.loadReservoirLevels()) });
+    }
     if (this.ctx.mapLayers.resilienceScore) {
       if (hasPremiumAccess()) {
         tasks.push({ name: 'resilienceRanking', task: () => runGuarded('resilienceRanking', () => this.loadResilienceRanking()) });
@@ -1551,6 +1573,9 @@ export class DataLoaderManager implements AppModule {
           break;
         case 'no2Activity':
           await this.loadNo2Activity();
+          break;
+        case 'reservoirLevels':
+          await this.loadReservoirLevels();
           break;
       }
     } finally {
@@ -3980,7 +4005,7 @@ export class DataLoaderManager implements AppModule {
       // visible as pending; unrest still requires confirmed provider precision.
       const ucdp = enrichEventsWithExposure((ucdpInput?.events ?? []).map(e => ({
         id: e.id, lat: e.latitude, lon: e.longitude, type: e.type_of_violence,
-        name: e.locationName ? `${e.locationName}, ${currentUcdpCountryName(e.country)}` : `${e.side_a} vs ${e.side_b}`,
+        name: e.locationName ?? '', locationName: e.locationName ?? '',
         country: e.country, hasPreciseLocation: e.hasPreciseLocation, eventCount: e.eventCount,
       })), perSourceLimit, true);
       const unrest = enrichEventsWithExposure((protests?.events ?? []).map(e => ({
@@ -5319,6 +5344,20 @@ export class DataLoaderManager implements AppModule {
     }
   }
 
+  /**
+   * Strategic Water Levels. Opt-in panel and layer: the RPC is read only while
+   * either is on, never at bootstrap. An unseeded dataset is an empty state;
+   * a failed request with nothing cached is an error.
+   */
+  async loadReservoirLevels(): Promise<void> {
+    const result = await fetchReservoirLevels();
+    if (this.ctx.isDestroyed) return;
+    this.callPanel('reservoir-levels', 'setResult', result);
+    const reservoirs = result.snapshot?.reservoirs ?? [];
+    if (result.ok || reservoirs.length > 0) this.ctx.map?.setReservoirLevels(reservoirs);
+    this.ctx.map?.setLayerReady('reservoirLevels', reservoirs.length > 0);
+  }
+
   /** Opt-in layer: the route is read only while the layer is on, never at bootstrap. */
   async loadNo2Activity(): Promise<void> {
     if (!this.ctx.map?.isDeckGLActive?.()) {
@@ -5506,6 +5545,25 @@ export function classifyDigestFetchFailure(error: unknown, deadlineExpired = fal
   if (message === 'digest returned 0 categories') return 'empty-body';
   if (error instanceof TypeError) return 'network';
   return 'other';
+}
+
+/** Whether a digest carries at least one story. A copy without one shows nothing. */
+export function digestHasItems(digest: ListFeedDigestResponse | null): boolean {
+  if (!digest || typeof digest.categories !== 'object' || digest.categories === null) return false;
+  return Object.values(digest.categories).some(bucket => Array.isArray(bucket?.items) && bucket.items.length > 0);
+}
+
+/**
+ * What the user was left with after a failed digest request. `empty` is the
+ * only outcome with no news on screen: no retained or saved copy, and no retry
+ * that recovered.
+ */
+export function digestFailureOutcome(
+  fallback: 'retained' | 'saved' | 'none',
+  retry: 'none' | 'recovered' | 'failed',
+): 'retained' | 'saved' | 'recovered' | 'empty' {
+  if (fallback !== 'none') return fallback;
+  return retry === 'recovered' ? 'recovered' : 'empty';
 }
 
 /**

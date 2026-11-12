@@ -561,7 +561,8 @@
     "marketBreadth": "Upana wa Soko",
     "climateNews": "Habari za Hali ya Hewa",
     "fx": "Kiwango cha ubadilishaji wa fedha za kigeni",
-    "ukmtoIncidents": "Matukio ya UKMTO"
+    "ukmtoIncidents": "Matukio ya UKMTO",
+    "reservoirLevels": "Viwango vya Kimkakati vya Maji"
   },
   "commands": {
     "prefixes": {
@@ -1460,7 +1461,8 @@
         "canadaRoads": "Barabara za Kanada",
         "canadaAlerts": "Tahadhari za Kanada",
         "notamAirspace": "Vikwazo vya Anga la NOTAM",
-        "no2Activity": "Shughuli za viwanda"
+        "no2Activity": "Shughuli za viwanda",
+        "reservoirLevels": "Viwango vya Maji"
       },
       "tooltip": {
         "earthquake": "Tetemeko la ardhi",
@@ -1577,7 +1579,8 @@
           "canadaRoads": "Matukio rasmi ya barabarani, maonyo, hali, kufungwa, ujenzi na hatari kutoka maeneo ya Kanada yanayotumika.",
           "canadaAlerts": "Tahadhari za usalama wa umma za majimbo kutoka Alberta Emergency Alert, B.C. Evacuation Orders and Alerts na SaskAlert.",
           "notamAirspace": "Vikwazo vya kuruka kwa muda na anga yenye vikwazo, hatari na iliyokatazwa kutoka kwa NOTAMs za FAA, inayotumika sasa au kuanza ndani ya saa 24",
-          "no2Activity": "Mwelekeo wa shughuli za NO2 kutoka Sentinel-5P kwa nchi 167 na makundi 32 ya viwanda: dirisha la hivi karibuni la siku 56 ikilinganishwa na tarehe zile zile za miaka iliyopita, baada ya ukanda usiohesabiwa wa 10%. Ina data iliyorekebishwa ya Copernicus Sentinel."
+          "no2Activity": "Mwelekeo wa shughuli za NO2 kutoka Sentinel-5P kwa nchi 167 na makundi 32 ya viwanda: dirisha la hivi karibuni la siku 56 ikilinganishwa na tarehe zile zile za miaka iliyopita, baada ya ukanda usiohesabiwa wa 10%. Ina data iliyorekebishwa ya Copernicus Sentinel.",
+          "reservoirLevels": "Kiwango cha uso wa maji katika mabwawa na maziwa ya kimkakati kutoka lidar ya setilaiti ya NASA ICESat-2, ikilinganishwa na kiwango cha kawaida cha mwezi. NASA huchapisha kila upitaji takriban miezi miwili baada ya kupimwa."
         },
         "notes": {
           "timeAffects": "Athari: Matetemeko ya Ardhi, Hali ya Hewa, Maandamano, Kukatika"
@@ -1819,7 +1822,7 @@
       "estimateWithin": "Takriban watu {{count}} ndani ya eneo la kilomita {{km}}",
       "method": "Makadirio yanatumia wastani wa msongamano wa watu nchini.",
       "empty": "Hakuna maeneo ya matukio yanayokidhi vigezo",
-      "infoTooltip": "Matukio yenye data ya msongamano wa watu wa nchi yanaonyeshwa. Maeneo kutoka data ya zamani bila taarifa za usahihi yanawekwa alama ya kusubiri sasisho. Maeneo yanayokadiriwa yanaweza kuingiliana.",
+      "infoTooltip": "Matukio yenye data ya msongamano wa watu wa nchi yanaonyeshwa. Maeneo ya matukio ya UCDP bila taarifa za usahihi yanawekwa alama ya kusubiri sasisho. Maeneo yanayokadiriwa yanaweza kuingiliana. Matukio ya machafuko yanahitaji eneo sahihi; matukio ya UCDP yaliyowekwa alama ya eneo lisilo sahihi hayajumuishwi. Eneo moja kutoka vyanzo viwili (machafuko na UCDP) huonekana katika safu mbili.",
       "eventCount_one": "{{count}} tukio",
       "eventCount_other": "{{count}} matukio",
       "locationPending": "Usahihi wa eneo unasubiri sasisho",
@@ -2458,7 +2461,8 @@
       "channelUrlHint": "Bandika URL ya chaneli (youtube.com/channel/UC…) au URL ya video ya moja kwa moja",
       "youtubeChannel": "Chaneli ya YouTube",
       "insecureStream": "{{name}} inatumia mtiririko usioaminifu (http), ambao vivinjari huzuia. Ongeza tena kwa URL ya mtiririko salama (https)",
-      "httpsStreamHint": "Vivinjari huzuia mitiririko isiyo salama (http). Bandika URL ya mtiririko salama (https)"
+      "httpsStreamHint": "Vivinjari huzuia mitiririko isiyo salama (http). Bandika URL ya mtiririko salama (https)",
+      "tapToPlay": "Gusa ili kuanza"
     },
     "map": {
       "showMap": "Onyesha Ramani",
@@ -2684,7 +2688,7 @@
     },
     "sanctionsPressure": {
       "title": "Vikwazo na Uteuzi",
-      "infoTooltip": "Orodha za OFAC SDN na zilizounganishwa pamoja na vikwazo vya Kanada vya SEMA/JVCFOA. Safu za nchi hutumia mahusiano ya moja kwa moja. Bendera za meli na usajili wa ndege huhesabiwa kando katika sajili; idadi ya mali ya nchi ikiwa sifuri haimaanishi hakuna mali iliyowekewa vikwazo. Nchi za taasisi mama hutenganishwa na ushahidi wa anwani na hazijumuishwi katika alama za hatari.",
+      "infoTooltip": "Orodha za OFAC SDN na zilizounganishwa pamoja na vikwazo vya Kanada vya SEMA/JVCFOA. Safu za nchi hutumia mahusiano ya moja kwa moja. Bendera za meli na usajili wa ndege huhesabiwa kando katika sajili; idadi ya mali ya nchi ikiwa sifuri haimaanishi hakuna mali iliyowekewa vikwazo.",
       "loading": "Inapakia data ya vikwazo...",
       "unavailable": "Data ya vikwazo haipatikani.",
       "summary": {
@@ -3208,6 +3212,49 @@
       "body": "Nyota kwenye GitHub inasaidia watu wengine kuipata.",
       "star": "Weka nyota kwenye GitHub",
       "dismiss": "Funga na usiulize tena"
+    },
+    "reservoirLevels": {
+      "note": "Kiwango cha uso wa maji kutoka lidar ya setilaiti ya NASA ICESat-2. NASA huchapisha kila upitaji takriban miezi miwili baada ya kupimwa, hivyo hii hufuatilia mabadiliko kwa wiki na misimu, si kwa siku. Kiwango tu, si ujazo.",
+      "source": "Chanzo:",
+      "processedWith": "imechakatwa kwa",
+      "empty": "Bado hakuna vipimo",
+      "filterEmpty": "Hakuna eneo la maji linalolingana na kichujio hiki",
+      "unavailable": "Data ya viwango vya maji haipatikani kwa sasa",
+      "filterLabel": "Chuja maeneo ya maji",
+      "filter": {
+        "all": "Yote",
+        "attention": "Yanahitaji uangalizi",
+        "transboundary": "Ya kuvuka mipaka"
+      },
+      "status": {
+        "record_low": "Chini kabisa kuwahi",
+        "record_high": "Juu kabisa kuwahi",
+        "falling_fast": "Inashuka haraka",
+        "rising_fast": "Inapanda haraka",
+        "low": "Chini kwa msimu",
+        "high": "Juu kwa msimu",
+        "normal": "Kawaida",
+        "insufficient_history": "Historia haitoshi",
+        "no_recent_data": "Hakuna upitaji wa karibuni",
+        "lowInRange": "Chini ndani ya masafa yake",
+        "highInRange": "Juu ndani ya masafa yake"
+      },
+      "vsUsual": "{{value}} ikilinganishwa na kawaida ya {{month}}",
+      "in12Months": "{{value}} katika miezi 12",
+      "noComparison": "Bado hakuna ulinganisho",
+      "measured": "ilipimwa {{date}} ({{age}})",
+      "noPass": "Bado hakuna upitaji unaofaa",
+      "popup": {
+        "level": "Kiwango",
+        "levelValue": "{{value}} juu ya usawa wa bahari (EGM2008)",
+        "anomaly": "Ikilinganishwa na kawaida ya {{month}}",
+        "anomalyPlain": "Ikilinganishwa na kawaida ya mwezi",
+        "changePrev": "Tangu upitaji uliopita",
+        "change90": "Katika siku 90",
+        "change365": "Katika miezi 12",
+        "measured": "Ilipimwa",
+        "sparkline": "Kiwango cha maji kwa miezi 36"
+      }
     }
   },
   "popups": {
@@ -4459,6 +4506,7 @@
   "auth": {
     "signIn": "Ingia",
     "createAccount": "Fungua akaunti",
+    "freeReason": "Bure: hifadhi mpangilio, fuata nchi, arifa",
     "settings": "Mipangilio",
     "passkeyOffer": {}
   },
@@ -4606,6 +4654,21 @@
         "related": {
           "0": "Nowcast ya shughuli za China",
           "1": "Muhtasari wa nchi"
+        }
+      },
+      "reservoirLevels": {
+        "category": "Tabianchi",
+        "purpose": "Huonyesha mabwawa na maziwa ya kimkakati kulingana na jinsi kiwango cha maji kinavyolinganishwa na cha kawaida kwa wakati huo wa mwaka na kasi ya mabadiliko yake.",
+        "source": "Urefu wa uso wa maji ya bara kutoka NASA ICESat-2 ATL13 kupitia NSIDC, uliochakatwa kwa SlideRule Earth na kujumlishwa kwa kila upitaji wa setilaiti na huduma ya seed-reservoir-levels.",
+        "freshness": "Husasishwa kila siku. NASA huchapisha kila upitaji siku 50 hadi 70 baada ya kupimwa, na kila bwawa hupimwa tena kila baada ya siku chache hadi karibu mwezi mmoja.",
+        "confidence": "Upitaji huhesabiwa tu pale angalau sehemu 5 za maji zinapokubaliana ndani ya mita 0.25. Ulinganisho wa msimu unahitaji upitaji kutoka angalau miaka 3 iliyopita katika wakati uleule wa mwaka.",
+        "limitations": {
+          "0": "Kiwango tu, si ujazo: kushuka kwa kiasi kilekile kunamaanisha upotevu tofauti wa hifadhi katika kila bwawa.",
+          "1": "Eneo la maji lisilo na upitaji kwa siku 150 huwekewa alama kuwa halina upitaji wa karibuni; kipimo chake cha mwisho, mabadiliko na tarehe bado huonyeshwa."
+        },
+        "related": {
+          "0": "Paneli ya Viwango vya Kimkakati vya Maji",
+          "1": "Hitilafu za tabianchi"
         }
       },
       "conflicts": {
@@ -4901,6 +4964,147 @@
     "updated": "Kichupo hiki sasa kina toleo la hivi karibuni la timu yako.",
     "stopped": "Ikacha kushiriki {{name}}.",
     "failed": "Haikuweza kufikia dashboards za timu yako. Jaribu tena.",
-    "limit": "Timu yako tayari inashiriki dashboards {{limit}} hapa. Acha kushiriki moja kwanza."
+    "limit": "Timu yako tayari inashiriki dashboards {{limit}} hapa. Acha kushiriki moja kwanza.",
+    "focusNotEntitled": "Mpango wako haujumuishi kushiriki dashboard iliyolengwa. Futa lengo la kichupo hiki ili kushiriki paneli zake.",
+    "focusUnreadable": "{{name}} ina kuzingatia ambayo toleo hili haliwezi kuonyesha. Pakua upya ili kubadilisha, kisha ifungue tena."
+  },
+  "focus": {
+    "barLabel": "Kuzingatia",
+    "summary": "Inalenga {{countries}}",
+    "neighboursOff": "Jirani hazijajumuishwa",
+    "chosenLabel": "Zilizochaguliwa",
+    "neighboursLabel": "Jirani",
+    "neighbourItem": "Jirani: {{name}}",
+    "range": "{{start}} hadi {{end}}",
+    "windowEnded": "Dirisha liliishia {{date}}",
+    "windowStarts": "Linaanza {{date}}",
+    "windowUntil": "Hadi {{date}}",
+    "windowFrom": "Tangu {{date}}",
+    "edit": "Hariri",
+    "clear": "Futa",
+    "clearAria": "Futa kuzingatia na onyesha ulimwengu mzima",
+    "clearFocus": "Futa kuzingatia",
+    "notFiltered": "Haijachujwa",
+    "notFilteredGlobal": "Data ya Dunia: haijachujwa kwa nchi",
+    "notFilteredYet": "Haijachujwa kwa nchi bado",
+    "gateSignedOutDesc": "Ingia ili kulenga kichupo cha dashboard kwenye nchi unazofuatilia.",
+    "gateUpgradeDesc": "Kulenga kichupo kwenye nchi zilizochaguliwa kunapatikana na Pro Business, API Business na Enterprise.",
+    "gateUpgradeCta": "Boresha",
+    "tabButton": "Kuzingatia",
+    "tabButtonTitle": "Lenga kichupo hiki kwenye nchi zilizochaguliwa",
+    "tabButtonTitleActive": "Hariri lengo la kichupo hiki",
+    "newTitle": "Lenga kichupo hiki",
+    "editTitle": "Hariri kuzingatia",
+    "intro": "Paneli zinazoweza kuchuja kwa nchi zinaonyesha nchi hizi tu. Zingine zinasema \"Haijachujwa\".",
+    "countriesLabel": "Nchi",
+    "count": "{{n}} ya {{max}}",
+    "searchPlaceholder": "Tafuta nchi",
+    "resultsLabel": "Nchi zinazolingana",
+    "limitReached": "Umechagua {{max}} nchi, ni kiwango cha juu ambacho kuzingatia kinaweza kushikilia.",
+    "removeCountry": "Ondoa {{name}}",
+    "includeNeighbours": "Jumuisha nchi jirani",
+    "neighboursHint": "Hatari huvuka mipaka. Jirani wanawekwa alama kama vile, na hawajalishi katika {{max}}.",
+    "startLabel": "Tangu (hiari)",
+    "endLabel": "Hadi (hiari)",
+    "datesHint": "Kwa safari au kazi. Wakati dirisha liliishia, kuzingatia linabaki na upinde unasema hivyo.",
+    "errorNoCountries": "Chagua angalau nchi moja.",
+    "errorTooMany": "Kuzingatia kinaweza kushikilia hadi {{max}} nchi.",
+    "errorDates": "Tarehe ya mwisho ni kabla ya tarehe ya kuanzia.",
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "saved": "Kichupo hiki kinalenga {{countries}}.",
+    "cleared": "Lengo limefutwa. Kichupo hiki kinaonyesha ulimwengu mzima.",
+    "notSaved": "Haiwezi kuhifadhi. Kivinjari chako kinazuia hifadhi ya tovuti.",
+    "plusNeighbours_one": "+ {{count}} jirani",
+    "plusNeighbours_other": "+ {{count}} jirani",
+    "filter": {
+      "showing": "Inaonyesha {{countries}}",
+      "showingNeighbours": "Inaonyesha {{countries}} + jirani",
+      "showAll": "Onyesha zote",
+      "focusOff": "Kuzingatia kumezimwa katika paneli hii: inaonyesha kila kitu",
+      "applyFocus": "Tumia kuzingatia",
+      "applyFocusAria": "Chuja paneli hii kwa kuzingatia tena",
+      "show": "Onyesha",
+      "hide": "Ficha",
+      "noCountryTag": "Hakuna nchi",
+      "emptyHint": "Kila kitu kingine kinacohesabiwa hapo juu.",
+      "emptyNews": "Hakuna kitu kwa nchi hizi katika kichwa cha habari cha sasa",
+      "emptyAdvisories": "Hakuna onyo za kusafiri kwa nchi hizi",
+      "emptyConflict": "Hakuna matukio ya mgogoro wa UCDP kwa nchi hizi",
+      "emptyConflictPartial": "Hakuna matukio ya mgogoro kwa nchi hizi kati ya matukio ya hivi karibuni. Orodha kamili haijakamatia.",
+      "loadingConflict": "Kupakia matukio yote ya mgogoro kwa nchi hizi…",
+      "emptyAirports": "Hakuna juu ya viwanja vyako vya angavu katika nchi hizi",
+      "emptyFlights": "Hakuna ndege za kwenda au zinazotumiwa kutoka nchi hizi kwenye bodi hii",
+      "emptyAviationNews": "Hakuna habari za uavyaji kwa nchi hizi katika saa 24 zilizopita",
+      "tabNotFiltered": "Kichupo hiki hakichujwi kwa nchi",
+      "hidden_one": "{{count}} kimefichwa na kuzingatia",
+      "hidden_other": "{{count}} vimefichwa na kuzingatia",
+      "showAllAria_one": "Onyesha kila kitu katika paneli hii, ikiwa ni pamoja na {{count}} kipengee nje ya kuzingatia",
+      "showAllAria_other": "Onyesha kila kitu katika paneli hii, ikiwa ni pamoja na {{count}} vipengee nje ya kuzingatia",
+      "unattributed_one": "{{count}} kipengee bila nchi",
+      "unattributed_other": "{{count}} vipengee bila nchi",
+      "showUnattributedAria_one": "Onyesha {{count}} kipengee bila nchi",
+      "showUnattributedAria_other": "Onyesha {{count}} vipengee bila nchi",
+      "hideUnattributedAria_one": "Ficha {{count}} kipengee bila nchi",
+      "hideUnattributedAria_other": "Ficha {{count}} vipengee bila nchi",
+      "partialConflict": "Inaonyesha matukio ya mgogoro kutoka 150 ya hivi karibuni tu. Orodha kamili haikupakiwa.",
+      "partialConflictLoading": "Inaonyesha matukio ya mgogoro kutoka kwa 150 ya hivi karibuni wakati orodha kamili inapakiwa.",
+      "emptyInstability": "Hakuna alama za kutokuwa na utulivu kwa nchi hizi",
+      "emptyOutbreaks": "Hakuna mlipuko wa magonjwa kwa nchi hizi",
+      "emptyOutages": "Hakuna usumbufu wa mtandao kwa nchi hizi",
+      "emptyRadiation": "Hakuna vipimo vya mionzi kwa nchi hizi",
+      "emptyFuelShortages": "Hakuna upungufu wa mafuta kwa nchi hizi",
+      "emptyEnergyDisruptions": "Hakuna usumbufu wa nishati kwa nchi hizi",
+      "emptyDisplacement": "Hakuna data ya uhamiaji kwa nchi hizi",
+      "emptyCorrelation": "Hakuna maadhimisho kwa nchi hizi"
+    },
+    "draftAssessment": "Rasimu ya tathmini",
+    "draftAssessmentAria": "Fungua tathmini ya safari, iliyojazwa na hii focus",
+    "draftCopied": "Ombi limenakiliwa. Libandike kwenye msaidizi wako wa AI.",
+    "draftCopiedPartial": "Ombi limenakiliwa kwa nchi {{count}} za kwanza. Tathmini moja inajumuisha nchi {{max}} kwa kiwango cha juu.",
+    "draftCopyFailed": "Imeshindikana kunakili ombi."
+  },
+  "tripAssessment": {
+    "heading": "Tathmini ya safari",
+    "intro": "Rasimu ya kwanza iliyotoka chanzo cha tathmini ya hatari ya safari, kwa mtahlili kukamilisha. Inaripoti kile ambacho data ina na haitoi ushauri wowote.",
+    "privacy": "Nchi, miji na tarehe tu. Usiingize majina ya wasafiri, hoteli au anwani za mitaa. Hakuna kitu unachoingia kinachohifadhiwa.",
+    "taskLabel": "Lebo ya kazi (ikhtiyari)",
+    "taskLabelPlaceholder": "Ziyara za tovuti za kikanda",
+    "windowStart": "Safari inaanza",
+    "windowEnd": "Safari inaishia",
+    "countriesLabel": "Nchi, katika mpangilio wa safari",
+    "count": "{{n}} ya {{max}}",
+    "searchPlaceholder": "Ongeza nchi",
+    "addCountry": "Ongeza nchi kwa safari",
+    "limit": "Safari inakamatia hadi {{max}} nchi.",
+    "omitted": "Kuachwa kwa sababu safari inakamatia hadi {{max}} nchi: {{names}}.",
+    "cities": "Miji, iliyotenganisha kwa koma (hadi {{max}})",
+    "arrive": "Fika",
+    "depart": "Ondoka",
+    "moveEarlier": "Hamisha {{name}} mapema kwenye safari",
+    "moveLater": "Hamisha {{name}} baadaye kwenye safari",
+    "remove": "Ondoa {{name}} kutoka safari",
+    "downloadMarkdown": "Pakua Markdown",
+    "downloadWord": "Pakua kwa Word",
+    "print": "Chapisha au hifadhi kama PDF",
+    "copyRequest": "Nakili ombi kwa msaidizi wa AI",
+    "close": "Funga",
+    "building": "Kujenga rasimu kutoka data ya hivi karibuni…",
+    "downloaded": "Kilichopakuwa {{file}}. Kila pakua kinajengwa upya na kumkamatia na wakati wake tofauti wa kukamatia.",
+    "printOpened": "Kidirisha cha chapisha kilifunguliwa. Chagua Hifadhi kama PDF kukamatia nakili.",
+    "errNoCountries": "Ongeza angalau nchi moja.",
+    "errTooMany": "Safari inakamatia hadi {{max}} nchi.",
+    "errWindow": "Safari lazima iishe siku ile ile au baada ya siku inayoanza.",
+    "errCities": "{{name}}: orodhesha hadi {{max}} miji.",
+    "errCountryDates": "{{name}}: kuondoka lazima kuwe siku ile ile au baada ya kuwasili.",
+    "errOutsideWindow": "{{name}}: tarehe lazima ziwe ndani ya dirisha la safari.",
+    "errInvalid": "Rasimu haikuweza kujenguliwa kutoka safari hii:",
+    "errAuth": "Ingia tena kujenga rasimu.",
+    "errUpgrade": "Tathmini ya safari inajumuishwa katika mipango ya Pro Business, API Business na Enterprise.",
+    "errBusy": "Maombi mengi sana. Jaribu tena baada ya dakika moja.",
+    "errUnavailable": "Data nyuma ya rasimu haipatikani sasa. Jaribu tena baada ya dakika moja.",
+    "errGeneric": "Rasimu haikuweza kujenguliwa. Jaribu tena.",
+    "errDownload": "Faili haikuweza kupakuliwa hapa. Tumia Chapisha au hifadhi kama PDF badala yake.",
+    "errLoad": "Tathmini ya safari haikuweza kufunguliwa. Pakia upya ukurasa kisha ujaribu tena."
   }
 }

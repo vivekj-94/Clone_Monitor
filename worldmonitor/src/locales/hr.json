@@ -564,7 +564,8 @@
     "marketBreadth": "Širina Tržišta",
     "climateNews": "Klimatske Vijesti",
     "fx": "Tečajevi deviza",
-    "ukmtoIncidents": "Incidenti UKMTO-a"
+    "ukmtoIncidents": "Incidenti UKMTO-a",
+    "reservoirLevels": "Strateški vodostaji"
   },
   "commands": {
     "prefixes": {
@@ -1468,7 +1469,8 @@
         "canadaRoads": "Ceste Kanada",
         "canadaAlerts": "Upozorenja Kanada",
         "notamAirspace": "NOTAM ograničenja zračnog prostora",
-        "no2Activity": "Industrijska aktivnost"
+        "no2Activity": "Industrijska aktivnost",
+        "reservoirLevels": "Vodostaji"
       },
       "tooltip": {
         "earthquake": "Zemljotres",
@@ -1585,7 +1587,8 @@
           "canadaRoads": "Službeni prometni incidenti, upozorenja, uvjeti, zatvaranja, radovi i opasnosti iz podržanih kanadskih jurisdikcija.",
           "canadaAlerts": "Pokrajinska upozorenja za javnu sigurnost iz Alberta Emergency Alert, B.C. Evacuation Orders and Alerts i SaskAlert.",
           "notamAirspace": "Privremena ograničenja letenja i ograničeni, opasni i zabranjeni zračni prostor prema FAA NOTAM-ima, koji su trenutno na snazi ili počinju u roku od 24 sata",
-          "no2Activity": "Smjer NO2 aktivnosti iz Sentinel-5P za 167 zemalja i 32 industrijska klastera: najnoviji 56-dnevni prozor u odnosu na iste datume prethodnih godina, nakon mrtve zone od 10 %. Sadrži izmijenjene podatke Copernicus Sentinel."
+          "no2Activity": "Smjer NO2 aktivnosti iz Sentinel-5P za 167 zemalja i 32 industrijska klastera: najnoviji 56-dnevni prozor u odnosu na iste datume prethodnih godina, nakon mrtve zone od 10 %. Sadrži izmijenjene podatke Copernicus Sentinel.",
+          "reservoirLevels": "Razina vodene površine strateških akumulacija i jezera iz satelitskog lidara NASA ICESat-2, u usporedbi s uobičajenom razinom za mjesec. NASA objavljuje svaki prelet otprilike dva mjeseca nakon mjerenja."
         },
         "notes": {
           "timeAffects": "Utječe na: Zemljotresi, Vrijeme, Protesti, Prekidi"
@@ -1828,7 +1831,7 @@
       "estimateWithin": "Oko {{count}} ljudi u krugu od {{km}} km",
       "method": "Procjene se temelje na prosječnoj gustoći stanovništva države.",
       "empty": "Nema odgovarajućih lokacija događaja",
-      "infoTooltip": "Prikazuju se događaji s podacima o gustoći stanovništva zemlje. Lokacije iz starijih podataka bez informacija o preciznosti označene su kao one koje čekaju ažuriranje. Procijenjena područja mogu se preklapati.",
+      "infoTooltip": "Prikazuju se događaji s podacima o gustoći stanovništva zemlje. Lokacije UCDP događaja bez informacija o preciznosti označene su kao one koje čekaju ažuriranje. Procijenjena područja mogu se preklapati. Nemiri zahtijevaju preciznu lokaciju; UCDP događaji označeni kao neprecizni se isključuju. Jedno mjesto iz dva izvora (nemiri i UCDP) prikazuje se u dva retka.",
       "eventCount_one": "{{count}} događaj",
       "eventCount_few": "{{count}} događaja",
       "eventCount_other": "{{count}} događaja",
@@ -2467,7 +2470,8 @@
       "channelOrVideoUrl": "YouTube kanal ili URL videa",
       "channelUrlHint": "Zalijepite URL kanala (youtube.com/channel/UC…) ili URL uživo videa",
       "youtubeChannel": "YouTube kanal",
-      "httpsStreamHint": "Preglednici blokiraju nesigurne (http) tokove. Zalijepite sigurni (https) URL toka"
+      "httpsStreamHint": "Preglednici blokiraju nesigurne (http) tokove. Zalijepite sigurni (https) URL toka",
+      "tapToPlay": "Dodirnite za reprodukciju"
     },
     "map": {
       "showMap": "Prikaži mapu",
@@ -2806,7 +2810,7 @@
     },
     "sanctionsPressure": {
       "title": "Sankcije i Označavanja",
-      "infoTooltip": "Popisi OFAC SDN i konsolidirani popisi te kanadske sankcije SEMA/JVCFOA. Redci država koriste izravne veze. Zastave plovila i registracije zrakoplova broje se zasebno u registrima; nula imovine za državu ne znači da nema sankcionirane imovine. Države matičnih subjekata odvojene su od dokaza o adresi i isključene iz ocjena rizika.",
+      "infoTooltip": "Popisi OFAC SDN i konsolidirani popisi te kanadske sankcije SEMA/JVCFOA. Redci država koriste izravne veze. Zastave plovila i registracije zrakoplova broje se zasebno u registrima; nula imovine za državu ne znači da nema sankcionirane imovine.",
       "loading": "Učitavanje podataka sankcija...",
       "unavailable": "Podaci sankcija nisu dostupni.",
       "summary": {
@@ -3236,6 +3240,49 @@
       "body": "Zvijezda na GitHubu pomaže drugim ljudima da ga pronađu.",
       "star": "Daj zvijezdu na GitHubu",
       "dismiss": "Odbaci i ne pitaj ponovno"
+    },
+    "reservoirLevels": {
+      "note": "Razina vodene površine iz satelitskog lidara NASA ICESat-2. NASA objavljuje svaki prelet otprilike dva mjeseca nakon mjerenja, pa se ovdje prate promjene kroz tjedne i godišnja doba, a ne kroz dane. Samo razina, ne volumen.",
+      "source": "Izvor:",
+      "processedWith": "obrađeno alatom",
+      "empty": "Još nema očitanja",
+      "filterEmpty": "Nijedno vodno tijelo ne odgovara ovom filtru",
+      "unavailable": "Podaci o vodostaju trenutačno nisu dostupni",
+      "filterLabel": "Filtriraj vodna tijela",
+      "filter": {
+        "all": "Sve",
+        "attention": "Traže pozornost",
+        "transboundary": "Prekogranična"
+      },
+      "status": {
+        "record_low": "Rekordno nisko",
+        "record_high": "Rekordno visoko",
+        "falling_fast": "Brzo opada",
+        "rising_fast": "Brzo raste",
+        "low": "Nisko za sezonu",
+        "high": "Visoko za sezonu",
+        "normal": "Uobičajeno",
+        "insufficient_history": "Prekratka povijest",
+        "no_recent_data": "Nema nedavnog preleta",
+        "lowInRange": "Nisko u svojem rasponu",
+        "highInRange": "Visoko u svojem rasponu"
+      },
+      "vsUsual": "{{value}} u odnosu na uobičajeno ({{month}})",
+      "in12Months": "{{value}} u 12 mjeseci",
+      "noComparison": "Još nema usporedbe",
+      "measured": "izmjereno {{date}} ({{age}})",
+      "noPass": "Još nema upotrebljivog preleta",
+      "popup": {
+        "level": "Razina",
+        "levelValue": "{{value}} iznad razine mora (EGM2008)",
+        "anomaly": "U odnosu na uobičajeno ({{month}})",
+        "anomalyPlain": "U odnosu na uobičajeno za mjesec",
+        "changePrev": "Od prethodnog preleta",
+        "change90": "U 90 dana",
+        "change365": "U 12 mjeseci",
+        "measured": "Izmjereno",
+        "sparkline": "Vodostaj kroz 36 mjeseci"
+      }
     }
   },
   "popups": {
@@ -4492,6 +4539,7 @@
   "auth": {
     "signIn": "Prijava",
     "createAccount": "Kreiraj račun",
+    "freeReason": "Besplatno: spremi raspored, prati zemlje, upozorenja",
     "settings": "Postavke",
     "passkeyOffer": {}
   },
@@ -4639,6 +4687,21 @@
         "related": {
           "0": "Nowcast aktivnosti Kine",
           "1": "Sažetak zemlje"
+        }
+      },
+      "reservoirLevels": {
+        "category": "Klima",
+        "purpose": "Označava strateške akumulacije i jezera prema tome kako se njihova razina vode odnosi prema uobičajenoj za to doba godine i koliko se brzo mijenja.",
+        "source": "Visina vodene površine kopnenih voda iz NASA ICESat-2 ATL13 putem NSIDC-a, obrađena alatom SlideRule Earth i objedinjena po preletu satelita uslugom seed-reservoir-levels.",
+        "freshness": "Ažurira se svakodnevno. NASA objavljuje svaki prelet 50 do 70 dana nakon mjerenja, a svaka akumulacija ponovno se mjeri svakih nekoliko dana do otprilike jednom mjesečno.",
+        "confidence": "Prelet se računa samo ako se barem 5 vodenih segmenata slaže unutar 0,25 m. Sezonska usporedba traži prelete iz barem 3 prethodne godine u isto doba godine.",
+        "limitations": {
+          "0": "Samo razina, ne volumen: isti pad znači različit gubitak zalihe u svakoj akumulaciji.",
+          "1": "Vodno tijelo bez preleta 150 dana označava se kao bez nedavnog preleta; posljednje očitanje, promjene i datum i dalje se prikazuju."
+        },
+        "related": {
+          "0": "Ploča Strateški vodostaji",
+          "1": "Klimatske anomalije"
         }
       },
       "conflicts": {
@@ -4934,6 +4997,153 @@
     "updated": "Ova kartica sada ima najnoviju verziju vašeg tima.",
     "stopped": "Dijeljenje {{name}} je zaustavljeno.",
     "failed": "Nije moguće dohvatiti nadzorne ploče vašeg tima. Pokušajte ponovno.",
-    "limit": "Vaš tim već dijeli {{limit}} nadzornih ploča ovdje. Prvo prestanite dijeliti jednu."
+    "limit": "Vaš tim već dijeli {{limit}} nadzornih ploča ovdje. Prvo prestanite dijeliti jednu.",
+    "focusNotEntitled": "Vaš plan ne uključuje dijeljenje fokusirane kontrolne ploče. Očistite fokus ove kartice da biste dijelili njezine panele.",
+    "focusUnreadable": "{{name}} ima fokus koji ova verzija ne može prikazati. Ponovno učitajte da ažurirate, zatim je ponovno otvorite."
+  },
+  "focus": {
+    "barLabel": "Fokus",
+    "summary": "Fokusirano na {{countries}}",
+    "neighboursOff": "Susjedne zemlje nisu uključene",
+    "chosenLabel": "Odabrane",
+    "neighboursLabel": "Susjedne zemlje",
+    "neighbourItem": "Susjedna država: {{name}}",
+    "range": "{{start}} do {{end}}",
+    "windowEnded": "Razdoblje završeno {{date}}",
+    "windowStarts": "Počinje {{date}}",
+    "windowUntil": "Do {{date}}",
+    "windowFrom": "Od {{date}}",
+    "edit": "Uredi",
+    "clear": "Očisti",
+    "clearAria": "Očisti fokus i prikaži cijeli svijet",
+    "clearFocus": "Očisti fokus",
+    "notFiltered": "Nema filtriranja",
+    "notFilteredGlobal": "Globalni podaci: nema filtriranja po zemlji",
+    "notFilteredYet": "Još nije filtrirano po zemlji",
+    "gateSignedOutDesc": "Prijavite se da fokusirate karticu kontrolne ploče na zemlje koje pratite.",
+    "gateUpgradeDesc": "Fokusiranje kartice na odabrane zemlje dostupno je s Pro Business, API Business i Enterprise paketima.",
+    "gateUpgradeCta": "Nadogradi",
+    "tabButton": "Fokus",
+    "tabButtonTitle": "Fokusiraj ovu karticu na odabrane zemlje",
+    "tabButtonTitleActive": "Uredi fokus ove kartice",
+    "newTitle": "Fokusiraj ovu karticu",
+    "editTitle": "Uredi fokus",
+    "intro": "Paneli koji mogu filtrirati po zemlji prikazuju samo te zemlje. Ostali kažu \"Nema filtriranja\".",
+    "countriesLabel": "Zemlje",
+    "count": "{{n}} od {{max}}",
+    "searchPlaceholder": "Pretraži zemlje",
+    "resultsLabel": "Odgovarajuće zemlje",
+    "limitReached": "Odabrali ste {{max}} zemalja, što je maksimalno za fokus.",
+    "removeCountry": "Ukloni {{name}}",
+    "includeNeighbours": "Uključi susjedne zemlje",
+    "neighboursHint": "Rizik prelazi granice. Susjedne zemlje su označene kao takve i ne računaju se prema {{max}}.",
+    "startLabel": "Od (neobavezno)",
+    "endLabel": "Do (neobavezno)",
+    "datesHint": "Za putovanje ili zadatak. Kada se razdoblje završi, fokus ostaje i traka to pokazuje.",
+    "errorNoCountries": "Odaberite najmanje jednu zemlju.",
+    "errorTooMany": "Fokus može sadržavati do {{max}} zemalja.",
+    "errorDates": "Datum završetka je prije datuma početka.",
+    "save": "Spremi",
+    "cancel": "Odustani",
+    "saved": "Ova kartica je fokusirana na {{countries}}.",
+    "cleared": "Fokus očišten. Ova kartica prikazuje cijeli svijet.",
+    "notSaved": "Nije moguće spremiti. Ovaj preglednik blokira pohranu stranice.",
+    "plusNeighbours_one": "+ {{count}} susjedna država",
+    "plusNeighbours_few": "+ {{count}} susjedne zemlje",
+    "plusNeighbours_other": "+ {{count}} susjeda",
+    "filter": {
+      "showing": "Prikazujem {{countries}}",
+      "showingNeighbours": "Prikazujem {{countries}} + susjedne zemlje",
+      "showAll": "Prikaži sve",
+      "focusOff": "Fokus je isključen u ovoj ploči: prikazujem sve",
+      "applyFocus": "Primijeni fokus",
+      "applyFocusAria": "Filtriraj ovu ploču prema fokusu ponovno",
+      "show": "Prikaži",
+      "hide": "Sakrij",
+      "noCountryTag": "Bez zemlje",
+      "emptyHint": "Sve ostalo se broji gore.",
+      "emptyNews": "Nema ništa za te zemlje u trenutnim vijestima",
+      "emptyAdvisories": "Nema upozorenja o putovanju za te zemlje",
+      "emptyConflict": "Nema UCDP događaja sukoba za te zemlje",
+      "emptyConflictPartial": "Nema događaja sukoba za te zemlje među najnovijim događajima. Potpuni popis se nije učitao.",
+      "loadingConflict": "Učitavam sve događaje sukoba za te zemlje…",
+      "emptyAirports": "Nijedan od vaših praćenih aerodroma nije u tim zemljama",
+      "emptyFlights": "Nema letova u ili iz tih zemalja na ovoj ploči",
+      "emptyAviationNews": "Nema vijesti iz zrakoplovstva za te zemlje u posljednjih 24 sata",
+      "tabNotFiltered": "Ovaj tab nije filtriran po zemlji",
+      "hidden_one": "{{count}} sakriven fokusima",
+      "hidden_few": "{{count}} sakrijena fokusima",
+      "hidden_other": "{{count}} skrivenih fokusima",
+      "showAllAria_one": "Prikaži sve u ovoj ploči, uključujući {{count}} stavku izvan fokusa",
+      "showAllAria_few": "Prikaži sve u ovoj ploči, uključujući {{count}} stavke izvan fokusa",
+      "showAllAria_other": "Prikaži sve u ovoj ploči, uključujući {{count}} stavki izvan fokusa",
+      "unattributed_one": "{{count}} stavka bez zemlje",
+      "unattributed_few": "{{count}} stavke bez zemlje",
+      "unattributed_other": "{{count}} stavki bez zemlje",
+      "showUnattributedAria_one": "Prikaži {{count}} stavku bez zemlje",
+      "showUnattributedAria_few": "Prikaži {{count}} stavke bez zemlje",
+      "showUnattributedAria_other": "Prikaži {{count}} stavki bez zemlje",
+      "hideUnattributedAria_one": "Sakrij {{count}} stavku bez zemlje",
+      "hideUnattributedAria_few": "Sakrij {{count}} stavke bez zemlje",
+      "hideUnattributedAria_other": "Sakrij {{count}} stavki bez zemlje",
+      "partialConflict": "Prikazujem ratne događaje samo iz zadnjih 150. Puna lista se nije učitala.",
+      "partialConflictLoading": "Prikazujem događaje sukoba iz zadnjih 150 dok se puna lista učitava.",
+      "emptyInstability": "Nema rezultata nestabilnosti za ove zemlje",
+      "emptyOutbreaks": "Nema izvještaja o bolestima za ove zemlje",
+      "emptyOutages": "Nema prekida interneta za ove zemlje",
+      "emptyRadiation": "Nema mjerenja zračenja za ove zemlje",
+      "emptyFuelShortages": "Nema manjka goriva za ove zemlje",
+      "emptyEnergyDisruptions": "Nema prekida u opskrbi energijom za ove zemlje",
+      "emptyDisplacement": "Nema podataka o raseljenim osobama za ove zemlje",
+      "emptyCorrelation": "Nema signala za ove zemlje"
+    },
+    "draftAssessment": "Nacrt ocjene",
+    "draftAssessmentAria": "Otvori procjenu putovanja, unaprijed popunjena s ovim fokusom",
+    "draftCopied": "Zahtjev kopiran. Zalijepi ga u svoj AI asistent.",
+    "draftCopiedPartial": "Zahtjev kopiran za prvih {{count}} zemalja. Procjena pokriva najviše {{max}} zemalja.",
+    "draftCopyFailed": "Nije bilo moguće kopirati zahtjev."
+  },
+  "tripAssessment": {
+    "heading": "Procjena putovanja",
+    "intro": "Nacrt prve verzije procjene rizika putovanja na temelju izvora, koju analyst završava. Izvještava što podaci pokazuju i ne daje savjete.",
+    "privacy": "Samo zemlje, gradovi i datumi. Ne unosite imena putnika, hotele ili adrese. Ništa što unesete se ne pohranjuje.",
+    "taskLabel": "Oznaka zadatka (neobavezno)",
+    "taskLabelPlaceholder": "Regionalni posjeti lokacijama",
+    "windowStart": "Putovanje počinje",
+    "windowEnd": "Putovanje završava",
+    "countriesLabel": "Zemlje, prema redoslijedu putovanja",
+    "count": "{{n}} od {{max}}",
+    "searchPlaceholder": "Dodaj zemlju",
+    "addCountry": "Dodaj zemlju na putovanje",
+    "limit": "Putovanje obuhvaća najviše {{max}} zemalja.",
+    "omitted": "Izostavljeno jer putovanje obuhvaća najviše {{max}} zemalja: {{names}}.",
+    "cities": "Gradovi, odvojeni zarezom (do {{max}})",
+    "arrive": "Dolazak",
+    "depart": "Odlazak",
+    "moveEarlier": "Pomakni {{name}} ranije na putovanju",
+    "moveLater": "Pomakni {{name}} kasnije na putovanju",
+    "remove": "Ukloni {{name}} sa putovanja",
+    "downloadMarkdown": "Preuzmi Markdown",
+    "downloadWord": "Preuzmi za Word",
+    "print": "Ispis ili spremi kao PDF",
+    "copyRequest": "Kopiraj zahtjev za AI asistenta",
+    "close": "Zatvori",
+    "building": "Izrada nacrta iz najnovijih podataka…",
+    "downloaded": "Preuzeta datoteka {{file}}. Svaki preuzmi se kreira iznova i označava s vremenom spremanja.",
+    "printOpened": "Dijalog ispisa otvoren. Odaberite Spremi kao PDF da zadržite kopiju.",
+    "errNoCountries": "Dodajte najmanje jednu zemlju.",
+    "errTooMany": "Putovanje obuhvaća najviše {{max}} zemalja.",
+    "errWindow": "Putovanje mora završiti na dan početka ili nakon njega.",
+    "errCities": "{{name}}: navedite najviše {{max}} gradova.",
+    "errCountryDates": "{{name}}: odlazak mora biti na dan dolaska ili nakon njega.",
+    "errOutsideWindow": "{{name}}: datumi moraju biti unutar vremenskog okvira putovanja.",
+    "errInvalid": "Nacrt se ne može izraditi iz ovog putovanja:",
+    "errAuth": "Prijavite se ponovno da izradite nacrt.",
+    "errUpgrade": "Procjena putovanja je uključena u planove Pro Business, API Business i Enterprise.",
+    "errBusy": "Previše zahtjeva. Pokušajte ponovno za minutu.",
+    "errUnavailable": "Podaci iza nacrta trenutno nisu dostupni. Pokušajte ponovno za minutu.",
+    "errGeneric": "Nacrt se ne može izraditi. Pokušajte ponovno.",
+    "errDownload": "Datoteka se ne može preuzeti odavdje. Umjesto toga koristite Ispis ili spremi kao PDF.",
+    "errLoad": "Procjena putovanja nije mogla biti otvorena. Ponovno učitajte stranicu i pokušajte ponovno."
   }
 }

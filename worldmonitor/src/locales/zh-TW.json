@@ -490,7 +490,8 @@
     "marketBreadth": "市場廣度",
     "climateNews": "氣候新聞",
     "fx": "外匯匯率",
-    "ukmtoIncidents": "UKMTO事件"
+    "ukmtoIncidents": "UKMTO事件",
+    "reservoirLevels": "戰略水位"
   },
   "commands": {
     "prefixes": {
@@ -1307,7 +1308,8 @@
         "canadaRoads": "Canada 道路",
         "canadaAlerts": "加拿大警報",
         "notamAirspace": "NOTAM 空域限制",
-        "no2Activity": "工業活動"
+        "no2Activity": "工業活動",
+        "reservoirLevels": "水位"
       },
       "tooltip": {
         "earthquake": "地震",
@@ -1424,7 +1426,8 @@
           "canadaRoads": "加拿大（Canada）受支援轄區的官方道路事件、警報、路況、封閉、施工和危險資訊",
           "canadaAlerts": "來自 Alberta Emergency Alert、B.C. 疏散令與警報及 SaskAlert 的省級公共安全警報",
           "notamAirspace": "FAA NOTAM 中的臨時飛行限制和受限、危險及禁飛空域，當前生效或將在 24 小時內生效",
-          "no2Activity": "Sentinel-5P NO2 活動方向，覆蓋 167 個國家和 32 個工業叢集：最新 56 天視窗與往年同期日期對比，經 10% 死區處理。包含經修改的 Copernicus Sentinel 資料。"
+          "no2Activity": "Sentinel-5P NO2 活動方向，覆蓋 167 個國家和 32 個工業叢集：最新 56 天視窗與往年同期日期對比，經 10% 死區處理。包含經修改的 Copernicus Sentinel 資料。",
+          "reservoirLevels": "來自 NASA ICESat-2 衛星光達的戰略水庫和湖泊水面水位，與該月的常年水位對比。NASA 在每次過境測量後約兩個月釋出資料。"
         },
         "notes": {
           "timeAffects": "影響範圍：地震、天氣、抗議、中斷"
@@ -1665,7 +1668,7 @@
       "estimateWithin": "半徑 {{km}} 公里內約有 {{count}} 人",
       "method": "估算使用該國的平均人口密度。",
       "empty": "沒有符合條件的事件地點",
-      "infoTooltip": "顯示有國家人口密度資料的事件。缺少精度資訊的舊資料位置會標記為待更新。估計區域可能重疊。",
+      "infoTooltip": "顯示有國家人口密度資料的事件。缺少位置精度資訊的 UCDP 事件會標記為待更新。估計區域可能重疊。 動亂事件需要精確位置；標記為位置不精確的 UCDP 事件會被排除。同一地點由兩個來源（動亂和 UCDP）報告時，會顯示為兩行。",
       "eventCount_other": "{{count}} 起事件",
       "locationPending": "位置精度待更新",
       "unrestCoverage": "動亂資料覆蓋範圍",
@@ -2107,7 +2110,8 @@
       "channelOrVideoUrl": "YouTube 頻道或影片 URL",
       "channelUrlHint": "貼上頻道 URL (youtube.com/channel/UC…) 或直播影片 URL",
       "youtubeChannel": "YouTube 頻道",
-      "httpsStreamHint": "瀏覽器會阻止不安全的 (http) 流。請貼上安全的 (https) 流 URL"
+      "httpsStreamHint": "瀏覽器會阻止不安全的 (http) 流。請貼上安全的 (https) 流 URL",
+      "tapToPlay": "點選播放"
     },
     "map": {
       "showMap": "顯示地圖",
@@ -2708,7 +2712,7 @@
     },
     "sanctionsPressure": {
       "title": "制裁與指定",
-      "infoTooltip": "OFAC SDN和綜合名單，以及加拿大SEMA/JVCFOA制裁名單。國家行使用直接關聯。船旗和航空器註冊在註冊資訊中單獨計數；某國資產數量為零並不表示沒有受制裁資產。母實體所屬國家與地址證據分開記錄，不計入風險評分。",
+      "infoTooltip": "OFAC SDN和綜合名單，以及加拿大SEMA/JVCFOA制裁名單。國家行使用直接關聯。船旗和航空器註冊在註冊資訊中單獨計數；某國資產數量為零並不表示沒有受制裁資產。",
       "loading": "正在載入制裁資料...",
       "unavailable": "制裁資料不可用。",
       "summary": {
@@ -3118,6 +3122,49 @@
       "body": "在 GitHub 上標星可以幫助其他人發現它。",
       "star": "在 GitHub 上標星",
       "dismiss": "關閉，不再提示"
+    },
+    "reservoirLevels": {
+      "note": "水面水位來自 NASA ICESat-2 衛星光達。NASA 在每次過境測量後約兩個月釋出資料，因此這裡追蹤的是數週和季節尺度的變化，而不是逐日變化。僅為水位，不是庫容。",
+      "source": "來源：",
+      "processedWith": "處理工具：",
+      "empty": "暫無讀數",
+      "filterEmpty": "沒有符合此篩選條件的水體",
+      "unavailable": "水位資料當前不可用",
+      "filterLabel": "篩選水體",
+      "filter": {
+        "all": "全部",
+        "attention": "需要關注",
+        "transboundary": "跨境"
+      },
+      "status": {
+        "record_low": "創紀錄低位",
+        "record_high": "創紀錄高位",
+        "falling_fast": "快速下降",
+        "rising_fast": "快速上升",
+        "low": "低於同期",
+        "high": "高於同期",
+        "normal": "正常",
+        "insufficient_history": "歷史資料不足",
+        "no_recent_data": "近期無過境",
+        "lowInRange": "在其範圍內較低",
+        "highInRange": "在其範圍內較高"
+      },
+      "vsUsual": "較{{month}}常年 {{value}}",
+      "in12Months": "12 個月 {{value}}",
+      "noComparison": "暫無對比",
+      "measured": "測量於 {{date}}（{{age}}）",
+      "noPass": "暫無可用過境",
+      "popup": {
+        "level": "水位",
+        "levelValue": "海拔 {{value}}（EGM2008）",
+        "anomaly": "較{{month}}常年",
+        "anomalyPlain": "較當月常年",
+        "changePrev": "較上次過境",
+        "change90": "90 天內",
+        "change365": "12 個月內",
+        "measured": "測量時間",
+        "sparkline": "36 個月水位"
+      }
     }
   },
   "popups": {
@@ -4437,6 +4484,7 @@
   "auth": {
     "signIn": "登入",
     "createAccount": "建立帳戶",
+    "freeReason": "免費：儲存佈局、關注國家、獲取提醒",
     "settings": "設定",
     "passkeyOffer": {}
   },
@@ -4584,6 +4632,21 @@
         "related": {
           "0": "中國活動即時預測",
           "1": "國家簡報"
+        }
+      },
+      "reservoirLevels": {
+        "category": "氣候",
+        "purpose": "按水面水位與一年中同期常年水位的對比以及變化速度，標示戰略水庫和湖泊。",
+        "source": "經由 NSIDC 獲取的 NASA ICESat-2 ATL13 內陸水面高度，使用 SlideRule Earth 處理，並由 seed-reservoir-levels 服務按每次衛星過境彙總。",
+        "freshness": "每日更新。NASA 在測量後 50 至 70 天釋出每次過境資料，每座水庫的重訪間隔從幾天到約一個月不等。",
+        "confidence": "只有當至少 5 個水面段在 0.25 米內一致時，該次過境才計入。季節對比需要至少 3 個往年同期的過境資料。",
+        "limitations": {
+          "0": "僅為水位，不是庫容：同樣的下降在不同水庫意味著不同的蓄水損失。",
+          "1": "150 天內沒有過境的水體會標記為近期無過境；其最後一次讀數、變化和日期仍會顯示。"
+        },
+        "related": {
+          "0": "戰略水位面板",
+          "1": "氣候異常"
         }
       },
       "conflicts": {
@@ -4879,6 +4942,141 @@
     "updated": "此標籤頁現已是團隊的最新版本。",
     "stopped": "停止共享 {{name}}。",
     "failed": "無法連線團隊儀表盤。請重試。",
-    "limit": "你的團隊已在此共享 {{limit}} 個儀表盤。請先停止共享其中一個。"
+    "limit": "你的團隊已在此共享 {{limit}} 個儀表盤。請先停止共享其中一個。",
+    "focusNotEntitled": "您的套餐不支援共享聚焦儀表板。清除此標籤頁的聚焦以共享其面板。",
+    "focusUnreadable": "{{name}} 有一個此版本無法顯示的聚焦。重新載入以更新，然後重新開啟。"
+  },
+  "focus": {
+    "barLabel": "聚焦",
+    "summary": "聚焦於 {{countries}}",
+    "neighboursOff": "未包含相鄰國家",
+    "chosenLabel": "已選擇",
+    "neighboursLabel": "相鄰國家",
+    "neighbourItem": "相鄰國家：{{name}}",
+    "range": "{{start}} 至 {{end}}",
+    "windowEnded": "時間視窗已於 {{date}} 結束",
+    "windowStarts": "開始於 {{date}}",
+    "windowUntil": "至 {{date}}",
+    "windowFrom": "從 {{date}}",
+    "edit": "編輯",
+    "clear": "清除",
+    "clearAria": "清除聚焦並顯示整個世界",
+    "clearFocus": "清除聚焦",
+    "notFiltered": "未篩選",
+    "notFilteredGlobal": "全球資料：未按國家篩選",
+    "notFilteredYet": "尚未按國家篩選",
+    "gateSignedOutDesc": "登入以將儀表板標籤頁的聚焦設定在您覆蓋的國家。",
+    "gateUpgradeDesc": "將標籤頁聚焦在所選國家需要 Pro Business、API Business 或 Enterprise 套餐。",
+    "gateUpgradeCta": "升級",
+    "tabButton": "聚焦",
+    "tabButtonTitle": "將此標籤頁聚焦在所選國家",
+    "tabButtonTitleActive": "編輯此標籤頁的聚焦",
+    "newTitle": "聚焦此標籤頁",
+    "editTitle": "編輯聚焦",
+    "intro": "可按國家篩選的面板只顯示這些國家。其他面板顯示\"未篩選\"。",
+    "countriesLabel": "國家",
+    "count": "{{n}}/{{max}}",
+    "searchPlaceholder": "搜尋國家",
+    "resultsLabel": "匹配的國家",
+    "limitReached": "您已選擇 {{max}} 個國家，這是聚焦可容納的最大數量。",
+    "removeCountry": "移除 {{name}}",
+    "includeNeighbours": "包含相鄰國家",
+    "neighboursHint": "風險跨越邊界。相鄰國家已標記，不計入 {{max}} 的限制中。",
+    "startLabel": "從（可選）",
+    "endLabel": "至（可選）",
+    "datesHint": "用於行程或任務。當時間視窗結束時，聚焦保持不變且狀態列會顯示。",
+    "errorNoCountries": "至少選擇一個國家。",
+    "errorTooMany": "聚焦最多可容納 {{max}} 個國家。",
+    "errorDates": "結束日期早於開始日期。",
+    "save": "儲存",
+    "cancel": "取消",
+    "saved": "此標籤頁聚焦於 {{countries}}。",
+    "cleared": "聚焦已清除。此標籤頁顯示整個世界。",
+    "notSaved": "無法儲存。此瀏覽器阻止了網站儲存。",
+    "plusNeighbours_other": "+ {{count}} 個相鄰國家",
+    "filter": {
+      "showing": "顯示 {{countries}}",
+      "showingNeighbours": "顯示 {{countries}} + 鄰國",
+      "showAll": "顯示全部",
+      "focusOff": "此面板已關閉聚焦：顯示全部內容",
+      "applyFocus": "應用聚焦",
+      "applyFocusAria": "按聚焦重新篩選此面板",
+      "show": "顯示",
+      "hide": "隱藏",
+      "noCountryTag": "無國家",
+      "emptyHint": "其他一切內容已計入上方。",
+      "emptyNews": "當前頭條新聞中沒有這些國家的內容",
+      "emptyAdvisories": "這些國家沒有旅行建議",
+      "emptyConflict": "這些國家沒有 UCDP 衝突事件",
+      "emptyConflictPartial": "最新事件中這些國家沒有衝突事件。完整列表未載入。",
+      "loadingConflict": "正在載入這些國家的所有衝突事件…",
+      "emptyAirports": "您監控的機場中沒有位於這些國家的機場",
+      "emptyFlights": "此面板中沒有往返這些國家的航班",
+      "emptyAviationNews": "最近 24 小時內這些國家沒有航空新聞",
+      "tabNotFiltered": "此選項卡未按國家篩選",
+      "hidden_other": "聚焦隱藏了 {{count}} 項",
+      "showAllAria_other": "顯示此面板中的全部內容，包括聚焦範圍外的 {{count}} 項",
+      "unattributed_other": "{{count}} 項無國家標記",
+      "showUnattributedAria_other": "顯示 {{count}} 項無國家標記的內容",
+      "hideUnattributedAria_other": "隱藏 {{count}} 項無國家標記的內容",
+      "partialConflict": "僅顯示最近150條衝突事件。完整列表未載入。",
+      "partialConflictLoading": "正在載入完整列表，目前顯示最新150條衝突事件。",
+      "emptyInstability": "這些國家沒有不穩定性評分",
+      "emptyOutbreaks": "這些國家沒有疾病爆發",
+      "emptyOutages": "這些國家沒有網際網路中斷",
+      "emptyRadiation": "這些國家沒有輻射讀數",
+      "emptyFuelShortages": "這些國家沒有燃料短缺",
+      "emptyEnergyDisruptions": "這些國家沒有能源中斷",
+      "emptyDisplacement": "這些國家沒有難民安置資料",
+      "emptyCorrelation": "這些國家沒有訊號"
+    },
+    "draftAssessment": "草稿評估",
+    "draftAssessmentAria": "開啟行程評估，使用此焦點預填充",
+    "draftCopied": "請求已複製。將其貼上到您的AI助手中。",
+    "draftCopiedPartial": "已為前 {{count}} 個國家複製請求。一份評估最多涵蓋 {{max}} 個國家。",
+    "draftCopyFailed": "無法複製請求。"
+  },
+  "tripAssessment": {
+    "heading": "行程評估",
+    "intro": "由資料支援的旅行風險評估初稿，供分析師完成。它報告資料顯示的內容，不提供建議。",
+    "privacy": "僅包括國家、城市和日期。請勿輸入旅行者姓名、酒店或街道地址。您輸入的任何內容都不會被儲存。",
+    "taskLabel": "任務標籤（可選）",
+    "taskLabelPlaceholder": "區域實地存取",
+    "windowStart": "行程開始",
+    "windowEnd": "行程結束",
+    "countriesLabel": "國家，按旅行順序",
+    "count": "{{n}}/{{max}}",
+    "searchPlaceholder": "新增國家",
+    "addCountry": "向行程中新增國家",
+    "limit": "一趟行程最多涵蓋 {{max}} 個國家。",
+    "omitted": "被遺漏，因為一趟行程最多涵蓋 {{max}} 個國家：{{names}}。",
+    "cities": "城市，用逗號分隔（最多 {{max}} 個）",
+    "arrive": "抵達",
+    "depart": "出發",
+    "moveEarlier": "將 {{name}} 移至行程較早位置",
+    "moveLater": "將 {{name}} 移至行程較晚位置",
+    "remove": "從行程中移除 {{name}}",
+    "downloadMarkdown": "下載 Markdown",
+    "downloadWord": "下載為 Word 格式",
+    "print": "列印或儲存為 PDF",
+    "copyRequest": "複製 AI 助手請求",
+    "close": "關閉",
+    "building": "從最新資料生成初稿中…",
+    "downloaded": "已下載 {{file}}。每次下載都是從最新資料生成，並附帶其自身的捕獲時間戳。",
+    "printOpened": "列印對話方塊已開啟。選擇\"另存為 PDF\"來保留副本。",
+    "errNoCountries": "至少新增一個國家。",
+    "errTooMany": "一趟行程最多涵蓋 {{max}} 個國家。",
+    "errWindow": "行程必須在開始日期的當天或之後結束。",
+    "errCities": "{{name}}：最多列出 {{max}} 個城市。",
+    "errCountryDates": "{{name}}：出發日期必須在抵達日期的當天或之後。",
+    "errOutsideWindow": "{{name}}：日期必須在行程視窗內。",
+    "errInvalid": "無法從此行程生成初稿：",
+    "errAuth": "重新登入以生成初稿。",
+    "errUpgrade": "行程評估包含在 Pro Business、API Business 和 Enterprise 計劃中。",
+    "errBusy": "請求過於頻繁。請在一分鐘後重試。",
+    "errUnavailable": "初稿背後的資料暫時不可用。請在一分鐘後重試。",
+    "errGeneric": "初稿生成失敗。請重試。",
+    "errDownload": "無法在此處下載檔案。請改用列印或另存為 PDF。",
+    "errLoad": "無法開啟行程評估。請重新整理頁面後重試。"
   }
 }

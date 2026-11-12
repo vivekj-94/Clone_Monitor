@@ -561,7 +561,8 @@
     "marketBreadth": "Piaci szélesség",
     "climateNews": "Klíma hírek",
     "fx": "Devizaárfolyamok",
-    "ukmtoIncidents": "UKMTO-események"
+    "ukmtoIncidents": "UKMTO-események",
+    "reservoirLevels": "Stratégiai vízszintek"
   },
   "commands": {
     "prefixes": {
@@ -1460,7 +1461,8 @@
         "canadaRoads": "Kanadai utak",
         "canadaAlerts": "Kanadai riasztások",
         "notamAirspace": "NOTAM légtéri korlátozások",
-        "no2Activity": "Ipari aktivitás"
+        "no2Activity": "Ipari aktivitás",
+        "reservoirLevels": "Vízszintek"
       },
       "tooltip": {
         "earthquake": "Földrengés",
@@ -1577,7 +1579,8 @@
           "canadaRoads": "Hivatalos közúti események, figyelmeztetések, útviszonyok, lezárások, építkezések és veszélyek a támogatott kanadai joghatóságokból.",
           "canadaAlerts": "Tartományi közbiztonsági riasztások az Alberta Emergency Alert, a B.C. Evacuation Orders and Alerts és a SaskAlert forrásaiból.",
           "notamAirspace": "Ideiglenes repüléskorlátozások, valamint korlátozott, veszélyes és tiltott légtér az FAA NOTAM-jaiból, amely jelenleg érvényes vagy 24 órán belül kezdődik",
-          "no2Activity": "Sentinel-5P NO2-aktivitás iránya 167 országra és 32 ipari klaszterre: a legutóbbi 56 napos ablak az előző évek azonos dátumaihoz képest, 10%-os holtsáv után. Módosított Copernicus Sentinel adatokat tartalmaz."
+          "no2Activity": "Sentinel-5P NO2-aktivitás iránya 167 országra és 32 ipari klaszterre: a legutóbbi 56 napos ablak az előző évek azonos dátumaihoz képest, 10%-os holtsáv után. Módosított Copernicus Sentinel adatokat tartalmaz.",
+          "reservoirLevels": "Stratégiai víztározók és tavak vízfelszínének szintje a NASA ICESat-2 műholdas lidarja alapján, a hónapra jellemző szinthez viszonyítva. A NASA minden áthaladást nagyjából két hónappal a mérés után tesz közzé."
         },
         "notes": {
           "timeAffects": "Érintett: Földrengések, Időjárás, Tüntetések, Leállások"
@@ -1819,7 +1822,7 @@
       "estimateWithin": "Körülbelül {{count}} ember {{km}} km-es körzetben",
       "method": "A becslések az ország átlagos népsűrűségén alapulnak.",
       "empty": "Nincs megfelelő eseményhelyszín",
-      "infoTooltip": "Az ország népsűrűségi adataival rendelkező események jelennek meg. A régebbi adatokból származó, pontossági információ nélküli helyek frissítésre váró jelölést kapnak. A becsült területek átfedhetik egymást.",
+      "infoTooltip": "Az ország népsűrűségi adataival rendelkező események jelennek meg. A pontossági információ nélküli UCDP-események helyei frissítésre váró jelölést kapnak. A becsült területek átfedhetik egymást. A zavargásokhoz pontos hely szükséges; a pontatlannak jelölt UCDP-események kimaradnak. Egy két forrásban (zavargások és UCDP) szereplő hely két sorban jelenik meg.",
       "eventCount_one": "{{count}} esemény",
       "eventCount_other": "{{count}} esemény",
       "locationPending": "A hely pontossága frissítésre vár",
@@ -2455,7 +2458,8 @@
       "channelOrVideoUrl": "YouTube-csatorna vagy videó URL",
       "channelUrlHint": "Illesszen be egy csatorna URL-t (youtube.com/channel/UC…) vagy egy élő videó URL-t",
       "youtubeChannel": "YouTube-csatorna",
-      "httpsStreamHint": "A böngészők blokkolják a nem biztonságos (http) streameket. Illesszen be egy biztonságos (https) stream URL-t"
+      "httpsStreamHint": "A böngészők blokkolják a nem biztonságos (http) streameket. Illesszen be egy biztonságos (https) stream URL-t",
+      "tapToPlay": "Koppintson a lejátszáshoz"
     },
     "map": {
       "showMap": "Térkép megjelenítése",
@@ -2788,7 +2792,7 @@
     },
     "sanctionsPressure": {
       "title": "Szankciók & Kijelölések",
-      "infoTooltip": "OFAC SDN és összevont listák, valamint Kanada SEMA/JVCFOA szankciói. Az országok sorai közvetlen kapcsolatokat használnak. A hajólobogók és a repülőgép-lajstromok külön szerepelnek a nyilvántartásokban; egy ország nulla eszközszáma nem jelenti a szankcionált eszközök hiányát. Az anyaszervezetek országai elkülönülnek a címadatoktól, és nem számítanak bele a kockázati pontszámokba.",
+      "infoTooltip": "OFAC SDN és összevont listák, valamint Kanada SEMA/JVCFOA szankciói. Az országok sorai közvetlen kapcsolatokat használnak. A hajólobogók és a repülőgép-lajstromok külön szerepelnek a nyilvántartásokban; egy ország nulla eszközszáma nem jelenti a szankcionált eszközök hiányát.",
       "loading": "Szankció adatok betöltése...",
       "unavailable": "Szankció adatok nem érhetőek el.",
       "summary": {
@@ -3208,6 +3212,49 @@
       "body": "A GitHub-on adott csillag segít másoknak megtalálni.",
       "star": "Csillagozás a GitHubon",
       "dismiss": "Bezárás és többé ne kérdezz rá"
+    },
+    "reservoirLevels": {
+      "note": "Vízfelszín szintje a NASA ICESat-2 műholdas lidarja alapján. A NASA minden áthaladást nagyjából két hónappal a mérés után tesz közzé, ezért ez hetek és évszakok változását követi, nem napokét. Csak vízszint, nem térfogat.",
+      "source": "Forrás:",
+      "processedWith": "feldolgozás:",
+      "empty": "Még nincs mérés",
+      "filterEmpty": "Egy víztest sem felel meg ennek a szűrőnek",
+      "unavailable": "A vízszintadatok jelenleg nem érhetők el",
+      "filterLabel": "Víztestek szűrése",
+      "filter": {
+        "all": "Mind",
+        "attention": "Figyelmet igényel",
+        "transboundary": "Határokon átnyúló"
+      },
+      "status": {
+        "record_low": "Rekordalacsony",
+        "record_high": "Rekordmagas",
+        "falling_fast": "Gyorsan csökken",
+        "rising_fast": "Gyorsan emelkedik",
+        "low": "Alacsony az évszakhoz",
+        "high": "Magas az évszakhoz",
+        "normal": "Szokásos",
+        "insufficient_history": "Túl rövid előzmény",
+        "no_recent_data": "Nincs friss áthaladás",
+        "lowInRange": "Alacsony a tartományában",
+        "highInRange": "Magas a tartományában"
+      },
+      "vsUsual": "{{value}} a szokásoshoz képest ({{month}})",
+      "in12Months": "{{value}} 12 hónap alatt",
+      "noComparison": "Még nincs összevetés",
+      "measured": "mérve: {{date}} ({{age}})",
+      "noPass": "Még nincs használható áthaladás",
+      "popup": {
+        "level": "Szint",
+        "levelValue": "{{value}} tengerszint felett (EGM2008)",
+        "anomaly": "A szokásoshoz képest ({{month}})",
+        "anomalyPlain": "A hónapra szokásoshoz képest",
+        "changePrev": "Az előző áthaladás óta",
+        "change90": "90 nap alatt",
+        "change365": "12 hónap alatt",
+        "measured": "Mérés ideje",
+        "sparkline": "Vízszint 36 hónap alatt"
+      }
     }
   },
   "popups": {
@@ -4459,6 +4506,7 @@
   "auth": {
     "signIn": "Bejelentkezés",
     "createAccount": "Fiók létrehozása",
+    "freeReason": "Ingyenes: elrendezés mentése, országok követése, riasztások",
     "settings": "Beállítások",
     "passkeyOffer": {}
   },
@@ -4606,6 +4654,21 @@
         "related": {
           "0": "Kína aktivitási nowcast",
           "1": "Országösszefoglaló"
+        }
+      },
+      "reservoirLevels": {
+        "category": "Éghajlat",
+        "purpose": "Megjelöli a stratégiai víztározókat és tavakat aszerint, hogyan viszonyul vízszintjük az évszakra jellemző szinthez, és milyen gyorsan változik.",
+        "source": "Szárazföldi vizek felszínmagassága a NASA ICESat-2 ATL13 adataiból az NSIDC-n keresztül, a SlideRule Earth feldolgozásával, műholdas áthaladásonként összesítve a seed-reservoir-levels szolgáltatással.",
+        "freshness": "Naponta frissül. A NASA minden áthaladást 50–70 nappal a mérés után tesz közzé, és egy tározót néhány naponta vagy nagyjából havonta mérnek újra.",
+        "confidence": "Egy áthaladás csak akkor számít, ha legalább 5 vízszakasz 0,25 m-en belül egyezik. Az évszakos összevetéshez legalább 3 korábbi év azonos időszakából kellenek áthaladások.",
+        "limitations": {
+          "0": "Csak vízszint, nem térfogat: ugyanaz a csökkenés minden tározóban más készletveszteséget jelent.",
+          "1": "Ha egy víztestnél 150 napja nem volt áthaladás, „nincs friss áthaladás” jelölést kap; az utolsó értéke, a változások és a dátum továbbra is látszanak."
+        },
+        "related": {
+          "0": "Stratégiai vízszintek panel",
+          "1": "Éghajlati anomáliák"
         }
       },
       "conflicts": {
@@ -4901,6 +4964,147 @@
     "updated": "Ez a fül most a csapat legújabb verzióját tartalmazza.",
     "stopped": "{{name}} megosztása leállítva.",
     "failed": "Nem sikerült elérni a csapat irányítópultjait. Próbáld újra.",
-    "limit": "A csapat már {{limit}} irányítópultot oszt meg itt. Előbb állítsd le az egyik megosztását."
+    "limit": "A csapat már {{limit}} irányítópultot oszt meg itt. Előbb állítsd le az egyik megosztását.",
+    "focusNotEntitled": "Az Ön csomagja nem tartalmazza a fókuszált irányítópult megosztásának lehetőségét. Törölje ennek a lapnak a fókuszát a panelek megosztásához.",
+    "focusUnreadable": "{{name}} olyan fókusszal rendelkezik, amelyet ez a verzió nem tud megjeleníteni. Frissítse az oldalt a frissítéshez, majd nyissa meg újra."
+  },
+  "focus": {
+    "barLabel": "Fókusz",
+    "summary": "Fókuszálva erre: {{countries}}",
+    "neighboursOff": "Szomszédok nem szerepelnek",
+    "chosenLabel": "Kiválasztott",
+    "neighboursLabel": "Szomszédok",
+    "neighbourItem": "Szomszéd: {{name}}",
+    "range": "{{start}} – {{end}}",
+    "windowEnded": "Időablak vége: {{date}}",
+    "windowStarts": "Kezdete: {{date}}",
+    "windowUntil": "Időablak vége: {{date}}",
+    "windowFrom": "Kezdete: {{date}}",
+    "edit": "Szerkesztés",
+    "clear": "Törlés",
+    "clearAria": "Törölje a fókuszt és jelenítse meg az egész világot",
+    "clearFocus": "Fókusz törlése",
+    "notFiltered": "Nincs szűrve",
+    "notFilteredGlobal": "Globális adatok: nem szűrve ország szerint",
+    "notFilteredYet": "Még nem szűrve ország szerint",
+    "gateSignedOutDesc": "Jelentkezzen be egy irányítópult-lap fókuszálásához az Ön által lefedett országokra.",
+    "gateUpgradeDesc": "A lap fókuszálása kiválasztott országokra Pro Business, API Business és Enterprise csomagban érhető el.",
+    "gateUpgradeCta": "Frissítés",
+    "tabButton": "Fókusz",
+    "tabButtonTitle": "Ennek a lapnak a fókuszálása a kiválasztott országokra",
+    "tabButtonTitleActive": "Ennek a lapnak a fókuszának szerkesztése",
+    "newTitle": "Lap fókuszálása",
+    "editTitle": "Fókusz szerkesztése",
+    "intro": "Az ország szerint szűrhető panelek csak ezeket az országokat mutatják. A többiek azt jelzik: „Nincs szűrve\".",
+    "countriesLabel": "Országok",
+    "count": "{{n}} / {{max}}",
+    "searchPlaceholder": "Országok keresése",
+    "resultsLabel": "Megegyező országok",
+    "limitReached": "{{max}} országot választott ki, amely a maximális a fókuszban.",
+    "removeCountry": "{{name}} eltávolítása",
+    "includeNeighbours": "Szomszéd országok bevonása",
+    "neighboursHint": "A kockázat átlépi a határokat. A szomszédok így jelölve vannak, és nem számítanak bele a {{max}} országba.",
+    "startLabel": "Ettől (nem kötelező)",
+    "endLabel": "Eddig (nem kötelező)",
+    "datesHint": "Utazáshoz vagy feladathoz. Amikor az időablak vége érkezik, a fókusz megmarad, és a sáv ezt jelzi.",
+    "errorNoCountries": "Válasszon legalább egy országot.",
+    "errorTooMany": "A fókusz legfeljebb {{max}} országot tartalmazhat.",
+    "errorDates": "A befejezési dátum a kezdési dátum előtt van.",
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "saved": "Ez a lap fókusza: {{countries}}.",
+    "cleared": "Fókusz törölve. Ez a lap a világot mutatja.",
+    "notSaved": "Nem sikerült menteni. A böngésző blokkolja az oldal tárolását.",
+    "plusNeighbours_one": "+ {{count}} szomszéd",
+    "plusNeighbours_other": "+ {{count}} szomszéd",
+    "filter": {
+      "showing": "{{countries}} megjelenítése",
+      "showingNeighbours": "{{countries}} + szomszédos országok megjelenítése",
+      "showAll": "Összes megjelenítése",
+      "focusOff": "Fókusz ki ebben a panelben: minden megjelenik",
+      "applyFocus": "Fókusz alkalmazása",
+      "applyFocusAria": "Panel szűrése a fókuszra újra",
+      "show": "Megjelenítés",
+      "hide": "Elrejtés",
+      "noCountryTag": "Nincs ország",
+      "emptyHint": "Minden más fent számításba van véve.",
+      "emptyNews": "Nincs híradás ezekből az országokból az aktuális manchetekben",
+      "emptyAdvisories": "Nincsenek utazási tanácsok ezekre az országokra",
+      "emptyConflict": "Nincsenek UCDP konfliktus események ezekre az országokra",
+      "emptyConflictPartial": "Nincsenek konfliktus események ezekre az országokra az utolsó események között. A teljes lista nem töltődött be.",
+      "loadingConflict": "Összes konfliktus esemény betöltése ezekre az országokra…",
+      "emptyAirports": "A megfigyelt repülőterek közül egyik sem található ezekben az országokban",
+      "emptyFlights": "Nincsenek járatok ezekből vagy ezekbe az országokba ezen a táblán",
+      "emptyAviationNews": "Nincsenek repülési hírek ezekre az országokra az utolsó 24 órában",
+      "tabNotFiltered": "Ez a fül nincs szűrve ország szerint",
+      "hidden_one": "{{count}} elrejtve a fókusz által",
+      "hidden_other": "{{count}} elrejtve a fókusz által",
+      "showAllAria_one": "Minden megjelenítése ebben a panelben, beleértve {{count}} elemet a fókuszon kívülről",
+      "showAllAria_other": "Minden megjelenítése ebben a panelben, beleértve {{count}} elemet a fókuszon kívülről",
+      "unattributed_one": "{{count}} elem ország nélkül",
+      "unattributed_other": "{{count}} elem ország nélkül",
+      "showUnattributedAria_one": "{{count}} elem megjelenítése ország nélkül",
+      "showUnattributedAria_other": "{{count}} elem megjelenítése ország nélkül",
+      "hideUnattributedAria_one": "{{count}} elem elrejtése ország nélkül",
+      "hideUnattributedAria_other": "{{count}} elem elrejtése ország nélkül",
+      "partialConflict": "Konfliktusesemények jelenítve meg a legutóbbi 150-ből. A teljes lista nem töltődött be.",
+      "partialConflictLoading": "Konfliktusesemények megjelenítése az utolsó 150-ből, miközben a teljes lista betöltődik.",
+      "emptyInstability": "Nincs stabilitási pontszám ezekhez az országokhoz",
+      "emptyOutbreaks": "Nincs megbetegedési kitörés ezekhez az országokhoz",
+      "emptyOutages": "Nincs internetszünet ezekhez az országokhoz",
+      "emptyRadiation": "Nincs sugárzási érték ezekhez az országokhoz",
+      "emptyFuelShortages": "Nincs üzemanyaghiány ezekhez az országokhoz",
+      "emptyEnergyDisruptions": "Nincs energiaszünet ezekhez az országokhoz",
+      "emptyDisplacement": "Nincs menekültadatok ezekhez az országokhoz",
+      "emptyCorrelation": "Nincs szignál ezekhez az országokhoz"
+    },
+    "draftAssessment": "Értékelési vázlat",
+    "draftAssessmentAria": "Az utazási értékelés megnyitása, amely ezzel a fókusszal van kitöltve",
+    "draftCopied": "Kérés másolva. Illessze be az AI asszisztensébe.",
+    "draftCopiedPartial": "A kérés az első {{count}} országra lett másolva. Egy értékelés legfeljebb {{max}} országot fed le.",
+    "draftCopyFailed": "A kérés másolása nem sikerült."
+  },
+  "tripAssessment": {
+    "heading": "Utazási értékelés",
+    "intro": "Egy forrásolt első változat az utazási kockázat értékeléséről, amelyet az elemzőnek kell befejezni. Azt jelenti, hogy az adatok milyen információt tartalmaznak, tanácsot nem ad.",
+    "privacy": "Csak országok, városok és dátumok. Ne adjon meg utazó neveket, szállodákat vagy utcacímeket. A megadott információ semmilyen módon nem kerül tárolásra.",
+    "taskLabel": "Feladat címkéje (opcionális)",
+    "taskLabelPlaceholder": "Regionális helyszíni látogatások",
+    "windowStart": "Utazás kezdete",
+    "windowEnd": "Utazás vége",
+    "countriesLabel": "Országok, utazási sorrendben",
+    "count": "{{n}} a {{max}} közül",
+    "searchPlaceholder": "Ország hozzáadása",
+    "addCountry": "Ország hozzáadása az utazáshoz",
+    "limit": "Egy utazás legfeljebb {{max}} országot tartalmazhat.",
+    "omitted": "Kihagyva, mert egy utazás legfeljebb {{max}} országot tartalmazhat: {{names}}.",
+    "cities": "Városok, vesszővel elválasztva (max. {{max}})",
+    "arrive": "Érkezés",
+    "depart": "Indulás",
+    "moveEarlier": "{{name}} korábbra mozgatása az utazásban",
+    "moveLater": "{{name}} később mozgatása az utazásban",
+    "remove": "{{name}} eltávolítása az utazásból",
+    "downloadMarkdown": "Letöltés Markdown formátumban",
+    "downloadWord": "Letöltés Word-hez",
+    "print": "Nyomtatás vagy mentés PDF-ként",
+    "copyRequest": "Kérés másolása AI asszisztensnek",
+    "close": "Bezárás",
+    "building": "Az első változat összeállítása a legfrissebb adatokból…",
+    "downloaded": "Letöltve: {{file}}. Minden letöltés frissen összeállított és a saját rögzítési időbélyegzővel ellátott.",
+    "printOpened": "Nyomtatási párbeszédablak megnyitva. A PDF-ként mentéshez válassza a Mentés PDF-ként lehetőséget.",
+    "errNoCountries": "Adjon hozzá legalább egy országot.",
+    "errTooMany": "Egy utazás legfeljebb {{max}} országot tartalmazhat.",
+    "errWindow": "Az utazásnak a kezdés napján vagy azt követően kell véget érnie.",
+    "errCities": "{{name}}: legfeljebb {{max}} város.",
+    "errCountryDates": "{{name}}: az indulás az érkezés napján vagy azt követően kell, hogy legyen.",
+    "errOutsideWindow": "{{name}}: a dátumok az utazási ablak időtartamán belül kell, hogy legyenek.",
+    "errInvalid": "Az első változat nem állítható össze ebből az utazásból:",
+    "errAuth": "Jelentkezzen be újra az első változat összeállításához.",
+    "errUpgrade": "Az utazási értékelés a Pro Business, API Business és Enterprise csomagokban érhető el.",
+    "errBusy": "Túl sok kérés. Próbálja újra egy perc múlva.",
+    "errUnavailable": "Az első változat mögötti adatok jelenleg nem érhetők el. Próbálja újra egy perc múlva.",
+    "errGeneric": "Az első változat nem állítható össze. Próbálja újra.",
+    "errDownload": "A fájl innen nem tölthető le. Használja a Nyomtatást vagy a PDF-ként mentést helyette.",
+    "errLoad": "Az utazási értékelés nem nyitható meg. Töltse be újra az oldalt, és próbálja újra."
   }
 }

@@ -195,7 +195,8 @@
     "fearGreed": "Fear & Greed",
     "marketBreadth": "Market Breadth",
     "climateNews": "Climate News",
-    "ukmtoIncidents": "UKMTO Incidents"
+    "ukmtoIncidents": "UKMTO Incidents",
+    "reservoirLevels": "Strategic Water Levels"
   },
   "common": {
     "dismiss": "Dismiss",
@@ -280,6 +281,7 @@
   "auth": {
     "signIn": "Sign In",
     "createAccount": "Create account",
+    "freeReason": "Free: save your layout, follow countries, get alerts",
     "settings": "Settings"
   },
   "mcp": {
@@ -718,7 +720,7 @@
       "title": "Pentagon Pizza Index"
     },
     "populationExposure": {
-      "infoTooltip": "Events with country density data are shown. Locations from older data without precision information are marked pending update. The estimated areas can overlap."
+      "infoTooltip": "Country density required. Unrest needs a precise location; UCDP marked imprecise is excluded, unknown is pending. One place from two sources shows as two rows. Areas may overlap."
     },
     "positioning247": {
       "infoTooltip": "<strong>24/7 Positioning</strong> Perpetual contract positioning stress from Hyperliquid. Trades around the clock, showing what's building when traditional markets are closed. Composite score (0-100) from funding rate, volume, open interest, and spot-perp basis. Green = longs crowded (bullish lean), red = shorts crowded (bearish lean).",
@@ -738,7 +740,7 @@
       "infoTooltip": "<strong>Renewable Energy</strong> Share of electricity generation from renewables by region and year, plus US installed capacity for solar, wind, and coal (MW). Sources: World Bank (EG.ELC.RNEW.ZS) and US Energy Information Administration."
     },
     "sanctionsPressure": {
-      "infoTooltip": "OFAC SDN and Consolidated Lists plus Canada SEMA/JVCFOA designations. Country rows use direct associations. Vessel flags and aircraft registries are counted separately under registries; zero country asset counts do not mean no sanctioned assets. Parent countries are separate from address evidence and excluded from risk scores.",
+      "infoTooltip": "OFAC SDN and Consolidated Lists plus Canada SEMA/JVCFOA designations. Country rows use direct associations. Vessel flags and aircraft registries are counted separately under registries; zero country asset counts do not mean no sanctioned assets.",
       "title": "Sanctions & Designations"
     },
     "satelliteFires": {

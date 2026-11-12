@@ -2565,6 +2565,20 @@
       ]
     },
     {
+      "host": "cmr.earthdata.nasa.gov",
+      "provider": "NASA Earthdata CMR",
+      "kind": "structured",
+      "observed": true,
+      "license": "U.S. government public metadata; NASA Earthdata terms apply",
+      "attribution": "NASA Earthdata Common Metadata Repository (CMR); credit the dataset (NSIDC ICESat-2 ATL13 and ATL06).",
+      "status": "terms-review",
+      "references": [
+        {
+          "path": "scripts/_reservoir-levels.mjs"
+        }
+      ]
+    },
+    {
       "host": "cnas.org",
       "provider": "cnas.org",
       "kind": "feed",
@@ -5542,6 +5556,20 @@
       ]
     },
     {
+      "host": "id.usembassy.gov",
+      "provider": "id.usembassy.gov",
+      "kind": "structured",
+      "observed": true,
+      "license": "Provider terms for this upstream API/dataset; verify before redistribution",
+      "attribution": "Credit id.usembassy.gov and link to the original upstream API/dataset.",
+      "status": "terms-review",
+      "references": [
+        {
+          "path": "scripts/seed-security-advisories.mjs"
+        }
+      ]
+    },
+    {
       "host": "identity.dataspace.copernicus.eu",
       "provider": "identity.dataspace.copernicus.eu",
       "kind": "structured",
@@ -6019,6 +6047,20 @@
       "references": [
         {
           "path": "shared/news-catalog.json"
+        }
+      ]
+    },
+    {
+      "host": "kh.usembassy.gov",
+      "provider": "kh.usembassy.gov",
+      "kind": "structured",
+      "observed": true,
+      "license": "Provider terms for this upstream API/dataset; verify before redistribution",
+      "attribution": "Credit kh.usembassy.gov and link to the original upstream API/dataset.",
+      "status": "terms-review",
+      "references": [
+        {
+          "path": "scripts/seed-security-advisories.mjs"
         }
       ]
     },
@@ -6918,6 +6960,20 @@
       ]
     },
     {
+      "host": "my.usembassy.gov",
+      "provider": "my.usembassy.gov",
+      "kind": "structured",
+      "observed": true,
+      "license": "Provider terms for this upstream API/dataset; verify before redistribution",
+      "attribution": "Credit my.usembassy.gov and link to the original upstream API/dataset.",
+      "status": "terms-review",
+      "references": [
+        {
+          "path": "scripts/seed-security-advisories.mjs"
+        }
+      ]
+    },
+    {
       "host": "myprocurement.treasury.gov.my",
       "provider": "myprocurement.treasury.gov.my",
       "kind": "structured",
@@ -7332,6 +7388,23 @@
       "references": [
         {
           "path": "src/config/live-video-sources.ts"
+        }
+      ]
+    },
+    {
+      "host": "nsidc.org",
+      "provider": "NSIDC",
+      "kind": "structured",
+      "observed": true,
+      "license": "U.S. government/public dataset terms; collection-specific license applies",
+      "attribution": "National Snow and Ice Data Center (NSIDC); link to the dataset.",
+      "status": "terms-review",
+      "references": [
+        {
+          "path": "scripts/seed-reservoir-levels.mjs"
+        },
+        {
+          "path": "src/components/reservoir-levels-view.ts"
         }
       ]
     },
@@ -7840,6 +7913,20 @@
       "references": [
         {
           "path": "scripts/shared/regional-energy-feeds.json"
+        }
+      ]
+    },
+    {
+      "host": "ph.usembassy.gov",
+      "provider": "ph.usembassy.gov",
+      "kind": "structured",
+      "observed": true,
+      "license": "Provider terms for this upstream API/dataset; verify before redistribution",
+      "attribution": "Credit ph.usembassy.gov and link to the original upstream API/dataset.",
+      "status": "terms-review",
+      "references": [
+        {
+          "path": "scripts/seed-security-advisories.mjs"
         }
       ]
     },
@@ -9206,6 +9293,20 @@
       ]
     },
     {
+      "host": "sg.usembassy.gov",
+      "provider": "sg.usembassy.gov",
+      "kind": "structured",
+      "observed": true,
+      "license": "Provider terms for this upstream API/dataset; verify before redistribution",
+      "attribution": "Credit sg.usembassy.gov and link to the original upstream API/dataset.",
+      "status": "terms-review",
+      "references": [
+        {
+          "path": "scripts/seed-security-advisories.mjs"
+        }
+      ]
+    },
+    {
       "host": "sh.dataspace.copernicus.eu",
       "provider": "sh.dataspace.copernicus.eu",
       "kind": "structured",
@@ -9323,6 +9424,37 @@
         },
         {
           "path": "api/slack/oauth/start.ts"
+        }
+      ]
+    },
+    {
+      "host": "sliderule.slideruleearth.io",
+      "provider": "SlideRule Earth",
+      "kind": "structured",
+      "observed": true,
+      "license": "Public NASA-funded processing service; output carries the source dataset terms (ICESat-2 ATL13 and ATL06, NSIDC)",
+      "attribution": "Processed with SlideRule Earth (slideruleearth.io); credit NASA ICESat-2 ATL13 and ATL06 (NSIDC).",
+      "status": "terms-review",
+      "references": [
+        {
+          "path": "scripts/_reservoir-levels.mjs"
+        }
+      ]
+    },
+    {
+      "host": "slideruleearth.io",
+      "provider": "SlideRule Earth",
+      "kind": "structured",
+      "observed": true,
+      "license": "Public NASA-funded processing service; output carries the source dataset terms (ICESat-2 ATL13 and ATL06, NSIDC)",
+      "attribution": "Processed with SlideRule Earth (slideruleearth.io); credit NASA ICESat-2 ATL13 and ATL06 (NSIDC).",
+      "status": "terms-review",
+      "references": [
+        {
+          "path": "scripts/seed-reservoir-levels.mjs"
+        },
+        {
+          "path": "src/components/reservoir-levels-view.ts"
         }
       ]
     },
@@ -10831,6 +10963,20 @@
         },
         {
           "path": "server/worldmonitor/aviation/v1/list-aviation-news.ts"
+        }
+      ]
+    },
+    {
+      "host": "vn.usembassy.gov",
+      "provider": "vn.usembassy.gov",
+      "kind": "structured",
+      "observed": true,
+      "license": "Provider terms for this upstream API/dataset; verify before redistribution",
+      "attribution": "Credit vn.usembassy.gov and link to the original upstream API/dataset.",
+      "status": "terms-review",
+      "references": [
+        {
+          "path": "scripts/seed-security-advisories.mjs"
         }
       ]
     },
@@ -12925,6 +13071,12 @@
       "attribution": "Credit www.gdacs.org and link to the original upstream API/dataset.",
       "status": "terms-review",
       "references": [
+        {
+          "path": "api/mcp/registry/_travel-risk-document.ts"
+        },
+        {
+          "path": "scripts/build-seasonal-hazard-calendar.mjs"
+        },
         {
           "path": "scripts/seed-natural-events.mjs"
         }
@@ -15396,10 +15548,16 @@
           "path": "api/mcp/auth.ts"
         },
         {
+          "path": "api/mcp/handler.ts"
+        },
+        {
           "path": "api/mcp/skill-extension/generated.ts"
         },
         {
           "path": "api/mcp/ui/news-dashboard-app.ts"
+        },
+        {
+          "path": "api/mcp/ui/shell.ts"
         },
         {
           "path": "api/not-found.ts"
@@ -15442,6 +15600,9 @@
         },
         {
           "path": "scripts/check-live-video-sources.mjs"
+        },
+        {
+          "path": "scripts/check-population-exposure.mjs"
         },
         {
           "path": "scripts/comparison-shortlist.mjs"
@@ -15523,6 +15684,9 @@
         },
         {
           "path": "src/components/RuntimeConfigPanel.ts"
+        },
+        {
+          "path": "src/config/dashboard-reference-links.ts"
         },
         {
           "path": "src/config/docs-locale-seo.ts"

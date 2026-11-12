@@ -494,7 +494,8 @@
     "marketBreadth": "Étendue du marché",
     "climateNews": "Actualités climatiques",
     "fx": "Taux de change",
-    "ukmtoIncidents": "Incidents UKMTO"
+    "ukmtoIncidents": "Incidents UKMTO",
+    "reservoirLevels": "Niveaux d’eau stratégiques"
   },
   "commands": {
     "prefixes": {
@@ -1261,7 +1262,8 @@
         "canadaRoads": "Routes du Canada",
         "canadaAlerts": "Alertes Canada",
         "notamAirspace": "Restrictions d'espace aérien NOTAM",
-        "no2Activity": "Activité industrielle"
+        "no2Activity": "Activité industrielle",
+        "reservoirLevels": "Niveaux d’eau"
       },
       "tooltip": {
         "earthquake": "Tremblement de terre",
@@ -1378,7 +1380,8 @@
           "canadaRoads": "Incidents routiers officiels, alertes, conditions, fermetures, travaux et dangers dans les juridictions canadiennes prises en charge",
           "canadaAlerts": "Alertes provinciales de sécurité publique d’Alberta Emergency Alert, B.C. Evacuation Orders and Alerts et SaskAlert",
           "notamAirspace": "Restrictions de vol temporaires et espaces aériens restreints, dangereux et interdits selon les NOTAMs de la FAA, en vigueur maintenant ou à partir des 24 prochaines heures",
-          "no2Activity": "Direction de l’activité NO2 de Sentinel-5P pour 167 pays et 32 pôles industriels : la dernière fenêtre de 56 jours comparée aux mêmes dates des années précédentes, après une bande morte de 10 %. Contient des données Copernicus Sentinel modifiées."
+          "no2Activity": "Direction de l’activité NO2 de Sentinel-5P pour 167 pays et 32 pôles industriels : la dernière fenêtre de 56 jours comparée aux mêmes dates des années précédentes, après une bande morte de 10 %. Contient des données Copernicus Sentinel modifiées.",
+          "reservoirLevels": "Niveau de la surface de l’eau des réservoirs et lacs stratégiques mesuré par le lidar satellite ICESat-2 de la NASA, comparé au niveau habituel du mois. La NASA publie chaque passage environ deux mois après la mesure."
         },
         "notes": {
           "timeAffects": "Affecte : tremblements de terre, conditions météorologiques, manifestations, pannes"
@@ -1621,7 +1624,7 @@
       "estimateWithin": "Environ {{count}} personnes dans un rayon de {{km}} km",
       "method": "Les estimations reposent sur la densité moyenne de population du pays.",
       "empty": "Aucun lieu d’événement ne répond aux critères",
-      "infoTooltip": "Les événements disposant de données de densité de population du pays sont affichés. Les lieux issus de données anciennes sans information de précision sont signalés en attente de mise à jour. Les zones estimées peuvent se chevaucher.",
+      "infoTooltip": "Les événements disposant de données de densité de population du pays sont affichés. Les lieux des événements UCDP sans information de précision sont signalés en attente de mise à jour. Les zones estimées peuvent se chevaucher. Les troubles nécessitent une localisation précise ; les événements UCDP marqués comme imprécis sont exclus. Un lieu signalé par deux sources (troubles et UCDP) apparaît sur deux lignes.",
       "eventCount_one": "{{count}} événement",
       "eventCount_many": "{{count}} événements",
       "eventCount_other": "{{count}} événements",
@@ -1979,7 +1982,8 @@
       "channelUrlHint": "Collez une URL de chaîne (youtube.com/channel/UC…) ou une URL de vidéo en direct",
       "youtubeChannel": "Chaîne YouTube",
       "insecureStream": "{{name}} utilise un flux non sécurisé (http), que les navigateurs bloquent. Ajoutez-le à nouveau avec une URL de flux sécurisée (https)",
-      "httpsStreamHint": "Les navigateurs bloquent les flux non sécurisés (http). Collez une URL de flux sécurisée (https)"
+      "httpsStreamHint": "Les navigateurs bloquent les flux non sécurisés (http). Collez une URL de flux sécurisée (https)",
+      "tapToPlay": "Appuyez pour lancer"
     },
     "securityAdvisories": {
       "loading": "Chargement des avis de voyage...",
@@ -2730,7 +2734,7 @@
     },
     "sanctionsPressure": {
       "title": "Sanctions et désignations",
-      "infoTooltip": "Listes OFAC SDN et consolidées, ainsi que les désignations SEMA/JVCFOA du Canada. Les lignes des pays utilisent les liens directs. Les pavillons des navires et les immatriculations des aéronefs sont comptés séparément dans les registres ; un nombre nul pour un pays ne signifie pas une absence d’actifs sanctionnés. Les pays des entités mères sont distincts des preuves d’adresse et exclus des scores de risque.",
+      "infoTooltip": "Listes OFAC SDN et consolidées, ainsi que les désignations SEMA/JVCFOA du Canada. Les lignes des pays utilisent les liens directs. Les pavillons des navires et les immatriculations des aéronefs sont comptés séparément dans les registres ; un nombre nul pour un pays ne signifie pas une absence d’actifs sanctionnés.",
       "loading": "Chargement des données de sanctions...",
       "unavailable": "Données de sanctions indisponibles.",
       "summary": {
@@ -3160,6 +3164,49 @@
       "body": "Une étoile sur GitHub aide les autres à le découvrir.",
       "star": "Ajouter une étoile sur GitHub",
       "dismiss": "Masquer et ne plus demander"
+    },
+    "reservoirLevels": {
+      "note": "Niveau de la surface de l’eau mesuré par le lidar satellite ICESat-2 de la NASA. La NASA publie chaque passage environ deux mois après la mesure : ces données suivent donc l’évolution sur des semaines et des saisons, pas sur des jours. Niveau seulement, pas volume.",
+      "source": "Source :",
+      "processedWith": "traité avec",
+      "empty": "Aucune mesure pour l’instant",
+      "filterEmpty": "Aucun plan d’eau ne correspond à ce filtre",
+      "unavailable": "Les données de niveau d’eau sont indisponibles pour le moment",
+      "filterLabel": "Filtrer les plans d’eau",
+      "filter": {
+        "all": "Tous",
+        "attention": "À surveiller",
+        "transboundary": "Transfrontaliers"
+      },
+      "status": {
+        "record_low": "Plus bas historique",
+        "record_high": "Plus haut historique",
+        "falling_fast": "Baisse rapide",
+        "rising_fast": "Hausse rapide",
+        "low": "Bas pour la saison",
+        "high": "Haut pour la saison",
+        "normal": "Habituel",
+        "insufficient_history": "Historique insuffisant",
+        "no_recent_data": "Aucun passage récent",
+        "lowInRange": "Bas dans sa plage",
+        "highInRange": "Haut dans sa plage"
+      },
+      "vsUsual": "{{value}} par rapport à l’habituel en {{month}}",
+      "in12Months": "{{value}} sur 12 mois",
+      "noComparison": "Pas encore de comparaison",
+      "measured": "mesuré le {{date}} ({{age}})",
+      "noPass": "Aucun passage exploitable pour l’instant",
+      "popup": {
+        "level": "Niveau",
+        "levelValue": "{{value}} au-dessus du niveau de la mer (EGM2008)",
+        "anomaly": "Par rapport à l’habituel en {{month}}",
+        "anomalyPlain": "Par rapport à l’habituel du mois",
+        "changePrev": "Depuis le passage précédent",
+        "change90": "Sur 90 jours",
+        "change365": "Sur 12 mois",
+        "measured": "Mesuré",
+        "sparkline": "Niveau d’eau sur 36 mois"
+      }
     }
   },
   "popups": {
@@ -4481,6 +4528,7 @@
   "auth": {
     "signIn": "Se connecter",
     "createAccount": "Créer un compte",
+    "freeReason": "Gratuit : enregistrer la mise en page, suivre des pays, alertes",
     "settings": "Paramètres",
     "passkeyOffer": {}
   },
@@ -4628,6 +4676,21 @@
         "related": {
           "0": "Nowcast d’activité de la Chine",
           "1": "Fiche pays"
+        }
+      },
+      "reservoirLevels": {
+        "category": "Climat",
+        "purpose": "Signale les réservoirs et lacs stratégiques selon l’écart de leur niveau d’eau avec le niveau habituel à cette période de l’année et la vitesse de son évolution.",
+        "source": "Hauteur de la surface des eaux continentales NASA ICESat-2 ATL13 via le NSIDC, traitée avec SlideRule Earth et agrégée par passage du satellite par le service seed-reservoir-levels.",
+        "freshness": "Mise à jour quotidienne. La NASA publie chaque passage 50 à 70 jours après la mesure, et chaque réservoir est remesuré tous les quelques jours à environ un mois.",
+        "confidence": "Un passage ne compte que si au moins 5 segments d’eau concordent à 0,25 m près. Une comparaison saisonnière exige des passages d’au moins 3 années antérieures à la même période de l’année.",
+        "limitations": {
+          "0": "Niveau seulement, pas volume : une même baisse représente une perte de stock différente dans chaque réservoir.",
+          "1": "Un plan d’eau sans passage depuis 150 jours est signalé sans passage récent ; sa dernière mesure, ses variations et sa date restent affichées."
+        },
+        "related": {
+          "0": "Panneau Niveaux d’eau stratégiques",
+          "1": "Anomalies climatiques"
         }
       },
       "conflicts": {
@@ -4923,6 +4986,153 @@
     "updated": "Cet onglet a maintenant la dernière version de votre équipe.",
     "stopped": "Partage de {{name}} arrêté.",
     "failed": "Impossible de se connecter aux dashboards de votre équipe. Réessayez.",
-    "limit": "Votre équipe partage déjà {{limit}} dashboards ici. Arrêtez d'abord d'en partager un."
+    "limit": "Votre équipe partage déjà {{limit}} dashboards ici. Arrêtez d'abord d'en partager un.",
+    "focusNotEntitled": "Votre plan ne comprend pas le partage d'un dashboard concentré. Effacez la concentration de cet onglet pour partager ses panneaux.",
+    "focusUnreadable": "{{name}} a une concentration que cette version ne peut pas afficher. Rechargez pour mettre à jour, puis ouvrez-la à nouveau."
+  },
+  "focus": {
+    "barLabel": "Concentration",
+    "summary": "Concentration sur {{countries}}",
+    "neighboursOff": "Voisins non inclus",
+    "chosenLabel": "Sélectionnés",
+    "neighboursLabel": "Voisins",
+    "neighbourItem": "Voisin : {{name}}",
+    "range": "{{start}} à {{end}}",
+    "windowEnded": "Fenêtre terminée {{date}}",
+    "windowStarts": "Commence {{date}}",
+    "windowUntil": "Jusqu'au {{date}}",
+    "windowFrom": "À partir du {{date}}",
+    "edit": "Modifier",
+    "clear": "Effacer",
+    "clearAria": "Effacez la concentration et affichez le monde entier",
+    "clearFocus": "Effacer la concentration",
+    "notFiltered": "Non filtré",
+    "notFilteredGlobal": "Données mondiales : non filtrées par pays",
+    "notFilteredYet": "Non filtré par pays pour l'instant",
+    "gateSignedOutDesc": "Connectez-vous pour concentrer un onglet du dashboard sur les pays que vous couvrez.",
+    "gateUpgradeDesc": "La concentration d'un onglet sur des pays choisis est disponible avec Pro Business, API Business et Enterprise.",
+    "gateUpgradeCta": "Passer à la version supérieure",
+    "tabButton": "Concentration",
+    "tabButtonTitle": "Concentrez cet onglet sur les pays choisis",
+    "tabButtonTitleActive": "Modifier la concentration de cet onglet",
+    "newTitle": "Concentrer cet onglet",
+    "editTitle": "Modifier la concentration",
+    "intro": "Les panneaux qui peuvent filtrer par pays affichent uniquement ces pays. Les autres indiquent « Non filtré ».",
+    "countriesLabel": "Pays",
+    "count": "{{n}} sur {{max}}",
+    "searchPlaceholder": "Rechercher des pays",
+    "resultsLabel": "Pays correspondants",
+    "limitReached": "Vous avez choisi {{max}} pays, le maximum qu'une concentration peut contenir.",
+    "removeCountry": "Supprimer {{name}}",
+    "includeNeighbours": "Inclure les pays voisins",
+    "neighboursHint": "Les risques ne connaissent pas de frontières. Les voisins sont marqués comme tels et ne comptent pas vers les {{max}}.",
+    "startLabel": "À partir de (facultatif)",
+    "endLabel": "Jusqu'à (facultatif)",
+    "datesHint": "Pour un voyage ou une tâche. Quand la fenêtre se termine, la concentration reste et la barre l'indique.",
+    "errorNoCountries": "Choisissez au moins un pays.",
+    "errorTooMany": "Une concentration peut contenir jusqu'à {{max}} pays.",
+    "errorDates": "La date de fin est antérieure à la date de début.",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "saved": "Cet onglet est concentré sur {{countries}}.",
+    "cleared": "Concentration effacée. Cet onglet affiche le monde entier.",
+    "notSaved": "Impossible d'enregistrer. Ce navigateur bloque le stockage sur le site.",
+    "plusNeighbours_one": "+ {{count}} voisin",
+    "plusNeighbours_many": "+ {{count}} voisins",
+    "plusNeighbours_other": "+ {{count}} voisins",
+    "filter": {
+      "showing": "Affichage de {{countries}}",
+      "showingNeighbours": "Affichage de {{countries}} + pays voisins",
+      "showAll": "Afficher tout",
+      "focusOff": "Concentration désactivée dans ce panneau : tout est affiché",
+      "applyFocus": "Appliquer la concentration",
+      "applyFocusAria": "Filtrer à nouveau ce panneau selon la concentration",
+      "show": "Afficher",
+      "hide": "Masquer",
+      "noCountryTag": "Aucun pays",
+      "emptyHint": "Tout le reste est compté ci-dessus.",
+      "emptyNews": "Rien pour ces pays dans les actualités actuelles",
+      "emptyAdvisories": "Aucune mise en garde aux voyageurs pour ces pays",
+      "emptyConflict": "Aucun événement de conflit UCDP pour ces pays",
+      "emptyConflictPartial": "Aucun événement de conflit pour ces pays parmi les derniers événements. La liste complète n'a pas pu être chargée.",
+      "loadingConflict": "Chargement de tous les événements de conflit pour ces pays…",
+      "emptyAirports": "Aucun de vos aéroports surveillés ne se trouve dans ces pays",
+      "emptyFlights": "Aucun vol vers ou depuis ces pays sur ce tableau",
+      "emptyAviationNews": "Aucune actualité aéronautique pour ces pays au cours des 24 dernières heures",
+      "tabNotFiltered": "Cet onglet n'est pas filtré par pays",
+      "hidden_one": "{{count}} élément masqué par la concentration",
+      "hidden_many": "{{count}} éléments masqués par la concentration",
+      "hidden_other": "{{count}} éléments masqués par la concentration",
+      "showAllAria_one": "Tout afficher dans ce panneau, y compris {{count}} élément hors de la concentration",
+      "showAllAria_many": "Tout afficher dans ce panneau, y compris {{count}} éléments hors de la concentration",
+      "showAllAria_other": "Tout afficher dans ce panneau, y compris {{count}} éléments hors de la concentration",
+      "unattributed_one": "{{count}} élément sans pays",
+      "unattributed_many": "{{count}} éléments sans pays",
+      "unattributed_other": "{{count}} éléments sans pays",
+      "showUnattributedAria_one": "Afficher l'{{count}} élément sans pays",
+      "showUnattributedAria_many": "Afficher les {{count}} éléments sans pays",
+      "showUnattributedAria_other": "Afficher les {{count}} éléments sans pays",
+      "hideUnattributedAria_one": "Masquer l'{{count}} élément sans pays",
+      "hideUnattributedAria_many": "Masquer les {{count}} éléments sans pays",
+      "hideUnattributedAria_other": "Masquer les {{count}} éléments sans pays",
+      "partialConflict": "Affichage des événements de conflit des 150 derniers uniquement. La liste complète n'a pas pu être chargée.",
+      "partialConflictLoading": "Affichage des événements de conflit des 150 derniers pendant le chargement de la liste complète.",
+      "emptyInstability": "Aucun score d'instabilité pour ces pays",
+      "emptyOutbreaks": "Aucune épidémie pour ces pays",
+      "emptyOutages": "Aucune perturbation Internet pour ces pays",
+      "emptyRadiation": "Aucune mesure de rayonnement pour ces pays",
+      "emptyFuelShortages": "Aucune pénurie de carburant pour ces pays",
+      "emptyEnergyDisruptions": "Aucune perturbation énergétique pour ces pays",
+      "emptyDisplacement": "Aucune donnée de déplacement pour ces pays",
+      "emptyCorrelation": "Aucun signal pour ces pays"
+    },
+    "draftAssessment": "Brouillon d'évaluation",
+    "draftAssessmentAria": "Ouvrir l'évaluation de voyage, préremplie avec ce focus",
+    "draftCopied": "Demande copiée. Collez-la dans votre assistant IA.",
+    "draftCopiedPartial": "Demande copiée pour les {{count}} premiers pays. Une évaluation couvre au maximum {{max}} pays.",
+    "draftCopyFailed": "Impossible de copier la demande."
+  },
+  "tripAssessment": {
+    "heading": "Évaluation de voyage",
+    "intro": "Un premier brouillon d'évaluation des risques de voyage tiré de données, à finaliser par un analyste. Il rapporte ce que contiennent les données et ne donne aucun conseil.",
+    "privacy": "Pays, villes et dates uniquement. N'entrez pas de noms de voyageurs, d'hôtels ou d'adresses précises. Aucune donnée que vous entrez n'est conservée.",
+    "taskLabel": "Étiquette de la tâche (optionnelle)",
+    "taskLabelPlaceholder": "Visites régionales de sites",
+    "windowStart": "Début du voyage",
+    "windowEnd": "Fin du voyage",
+    "countriesLabel": "Pays, dans l'ordre du voyage",
+    "count": "{{n}} sur {{max}}",
+    "searchPlaceholder": "Ajouter un pays",
+    "addCountry": "Ajouter un pays au voyage",
+    "limit": "Un voyage couvre au maximum {{max}} pays.",
+    "omitted": "Omis parce qu'un voyage couvre au maximum {{max}} pays : {{names}}.",
+    "cities": "Villes, séparées par des virgules ({{max}} maximum)",
+    "arrive": "Arrivée",
+    "depart": "Départ",
+    "moveEarlier": "Avancer {{name}} dans le voyage",
+    "moveLater": "Repousser {{name}} dans le voyage",
+    "remove": "Supprimer {{name}} du voyage",
+    "downloadMarkdown": "Télécharger en Markdown",
+    "downloadWord": "Télécharger pour Word",
+    "print": "Imprimer ou enregistrer en PDF",
+    "copyRequest": "Copier la requête pour un assistant IA",
+    "close": "Fermer",
+    "building": "Génération du brouillon à partir des dernières données…",
+    "downloaded": "{{file}} téléchargé. Chaque téléchargement est généré à partir des données actuelles et horodaté.",
+    "printOpened": "Dialogue d'impression ouvert. Choisissez Enregistrer en PDF pour conserver une copie.",
+    "errNoCountries": "Ajoutez au moins un pays.",
+    "errTooMany": "Un voyage couvre au maximum {{max}} pays.",
+    "errWindow": "Le voyage doit se terminer le jour du départ ou après.",
+    "errCities": "{{name}} : listez au maximum {{max}} villes.",
+    "errCountryDates": "{{name}} : le départ doit être le jour de l'arrivée ou après.",
+    "errOutsideWindow": "{{name}} : les dates doivent se situer dans la fenêtre du voyage.",
+    "errInvalid": "Le brouillon n'a pas pu être généré à partir de ce voyage :",
+    "errAuth": "Connectez-vous à nouveau pour générer le brouillon.",
+    "errUpgrade": "L'évaluation de voyage est incluse dans les plans Pro Business, API Business et Enterprise.",
+    "errBusy": "Trop de requêtes. Réessayez dans une minute.",
+    "errUnavailable": "Les données du brouillon ne sont pas disponibles pour le moment. Réessayez dans une minute.",
+    "errGeneric": "Le brouillon n'a pas pu être généré. Réessayez.",
+    "errDownload": "Le fichier n'a pas pu être téléchargé ici. Utilisez l'impression ou enregistrez en PDF à la place.",
+    "errLoad": "L'évaluation de voyage n'a pas pu être ouverte. Rechargez la page et réessayez."
   }
 }
