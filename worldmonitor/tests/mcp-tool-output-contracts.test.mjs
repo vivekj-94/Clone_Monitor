@@ -1,26 +1,3 @@
-// Per-tool output-shape contract regression. For every tool in
-// `__testing__.TOOL_REGISTRY`, dispatch a `tools/call` through the public
-// handler with default-ish arguments and assert the returned `content[0].text`
-// JSON validates against that tool's declared `outputSchema`.
-//
-// Coverage scope (documented intent — see PR body):
-//   • Cache tools (no `_execute`): real dispatch pipeline. fetch is stubbed
-//     so every cache-key read returns a non-null `{}` payload, executeTool
-//     assembles the envelope, and the test validates the response. This
-//     catches envelope-shape regression (missing `cached_at` / `stale`,
-//     wrong `data` shape, executeTool stripping the envelope, etc.).
-//   • RPC tools (has `_execute`): `_execute` is monkey-patched to return a
-//     minimal-shape object derived from the declared `outputSchema`. This
-//     proves the schema declaration is internally consistent (a `required`
-//     field whose type allows no concrete value would fail) and that the
-//     dispatch pipeline preserves the response unchanged through
-//     `applyJmespath` and `rpcOk`. It does NOT exercise the real `_execute`
-//     body — field-level shape drift for RPC tools is OUT OF SCOPE and is
-//     covered indirectly by the per-fixture parity test in
-//     `mcp-output-schema-coverage.test.mjs` (3 cache tools today).
-//
-// One `it()` per tool so a failure names the offending tool.
-
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 
@@ -52,6 +29,8 @@ const REQUIRED_ARGS = {
   get_country_history: { country_code: 'US' },
   get_media_perspective: { subject_country: 'SA' },
   get_defense_industrial_base: { country_code: 'US' },
+  get_point_satellite_passes: { lat: 39.74, lon: -104.99 },
+  get_country_imagery_evidence: { country_code: 'UA' },
   get_country_coverage: { country_code: 'US' },
   get_food_stocks: { country_code: 'US' },
   get_demographics_capability: { country_code: 'US' },
@@ -125,6 +104,11 @@ const STUB_FIXTURES = {
   get_country_brief_section: assembleRawSignals('US', Object.fromEntries(RAW_SIGNAL_FAMILIES.map(family =>
     [family, failedRawSignal(family, 'unavailable', '2026-10-05T12:00:00Z', 'Controlled failure')])), '2026-10-05T12:00:00Z'),
   get_stock_research: { operation: 'analysis', data: { available: false, symbol: 'AAPL' } },
+  get_point_satellite_passes: {
+    point: { lat: 39.74, lon: -104.99 }, windowStartMs: 1, windowEndMs: 2, computedAt: 1, inventoryVersion: 'v', catalogFetchedAt: 0,
+    stale: true, passes: [], outOfFootprintPasses: 0, acquisitions: [], archiveStatus: 'complete', failedSources: [], unansweredProfiles: [],
+  },
+  get_country_imagery_evidence: { countryCode: 'UA', asOf: 0, stale: true, siteCount: 0, confirmedFlagCount: 0, sites: [] },
   get_five_factor_scorecard: { unavailable: true, unavailableReason: 'country-unavailable' },
   list_five_factor_scorecards: {
     methodologyVersion: '', computedAt: '', scorecards: [], unavailable: true, unavailableReason: 'scorecard-snapshot-unavailable',

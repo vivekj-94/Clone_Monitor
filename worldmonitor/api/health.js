@@ -411,6 +411,12 @@ const STANDALONE_KEYS = {
   // ICESat-2 strategic reservoir levels (scripts/seed-reservoir-levels.mjs). Served by
   // /api/climate/v1/list-reservoir-levels with no dashboard consumer yet.
   reservoirLevels: 'climate:reservoir-levels:v1',
+  // Imaging-satellite orbit elements and their daily ring (scripts/seed-orbital-catalog.mjs).
+  // No dashboard consumer yet; the orbital lookup reads it through its own RPC.
+  orbitalCatalog: 'orbital:catalog:v1',
+  // Watched-site satellite evidence index (scripts/seed-orbital-sites.mjs); per-site and
+  // per-country records sit beside it. Read by the orbital RPCs, not the dashboard.
+  orbitalSites: 'orbital:sites:v1',
   // Public chokepoint status open dataset index (/data/v1/chokepoints/), published
   // daily by .github/workflows/open-data-chokepoints.yml. Read only by
   // api/open-data-chokepoints.js, never by the dashboard.
@@ -462,6 +468,7 @@ const STANDALONE_KEYS = {
   // Seeded by seed-cross-border-arrivals (#9023); read by the displacement
   // panel and map layer through the on-demand bootstrap URL.
   crossBorderArrivals: BOOTSTRAP_CACHE_KEYS.crossBorderArrivals,
+  gridDisruptionClock: BOOTSTRAP_CACHE_KEYS.gridDisruptionClock,
   canadaAlertsAbSource: 'alerts:canada:alberta-aea:v1',
   canadaAlertsBcSource: 'alerts:canada:bc-evacuation:v1',
   canadaAlertsSkSource: 'alerts:canada:saskalert:v1',
@@ -854,6 +861,16 @@ const STANDALONE_KEYS = {
 const FIVE_FACTOR_SCORECARD_READ_MODEL_KEY = 'scorecard:five-factor:v1:read-model';
 
 const SEED_META = {
+  gridDisruptionClock: {
+    key: 'seed-meta:infra:grid-disruption-clock',
+    maxStaleMin: 30,
+    activationKey: 'seed-activated:infra:grid-disruption-clock',
+    cutover: {
+      mode: 'activation-marker', fromKey: null,
+      issue: 10698,
+      activationKey: 'seed-activated:infra:grid-disruption-clock',
+    },
+  },
   ukmtoIncidents: {
     key: 'seed-meta:maritime:ukmto-incidents', maxStaleMin: 75,
     activationKey: 'seed-activated:maritime:ukmto-incidents',
@@ -954,6 +971,16 @@ const SEED_META = {
   // level or whose CMR discovery failed DISCOVERY_ALERT_RUNS runs in a row.
   reservoirLevels:  { key: 'seed-meta:climate:reservoir-levels', maxStaleMin: 4320, minRecordCount: 50, firstPublicationMaxWaitMin: 1440, activationKey: 'seed-activated:climate:reservoir-levels',
     cutover: { mode: 'activation-marker', fromKey: null, issue: 10490, activationKey: 'seed-activated:climate:reservoir-levels' } },
+  // Climate bundle member every 3h; 540 = 3x the cadence. New probe: ROLLOUT_PENDING for up to a
+  // day after deploy, until the seeder writes its activation marker after its first publication.
+  // minRecordCount sits below the 17 profiled satellites CelesTrak carried on 2026-11-13.
+  orbitalCatalog:   { key: 'seed-meta:orbital:catalog', maxStaleMin: 540, minRecordCount: 15, firstPublicationMaxWaitMin: 1440, activationKey: 'seed-activated:orbital:catalog',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10615, activationKey: 'seed-activated:orbital:catalog' } },
+  // Daily climate bundle member; 4320 = 3 missed days. One run evaluates the sites its budget
+  // allows and the index keeps every site evaluated so far, so the count reaches the 655-site
+  // registry within two runs; minRecordCount allows for the first run's partial pass.
+  orbitalSites:     { key: 'seed-meta:orbital:sites', maxStaleMin: 4320, minRecordCount: 300, firstPublicationMaxWaitMin: 1440, activationKey: 'seed-activated:orbital:sites',
+    cutover: { mode: 'activation-marker', fromKey: null, issue: 10615, activationKey: 'seed-activated:orbital:sites' } },
   unrestEvents:     { key: 'seed-meta:unrest:events',           maxStaleMin: 120 }, // 45min cron; 120 = 2h grace (was 75 = 30min buffer, too tight)
   cyberThreats:     { key: 'seed-meta:cyber:threats',           maxStaleMin: 240 }, // 2h interval; 240min = 2x interval
   cveReference: {
@@ -2583,7 +2610,7 @@ const SEED_META = {
     cutover: { mode: 'activation-marker', fromKey: null, issue: 9893, activationKey: 'seed-activated:energy:regional-fccc' } },
   regionalEnergyMem: { key: 'seed-meta:energy:regional-mem', maxStaleMin: 2160, firstPublicationMaxWaitMin: 1440, maxContentAgeMin: 30240, activationKey: 'seed-activated:energy:regional-mem',
     cutover: { mode: 'activation-marker', fromKey: null, issue: 9893, activationKey: 'seed-activated:energy:regional-mem' } },
-  regionalEnergyQatarenergy: { key: 'seed-meta:energy:regional-qatarenergy', maxStaleMin: 2160, firstPublicationMaxWaitMin: 1440, maxContentAgeMin: 64800, activationKey: 'seed-activated:energy:regional-qatarenergy',
+  regionalEnergyQatarenergy: { key: 'seed-meta:energy:regional-qatarenergy', maxStaleMin: 2160, firstPublicationMaxWaitMin: 1440, maxContentAgeMin: 100800, activationKey: 'seed-activated:energy:regional-qatarenergy',
     cutover: { mode: 'activation-marker', fromKey: null, issue: 10051, activationKey: 'seed-activated:energy:regional-qatarenergy' } },
   regionalEnergyErb: { key: 'seed-meta:energy:regional-erb', maxStaleMin: 2160, firstPublicationMaxWaitMin: 1440, maxContentAgeMin: 64800, activationKey: 'seed-activated:energy:regional-erb',
     cutover: { mode: 'activation-marker', fromKey: null, issue: 10051, activationKey: 'seed-activated:energy:regional-erb' } },
@@ -2759,6 +2786,7 @@ const GOVERNMENT_RELEASE_INCIDENT_GRACE_MIN = 30 * 24 * 60;
 // chronic outage went undetected until a user noticed the panel was stuck on
 // "Loading...". Removed marketImplications below.
 const ON_DEMAND_KEYS = new Set([
+  'gridDisruptionClock',
   'foodPricesPihps', 'foodPricesPbs', 'foodPricesDa', 'foodPricesCbsl',
   'foodPricesSniim', 'foodPricesGiews', 'foodPricesOnagri',
   'foodPricesNabc',
@@ -2804,6 +2832,9 @@ const ON_DEMAND_KEYS = new Set([
   // New ICESat-2 probe: absent before the first daily climate bundle run. firstPublicationMaxWaitMin
   // bounds the grace to one day; seed-activated:climate:reservoir-levels revokes it.
   'reservoirLevels',
+  // New imaging catalog: absent before the climate bundle's first run after deploy.
+  'orbitalCatalog',
+  'orbitalSites',
 
   'globalTendersColombiaSecop',
   'globalTendersKenyaPpip',
@@ -3007,6 +3038,7 @@ const ON_DEMAND_KEYS = new Set([
 // publish; when the marker exists the key leaves ON_DEMAND softening and
 // normal EMPTY/STALE_SEED rules apply.
 const ACTIVATION_MARKERS = {
+  gridDisruptionClock: SEED_META.gridDisruptionClock.activationKey,
   regionalEnergyPgcb: SEED_META.regionalEnergyPgcb.activationKey,
   regionalEnergyPetrobangla: SEED_META.regionalEnergyPetrobangla.activationKey,
   regionalEnergyNiso: SEED_META.regionalEnergyNiso.activationKey,
@@ -3031,6 +3063,8 @@ const ACTIVATION_MARKERS = {
   regionalEnergyCreg: SEED_META.regionalEnergyCreg.activationKey,
   regionalEnergyUrsea: SEED_META.regionalEnergyUrsea.activationKey,
   reservoirLevels: SEED_META.reservoirLevels.activationKey,
+  orbitalCatalog: SEED_META.orbitalCatalog.activationKey,
+  orbitalSites: SEED_META.orbitalSites.activationKey,
 
   globalTendersColombiaSecop: SEED_META.globalTendersColombiaSecop.activationKey,
   globalTendersKenyaPpip: SEED_META.globalTendersKenyaPpip.activationKey,
@@ -5158,7 +5192,7 @@ function composeCiiEconomicStressHealth(entry, raw, readError = false, now = Dat
   const required = CII_COVERAGE_BASELINE.scoredCountries;
   const countries = payload?.countries;
   let valid = payload?.schemaVersion === 1 && countries && typeof countries === 'object'
-    && Object.keys(countries).sort().join() === [...required].sort().join();
+    && !Array.isArray(countries) && required.every(code => Object.hasOwn(countries, code));
   const measuredCountries = [], unmeasuredCountries = [];
   for (const code of required) {
     const row = countries?.[code];

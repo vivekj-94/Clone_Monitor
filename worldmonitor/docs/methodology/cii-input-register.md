@@ -47,6 +47,7 @@ This register has one row per input the CII reads. Under `docs/methodology/cii-c
 | Sanctions (`sanctions:pressure:v1`, `sanctions:country-counts:v1`) | Sanctions list entries | Listed address country | Stock | OFAC lists | Entry-count bands | Front-company addresses score their host country (UA/DE/GB −5 when removed). | **remove** |
 | Foreign military flights and vessels (`intelligence:military-cii:v1`) | Foreign military presence | Location | Current | ADS-B and AIS coverage | Absolute counts × 2 | NATO transports at cruise altitude. 88% of "military" vessels are AIS types 35 and 50–59 (pilot, SAR, tugs). Security correlates −0.60 with baseline. | **remove** |
 | AIS disruptions (same key) | Shipping disruption | Location | Current | AIS coverage | Counts, capped at 10 | Station density, not instability. | **context** |
+| Satellite imagery change flags (`orbital:country:v1:<code>`) | Radar imagery statistics at a watched site changed, confirmed by the next comparable scene | Watched site's country | Current site summary, three days at most | Watched sites only (nuclear, port, chokepoint and declared-base lists) | Not scored | Sensor and watch-list coverage, not instability: a country with more watched sites would collect more flags. Shown as named sites out of the country's watched-site total, never as a bare count. | **context** |
 | Temporal anomalies (`temporal:anomalies:v1`) | Activity anomalies | Global only | Current | Global | Not scored | Read but never scored: the producer emits region "global" only. | **remove** the read |
 
 ## Missing families (Stage D)
@@ -89,6 +90,22 @@ highest was the Saudi riyal at 0.06, whose isolated spikes the medians remove.
 The second source read both pegs as flat and agreed with Yahoo on the Egyptian
 pound (6.30% against 6.27%). Its terms are under review in the attribution ledger.
 The noise share and the anchor date are published with each member.
+
+Russia, Venezuela and Iraq have no Yahoo row, so on 13 November 2026 they rested
+on inflation alone and a late IMF release would have left them unmeasured. The
+seeder now reads RUB, VES and IQD from the second source only and publishes them
+in a separate `dailyOnly` list of the same key, so the 45-currency stress table
+and its readers do not change; a Yahoo row for the same country keeps priority.
+A check of 240 days of snapshots found RUB moving as a market rate, VES following
+the official crawl (which understates the parallel market), and IQD holding the
+1,310 peg until the central bank devalued by about 15% on 7 October 2026. On the
+same day these gave Russia −1.35% (a small appreciation), Venezuela 14.58% and
+Iraq 13.82% against 15 August. The Iranian rial is excluded: the source sat near
+1,375,000 from June to September 2026 while the official rate moved from about
+1.59 to 1.74 million, so its 90-day anchor was stale, not a measurement. Iran
+keeps its inflation member only until a source with a reliable market rate is
+reviewed.
+
 Values retain their units, source key, observation date and reference method.
 U18 must evaluate the scoring transformation and member-count fairness; these
 producer measurements do not select score constants or weights.
@@ -99,8 +116,24 @@ for monthly CPI, 7 months for quarterly CPI, 7 days for currency and 3 months fo
 monthly yields. US, DE and FR have no currency member. A held peg with clean
 quotes is a measured zero move; a peg with unreliable quotes is not measured. Stale or insufficient-history members retain their absence reason and
 last observation date, with no numeric scoring value. Countries with no fresh
-member are published as not measured. The source country list is the released
-31; the dry run separately reports PH, TH, ID, VN, MY and KH.
+member are published as not measured. The producer publishes the union of valid
+country codes in its input keys, plus every released country. It retains a row
+even when no member is fresh. The scored set stays at 31; neither global input
+publication nor extra fixture capture targets admit a country to scoring.
+
+U23's [GET-only coverage inventory](cii-global-coverage-inventory.md), captured
+on 13 November 2026, finds 199 economic country rows with 149 measured, compared
+with the live key's 31 rows and 25 measured. The GDELT bulk counters are already
+global. Retaining quiet countries with measured article coverage expands their
+summary from 186 to 232 mapped codes for 6,504 additional bytes, with no new
+downloads. The report lists each prior country's article volume and each OQ11
+clause count. These are candidate results; deployment and natural-run GET-only
+acceptance are still required. `cii-capture-fixture.mts` defaults to the published
+country union and retains the economic key; `--target-set released` and
+`--target-set 37` remain available. Existing fixture bytes do not change.
+Calibration captures also accept the published superset; all 37 calibration
+countries and their priors are still required. An extra input country without
+a prior is retained without becoming eligible for scoring.
 
 Cuba and North Korea currently have no usable economic member despite economic
 distress. Their lack of a term is a coverage limitation, not evidence of low

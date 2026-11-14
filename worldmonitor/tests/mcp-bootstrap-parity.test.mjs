@@ -41,6 +41,7 @@ const EXCLUDED_FROM_MCP = new Map([
   ['intelligence:cii-structural-prior:v1',
     'internal-reference: pinned WGI prior for the future CII scorer (#10577 U3); producer-only and not yet consumed by a released score or MCP tool.'],
   ['cyber:cve-reference:v1', 'deferred: standalone CISA KEV reference store; advisory/CVE lookup consumer and bounded MCP query are follow-ups to #6229.'],
+  ['infra:grid-disruption-clock:v1', 'Panel-owned outage observations with reporting coverage, source times and warning checks. See the Grid disruption clock.'],
   ['maritime:ukmto-incidents:v1', 'UKMTO publisher reports await activation and source-aware MCP composition (#9831)'],
   ['risk:scores:history:index',
     'operational: string index for daily CII health; MCP country history and weekly movers read the per-country sorted sets directly.'],
@@ -100,6 +101,10 @@ const EXCLUDED_FROM_MCP = new Map([
     'seeded and health-monitored only: #6682 ingests official Toronto Fire live CAD as a standalone source until a Toronto safety panel exists. Do not advertise an MCP slice before that product surface exists.'],
   ['safety:toronto-tps:v1',
     'seeded and health-monitored only: #6682 ingests official TPS Calls for Service as a standalone source until a Toronto safety panel exists. Do not advertise an MCP slice before that product surface exists.'],
+  ['safety:toronto:tps-mci:v1',
+    'deferred: the Toronto-only get_toronto_reported_occurrences tool left tools/list (it stays callable as a retired name). A city-specific tool does not belong in a global tool list; a public-safety tool taking a jurisdiction receives this slice once a second city or province is seeded.'],
+  ['safety:toronto:tps-calls-attended:v1',
+    'deferred: the Toronto-only get_toronto_calls_attended tool left tools/list (it stays callable as a retired name). A city-specific tool does not belong in a global tool list; a public-safety tool taking a jurisdiction receives this slice once a second city or province is seeded.'],
   ['economic:fred:batch:v1',
     'operational: producer batch envelope written by seed-fred-rates for health and rollout validation; the individual FRED series are the queryable data surfaces, so the batch envelope is intentionally not exposed through MCP.'],
 
