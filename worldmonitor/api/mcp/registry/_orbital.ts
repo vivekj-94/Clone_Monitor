@@ -5,7 +5,7 @@ import { fetchMcpDownstream } from '../downstream';
 import type { ToolDef } from '../types';
 
 const POINT_PASSES_PATH = '/api/orbital/v1/get-point-passes';
-const COUNTRY_EVIDENCE_PATH = '/api/orbital/v1/get-country-imagery-evidence';
+export const COUNTRY_EVIDENCE_PATH = '/api/orbital/v1/get-country-imagery-evidence';
 const USER_AGENT = 'worldmonitor-mcp-edge/1.0';
 
 function coordinate(params: Record<string, unknown>, name: 'lat' | 'lon', limit: number): number {
@@ -18,7 +18,7 @@ function coordinate(params: Record<string, unknown>, name: 'lat' | 'lon', limit:
 
 const pointArgs = (params: Record<string, unknown>) => ({ lat: coordinate(params, 'lat', 90), lon: coordinate(params, 'lon', 180) });
 
-async function readOrbital(path: string, query: URLSearchParams, label: string, base: string, context: Parameters<typeof buildAuthHeaders>[0], execution: Parameters<typeof fetchMcpDownstream>[2]) {
+export async function readOrbital(path: string, query: URLSearchParams, label: string, base: string, context: Parameters<typeof buildAuthHeaders>[0], execution: Parameters<typeof fetchMcpDownstream>[2]) {
   const url = `${base}${path}?${query}`;
   const auth = await buildAuthHeaders(context, 'GET', url, undefined);
   const res = await fetchMcpDownstream(url, { method: 'GET', headers: { ...auth, 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(25_000) }, execution);
@@ -34,7 +34,7 @@ const POINT_PASS_SCHEMA = {
     noradId: { type: 'integer' },
     name: { type: 'string', description: 'Satellite name as published.' },
     profileId: { type: 'string', description: 'Sensor profile, e.g. sentinel-2, sentinel-1, landsat.' },
-    category: { type: 'string', description: 'open-optical, open-radar, weather-polar, commercial-radar, military or crewed-station.' },
+    category: { type: 'string', description: 'open-optical, open-radar, open-lidar, weather-polar, commercial-optical, commercial-radar, government-optical, government-radar, military or crewed-station.' },
     timeMs: { type: 'integer', description: 'Closest approach, Unix epoch milliseconds.' },
     opportunity: { type: 'boolean', description: 'A future pass: a chance to image, never an image.' },
     groundDistanceKm: { type: 'number' },
@@ -45,7 +45,7 @@ const POINT_PASS_SCHEMA = {
     edgeOfSwath: { type: 'boolean', description: 'Within 5 km of the footprint edge, so imaging is uncertain.' },
     coverage: { type: 'boolean', description: 'The mission acquires over this point at all.' },
     tier: { type: 'string', enum: TIERS, description: 'Exactly one tier per pass. Military passes are capability-overhead, never an image.' },
-    tierNote: { type: 'string', description: 'not-in-archive when the archive answered without this pass after its publication delay.' },
+    tierNote: { type: 'string', description: 'not-in-archive when the archive answered without this pass after its publication delay; geometry-disagreed when the archive holds the image although the modelled footprint, daylight or coverage said otherwise.' },
     orbitAgeDays: { type: 'number', description: 'Days between the pass and the epoch of the orbit elements used.' },
     acquisitionKey: { type: 'string', description: 'Key of the matched entry in acquisitions; empty when none.' },
   },
@@ -94,6 +94,22 @@ const SITE_SCHEMA = {
   required: ['siteId', 'name', 'lat', 'lon'],
 };
 
+/**
+ * Orbital Watch ships dark (#10710): its REST endpoints answer 404 until
+ * ORBITAL_WATCH_ENABLED=true, so a listed tool would fail every call (#10721).
+ * Set this true in the same change that turns the feature on, then regenerate
+ * the server card and docs and bump SERVER_VERSION.
+ */
+export const ORBITAL_MCP_TOOLS_PUBLISHED = false;
+
+/**
+ * The one catalog gate for every orbital MCP tool: listed together, by the constant
+ * alone, so a catalog built in any environment lists all of them or none.
+ */
+export function orbitalMcpTools<T>(tools: readonly T[], published: boolean = ORBITAL_MCP_TOOLS_PUBLISHED): T[] {
+  return published ? [...tools] : [];
+}
+
 export const ORBITAL_TOOLS: ToolDef[] = [
   {
     name: 'get_point_satellite_passes',
@@ -121,7 +137,7 @@ export const ORBITAL_TOOLS: ToolDef[] = [
         catalogFetchedAt: { type: 'integer' },
         stale: { type: 'boolean' },
         passes: { type: 'array', items: POINT_PASS_SCHEMA, description: 'Passes covering the point, oldest first.' },
-        outOfFootprintPasses: { type: 'integer', description: 'Passes in range whose footprint misses the point; counted, not listed.' },
+        outOfFootprintPasses: { type: 'integer', description: 'Passes in range whose footprint misses the point and that no archive image confirms; counted, not listed.' },
         acquisitions: { type: 'array', items: ACQUISITION_SCHEMA, description: 'Archive acquisitions at the point, newest first; tiles of one acquisition count once.' },
         archiveStatus: { type: 'string', enum: ['complete', 'partial'] },
         failedSources: { type: 'array', items: { type: 'object', properties: { archive: { type: 'string' }, reason: { type: 'string' }, httpStatus: { type: 'integer' } } } },
