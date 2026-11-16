@@ -155,6 +155,7 @@ import { onEntitlementChange } from '@/services/entitlements';
 import { hasPremiumAccess } from '@/services/panel-gating';
 import { trackGateHit } from '@/services/analytics';
 import { MapPopup, type PopupType } from './MapPopup';
+import { fireDetectionPopupData } from './map-popup-fire';
 import { renderMilitaryVesselTooltipHtml } from './deckgl-tooltip-renderers';
 import type { GetChokepointStatusResponse } from '@/services/supply-chain';
 import type { ChinaCorridorControlTower } from '../../shared/china-corridor-control-towers';
@@ -748,6 +749,8 @@ export class DeckGLMap {
   private militaryFlightClusters: MilitaryFlightCluster[] = [];
   private activeFlightTrails = new Set<string>();
   private clearTrailsBtn: HTMLButtonElement | null = null;
+  private zoomControlsEl: HTMLElement | null = null;
+  private mountedMapControl: HTMLElement | null = null;
   private militaryVessels: MilitaryVessel[] = [];
   private militaryVesselClusters: MilitaryVesselCluster[] = [];
   private serverBases: MilitaryBaseEnriched[] = [];
@@ -756,7 +759,7 @@ export class DeckGLMap {
   private serverBasesFetchSeq = 0;
   private baseConfigLoadPending = false;
   private naturalEvents: NaturalEvent[] = [];
-  private firmsFireData: Array<{ lat: number; lon: number; brightness: number; frp: number; confidence: number; region: string; acq_date: string; daynight: string }> = [];
+  private firmsFireData: Array<{ lat: number; lon: number; brightness: number; frp: number; confidence: number; region: string; acq_date: string; daynight: string; detected_at?: number; satellite?: string; source?: string }> = [];
   private techEvents: TechEventMarker[] = [];
   private flightDelays: AirportDelayAlert[] = [];
   private aircraftPositions: PositionSample[] = [];
@@ -850,7 +853,6 @@ export class DeckGLMap {
   // Callbacks
   private onNewsClick?: (item: Pick<NewsLocationMarker, 'article' | 'title'>) => void;
   private onHotspotClick?: (hotspot: Hotspot) => void;
-  private onTradeArcClick?: (segment: TradeRouteSegment, waypoints: string[], x: number, y: number) => void;
   private onTimeRangeChange?: (range: TimeRange) => void;
   private onCountryClick?: (country: CountryClickPayload) => void;
   private onMapContextMenu?: (payload: { lat: number; lon: number; screenX: number; screenY: number; countryCode?: string; countryName?: string }) => void;
@@ -5992,7 +5994,6 @@ export class DeckGLMap {
       }
       const waypoints = ROUTE_WAYPOINTS_MAP.get(segment.routeId) ?? [];
       this.popup.showRouteBreakdown(segment, waypoints, info.x, info.y);
-      this.onTradeArcClick?.(segment, waypoints, info.x, info.y);
       return;
     }
 
@@ -6046,10 +6047,13 @@ export class DeckGLMap {
       'cable-advisories-layer': 'cable-advisory',
       'repair-ships-layer': 'repair-ship',
       'reservoir-levels-layer': 'reservoirLevel',
+      'fires-layer': 'fireDetection',
     };
 
     const popupType = layerToPopupType[layerId];
     if (!popupType) return;
+    // Only a satellite detection opens a fire popup, and only with Orbital Watch on (#10713).
+    if (popupType === 'fireDetection' && !fireDetectionPopupData(info.object)) return;
 
     // For synthetic storm layers, unwrap the backing NaturalEvent
     let data = info.object?._event ?? info.object;
@@ -6201,6 +6205,12 @@ export class DeckGLMap {
     return [100, 100, 100, alpha];
   }
 
+  /** Adds a control below the zoom buttons, kept across a late controls build. */
+  public mountMapControl(el: HTMLElement): void {
+    this.mountedMapControl = el;
+    this.zoomControlsEl?.append(el);
+  }
+
   // UI Creation methods
   private createControls(): void {
     const controls = document.createElement('div');
@@ -6234,6 +6244,8 @@ export class DeckGLMap {
       else if (target.classList.contains('zoom-out')) this.zoomOut();
       else if (target.classList.contains('zoom-reset')) this.resetView();
     });
+    this.zoomControlsEl = controls.querySelector('.zoom-controls');
+    if (this.mountedMapControl) this.zoomControlsEl?.append(this.mountedMapControl);
 
     const viewSelect = controls.querySelector('.view-select') as HTMLSelectElement;
     viewSelect.value = this.state.view;
@@ -8021,7 +8033,7 @@ export class DeckGLMap {
     this.render();
   }
 
-  public setFires(fires: Array<{ lat: number; lon: number; brightness: number; frp: number; confidence: number; region: string; acq_date: string; daynight: string }>): void {
+  public setFires(fires: Array<{ lat: number; lon: number; brightness: number; frp: number; confidence: number; region: string; acq_date: string; daynight: string; detected_at?: number; satellite?: string; source?: string }>): void {
     this.firmsFireData = fires;
     this.render();
   }
@@ -8599,16 +8611,6 @@ export class DeckGLMap {
     return getHotspotEscalation(hotspotId);
   }
 
-  /** Get military flight clusters for rendering/analysis */
-  public getMilitaryFlightClusters(): MilitaryFlightCluster[] {
-    return this.militaryFlightClusters;
-  }
-
-  /** Get military vessel clusters for rendering/analysis */
-  public getMilitaryVesselClusters(): MilitaryVesselCluster[] {
-    return this.militaryVesselClusters;
-  }
-
   public highlightAssets(assets: RelatedAsset[] | null): void {
     // Clear previous highlights
     Object.values(this.highlightedAssets).forEach(set => set.clear());
@@ -8630,10 +8632,6 @@ export class DeckGLMap {
 
   public setOnHotspotClick(callback: (hotspot: Hotspot) => void): void {
     this.onHotspotClick = callback;
-  }
-
-  public setOnTradeArcClick(cb: (segment: TradeRouteSegment, waypoints: string[], x: number, y: number) => void): void {
-    this.onTradeArcClick = cb;
   }
 
   public setOnTimeRangeChange(callback: (range: TimeRange) => void): void {
@@ -9466,6 +9464,8 @@ export class DeckGLMap {
     this.controlDisclosureCleanups.forEach(cleanup => cleanup());
     this.controlDisclosureCleanups = [];
     this.destroyed = true;
+    // The popup is appended to document.body, so removing the map container leaves it open.
+    this.popup.hide();
     this.aircraftFetchSeq += 1;
     this.deckFrameProvider.dispose();
     this.settleViewportMovement(false);

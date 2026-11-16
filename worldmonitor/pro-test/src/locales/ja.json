@@ -133,7 +133,7 @@
     "deliveryLabel": "インテリジェンスがあなたを見つける方法を選ぶ",
     "supplyChainLab": "サプライチェーン ストレス ラボ",
     "supplyChainLabDesc": "複数国・セクター間のコスト衝撃をモデル化。ボトルネック依存度別に商品脆弱性をランク付け。採掘から精製までの集中度と SGE–COMEX 物理プレミアム乖離を追跡 — ヘッドラインが出る前に動く系列。",
-    "roadmapNote": "ロードマップ: 軌道上監視、より長い履歴、プレミアム マップ レイヤー。"
+    "roadmapNote": "ロードマップ: より長い履歴、プレミアムマップレイヤー。"
   },
   "apiSection": {
     "apiTier": "API ティア",
@@ -202,6 +202,10 @@
     "rowExport": "データエクスポート（CSV、JSON、PDF）",
     "rowRedistribution": "顧客への再配布",
     "rowSupport": "サポート",
+    "rowOrbital": "衛星画像（Orbital Watch）",
+    "orbitalLookup": "通過検索と最新画像",
+    "orbitalAlertsMcp": "さらにアラートとMCP",
+    "orbitalAlertsMcpApi": "さらにアラート、MCP、REST API",
     "licClient": "クライアント業務と社内利用",
     "licInternal": "社内ツールのみ",
     "licCustomer": "顧客向け製品",

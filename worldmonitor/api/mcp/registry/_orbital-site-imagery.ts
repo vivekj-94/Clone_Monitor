@@ -43,7 +43,7 @@ export const WATCHED_SITE_IMAGERY_TOOL: ToolDef = {
   title: 'Latest image and next pass for watched sites',
   _subscriptionOnly: true,
   _outputBudgetBytes: 131072,
-  description: 'Return the watched sites in one country, newest image first, each with its latest archive image (scene id, sensor, date and the credit line owed when citing it) and its next predicted imaging pass, plus attribution: every credit line the listed sites owe. Pass site to keep only sites whose name or id contains it. Same evidence and currency rule as get_country_imagery_evidence: stale true means the evidence is missing or older than 3 days and sites is empty. Requires a paid plan; one downstream fetch. Read-only.',
+  description: 'Return the watched sites in one country, newest image first, each with its latest archive image (scene id, sensor, date and the credit line owed when citing it) and its next predicted imaging pass, plus attribution: every credit line the listed sites owe. Pass site to keep only sites whose name or id contains it. stale true means the site evidence for that country is missing or older than 3 days, and sites is then empty. Requires a paid plan; one downstream fetch. Read-only.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -84,7 +84,7 @@ export const WATCHED_SITE_IMAGERY_TOOL: ToolDef = {
     // While dark, fail with the same 404 the other orbital tools get from the dark REST endpoint.
     if (!isOrbitalWatchEnabled()) await assertToolFetchOk(orbitalWatchDarkResponse(), TOOL);
     const evidence = await readOrbital(COUNTRY_EVIDENCE_PATH, new URLSearchParams({ country_code: countryCode }), TOOL, base, context, execution) as GetCountryImageryEvidenceResponse;
-    const { credits: _credits, ...imagery } = countrySiteImagery({ ...evidence, sites: Array.isArray(evidence?.sites) ? evidence.sites : [] }, Date.now());
+    const imagery = countrySiteImagery({ ...evidence, sites: Array.isArray(evidence?.sites) ? evidence.sites : [] }, Date.now());
     const sites = query ? imagery.sites.filter((site) => site.name.toLowerCase().includes(query) || site.siteId.toLowerCase().includes(query)) : imagery.sites;
     return { ...imagery, sites, attribution: imageryCredits(sites) };
   },

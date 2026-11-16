@@ -5,10 +5,12 @@
 import {
   ArchiveRefusal,
   ARCHIVE_LOOKBACK_DAYS,
-  archiveBackoffMs,
+  ARCHIVE_REFUSAL_STATUSES,
+  archiveBackoffCommand,
   acquisitionsFromStac,
   countryKey,
   evaluateSites,
+  nextBackoff,
   ORBITAL_SITES_ACTIVATION_KEY,
   ORBITAL_SITES_BACKOFF_KEY,
   ORBITAL_SITES_KEY,
@@ -57,9 +59,8 @@ export const ARCHIVE_MIN_INTERVAL_MS = 250;
 // Leaves the bundle section (9 minutes) room to publish after the evaluation stops.
 export const RUN_BUDGET_MS = 6 * 60_000;
 export const RECORD_TTL_SECONDS = 14 * 86_400;
-// Daily cadence; three missed days before health calls the sites stale.
+// Runs every 12 hours (seed-bundle-climate.mjs); three days without a run before health calls the sites stale.
 export const MAX_STALE_MIN = 4_320;
-const REFUSAL_STATUSES = new Set([401, 403, 429, 451]);
 const MGET_CHUNK = 100;
 const PIPELINE_CHUNK = 50;
 /** Archive search pages read per site; one page is 100 items, and Sentinel-2 tiles alone can fill one. */
@@ -73,12 +74,17 @@ export const CHANGE_BUDGET_MS = 2 * 60_000;
 
 /** Requests start at least `minIntervalMs` apart, even when several callers wait at once. */
 function makeThrottle({ minIntervalMs, clock, wait }) {
-  let nextSlot = -Infinity;
-  return async () => {
-    const slot = Math.max(clock(), nextSlot);
-    nextSlot = slot + minIntervalMs;
-    const gap = slot - clock();
-    if (gap > 0) await wait(gap);
+  // Callers take turns, and each turn measures from when the previous one was released, so a
+  // timer that fires late delays the requests after it instead of shortening the next gap.
+  let queue = Promise.resolve();
+  let released = -Infinity;
+  return () => {
+    const turn = queue.then(async () => {
+      for (let gap = released + minIntervalMs - clock(); gap > 0; gap = released + minIntervalMs - clock()) await wait(gap);
+      released = clock();
+    });
+    queue = turn.catch(() => {});
+    return turn;
   };
 }
 
@@ -93,7 +99,7 @@ export function makeArchiveSearch({ fetchImpl = (...args) => globalThis.fetch(..
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(ARCHIVE_TIMEOUT_MS),
     });
-    if (REFUSAL_STATUSES.has(response.status)) {
+    if (ARCHIVE_REFUSAL_STATUSES.has(response.status)) {
       await response.body?.cancel();
       throw new ArchiveRefusal(`Planetary Computer refused the search (HTTP ${response.status})`);
     }
@@ -139,7 +145,7 @@ export function makeStatisticsFetch({ fetchImpl = (...args) => globalThis.fetch(
       body: JSON.stringify(feature),
       signal: AbortSignal.timeout(ARCHIVE_TIMEOUT_MS),
     });
-    if (REFUSAL_STATUSES.has(response.status)) {
+    if (ARCHIVE_REFUSAL_STATUSES.has(response.status)) {
       await response.body?.cancel();
       throw new ScoringRefusal(`Planetary Computer refused the statistics request (HTTP ${response.status})`);
     }
@@ -183,7 +189,7 @@ export function redisSiteStore({ credentials = getRedisCredentials, fetchImpl = 
     },
     async writeBackoff(backoff) {
       const { url, token } = credentials();
-      await redisCommand(url, token, backoffCommand(backoff), { label: 'Redis SET orbital archive backoff' });
+      await redisCommand(url, token, archiveBackoffCommand(backoff), { label: 'Redis SET orbital archive backoff' });
     },
     async write(commands) {
       const { url, token } = credentials();
@@ -204,14 +210,7 @@ export function redisSiteStore({ credentials = getRedisCredentials, fetchImpl = 
   };
 }
 
-export const BACKOFF_TTL_SECONDS = 7 * 86_400;
-const backoffCommand = (backoff) => ['SET', ORBITAL_SITES_BACKOFF_KEY, JSON.stringify(backoff), 'EX', BACKOFF_TTL_SECONDS];
-
-/** The archive backoff after one more refusal: each refusal in a row doubles the wait. */
-export function nextBackoff(previous, reason, nowMs) {
-  const refusals = (previous?.refusals ?? 0) + 1;
-  return { refusals, reason, at: nowMs, until: nowMs + archiveBackoffMs(refusals) };
-}
+export { BACKOFF_TTL_SECONDS, nextBackoff } from './_orbital-sites.mjs';
 
 /** Site records and rollups land before the index that names their revisions. */
 export function publicationCommands(plan, { canonicalKey, payload, ttlSeconds }) {
@@ -222,7 +221,7 @@ export function publicationCommands(plan, { canonicalKey, payload, ttlSeconds })
     ...(plan.flagWrites ? plan.retainedSiteIds.map((id) => ['EXPIRE', flagShadowKey(id), RECORD_TTL_SECONDS]) : []),
     ...plan.rollupWrites.map((rollup) => ['SET', countryKey(rollup.countryCode), JSON.stringify(rollup), 'EX', RECORD_TTL_SECONDS]),
     ...plan.deletes.map((key) => ['DEL', key]),
-    ...(plan.backoff ? [backoffCommand(plan.backoff)] : plan.clearBackoff ? [['DEL', ORBITAL_SITES_BACKOFF_KEY]] : []),
+    ...(plan.backoff ? [archiveBackoffCommand(plan.backoff)] : plan.clearBackoff ? [['DEL', ORBITAL_SITES_BACKOFF_KEY]] : []),
     ['SET', canonicalKey, payload, 'EX', ttlSeconds],
     ['SET', ORBITAL_SITES_ACTIVATION_KEY, '1'],
   ];

@@ -2,25 +2,22 @@ import type { GeoPoint } from '../../shared/orbital/pass-geometry.js';
 import type { OrbitalTrackSurface } from '@/app/orbital-watch';
 import { takeOrbitalShareLink } from '@/app/orbital-share-link';
 import { buildOrbitalShareFragment, parseOrbitalShareFragment } from '@/utils/urlState';
-import { ORBITAL_EVIDENCE_EVENT } from '@/services/orbital/evidence-event';
-
-export type OrbitalRouteView = 'sheet' | 'full';
+import { ORBITAL_EVENT_COMPARE_EVENT, ORBITAL_EVIDENCE_EVENT, type OrbitalEventCompareDetail } from '@/services/orbital/evidence-event';
 
 export interface OrbitalRoute {
   point: GeoPoint;
-  view: OrbitalRouteView;
 }
 
-const ROUTE_RE = /^#?orbital=(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)(?:&view=(full))?$/;
+const ROUTE_RE = /^#?orbital=(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)(?:&view=full)?$/;
 
-/** Reads `#orbital=<lat>,<lon>[&view=full]`. */
+/** Reads `#orbital=<lat>,<lon>`, accepting the `&view=full` that older links carry. */
 export function parseOrbitalRoute(hash: string): OrbitalRoute | null {
   const match = ROUTE_RE.exec(hash);
   if (!match) return null;
   const lat = Number(match[1]);
   const lon = Number(match[2]);
   if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
-  return { point: { lat, lon }, view: match[3] === 'full' ? 'full' : 'sheet' };
+  return { point: { lat, lon } };
 }
 
 /**
@@ -73,7 +70,7 @@ export function watchOrbitalRoute(map: () => OrbitalTrackSurface | null = () => 
   return () => window.removeEventListener('hashchange', onHashChange);
 }
 
-/** Opens the point lookup's sheet when a map popup's "Open evidence" sends its object's point. */
+/** Opens the point lookup's sheet when a map popup's "Open evidence" sends its object's point, and Compare on its "Before / after". */
 export function watchOrbitalEvidence(map: () => OrbitalTrackSurface | null = () => null): () => void {
   const onEvidence = (event: Event) => {
     const point = (event as CustomEvent<GeoPoint>).detail;
@@ -81,6 +78,15 @@ export function watchOrbitalEvidence(map: () => OrbitalTrackSurface | null = () 
     void import('@/app/orbital-watch').then(({ openOrbitalWatch }) =>
       openOrbitalWatch({ lat: point.lat, lon: point.lon }, document.getElementById('mapContainer'), map()));
   };
+  const onEventCompare = (event: Event) => {
+    const detail = (event as CustomEvent<OrbitalEventCompareDetail>).detail;
+    if (!detail?.pair) return;
+    void import('@/app/orbital-watch').then(({ openOrbitalEventCompare }) => openOrbitalEventCompare(detail));
+  };
   window.addEventListener(ORBITAL_EVIDENCE_EVENT, onEvidence);
-  return () => window.removeEventListener(ORBITAL_EVIDENCE_EVENT, onEvidence);
+  window.addEventListener(ORBITAL_EVENT_COMPARE_EVENT, onEventCompare);
+  return () => {
+    window.removeEventListener(ORBITAL_EVIDENCE_EVENT, onEvidence);
+    window.removeEventListener(ORBITAL_EVENT_COMPARE_EVENT, onEventCompare);
+  };
 }

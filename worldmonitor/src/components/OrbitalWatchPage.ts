@@ -1,11 +1,15 @@
 import type { GeoPoint } from '../../shared/orbital/pass-geometry.js';
 import { OPTICAL_MIN_SUN_ELEVATION_DEG, type PassTier } from '../../shared/orbital/tiers.js';
+import type { WatchedSite, WatchedSiteOriginList } from '../../shared/watched-sites';
+import type { GetWatchedSiteImageryResponse } from '@/generated/client/worldmonitor/orbital/v1/service_client';
 import type { PointPassLookup } from '@/services/orbital/pass-client';
 import type { PointPass } from '@/services/orbital/pass-job';
 import type { EvidenceProgress, MatchedAcquisition, OrbitalEvidence } from '@/services/orbital/match';
-import { ARCHIVE_REQUEST_TIMEOUT_MS, type ArchiveId } from '@/services/orbital/archive-result';
+import { ARCHIVE_REQUEST_TIMEOUT_MS, type ArchiveFailure, type ArchiveId } from '@/services/orbital/archive-result';
 import { ArchiveImageError, loadArchiveImage, type ArchiveImageResult, type LoadedArchiveImage } from '@/services/orbital/archive-image';
-import { hasNoDataAtPoint, MOSAIC_FALLBACK_DAYS, type CropPosition, type DailyMosaicRow } from '@/services/orbital/archive-gibs';
+import { noDataAtPoint } from '@/services/orbital/image-no-data';
+import { isSceneStillProcessing } from '@/services/orbital/scene-processing';
+import { MOSAIC_FALLBACK_DAYS, type CropPosition, type DailyMosaicRow } from '@/services/orbital/archive-gibs';
 import { DEFAULT_CROP_HALF_SIZE_KM } from '@/services/orbital/crop-url';
 import { imageGrid, isClearScene } from '@/services/orbital/scene-history';
 import { acquisitionCredit, ORBITAL_WATCH_DOCS_URL, resultCredits, type ResultCredit } from '@/services/orbital/credits';
@@ -14,6 +18,7 @@ import { declareOverlay } from '@/utils/open-modal';
 import { isAllowedPreviewUrl } from '@/utils/imagery-preview';
 import { h, replaceChildren, type DomChild } from '@/utils/dom-utils';
 import { iso2ToCountryName } from '@/utils/country-codes';
+import { createShareLinkButton, resetShareLinkButton } from './share-link-button';
 import type { SensorCategory } from '../../shared/orbital/sensor-profiles.js';
 import { ORBIT_ELEMENTS_MAX_AGE_DAYS } from '../../shared/orbital/pass-geometry.js';
 import { EVENT_RADIUS_KM, type EventSourceId, type LiveSourceId } from '@/services/orbital/point-context';
@@ -32,8 +37,20 @@ export type OrbitalWatchState =
   | { kind: 'unavailable' }
   | { kind: 'passes'; lookup: PointPassLookup; archives: ArchiveState };
 
+/** The watched site the point falls on, and its public record (read by site id, never by the point). */
+export type WatchedSiteState =
+  | { kind: 'none' }
+  | { kind: 'loading'; site: WatchedSite }
+  | { kind: 'loaded'; site: WatchedSite; record: GetWatchedSiteImageryResponse }
+  | { kind: 'failed'; site: WatchedSite };
+
+const SITE_LIST_KEY: Record<WatchedSiteOriginList, string> = {
+  hotspot: 'hotspot', 'conflict-zone': 'conflictZone', 'military-base': 'militaryBase', 'nuclear-facility': 'nuclearFacility',
+  port: 'port', chokepoint: 'chokepoint', reservoir: 'reservoir',
+};
+
 /** Empty mount points other surfaces fill: the place search and the timeline. */
-export type OrbitalSlot = 'search' | 'timeline';
+export type OrbitalSlot = 'search' | 'timeline' | 'water' | 'satellites';
 
 /** The mobile bottom sheet's three heights; the docked desktop sheet ignores it. */
 export type SheetHeight = 'collapsed' | 'half' | 'full';
@@ -193,23 +210,15 @@ interface TileFallbacks {
   noDataAt?: CropPosition;
 }
 
-const NO_DATA_SAMPLE_PX = 32;
 const CROP_CENTRE: CropPosition = { x: 0.5, y: 0.5 };
 
-/** Unreadable pixels count as data, so a failed check never hides a real image. */
-function noDataAtPoint(img: HTMLImageElement, at: CropPosition): boolean {
-  try {
-    const canvas = document.createElement('canvas');
-    canvas.width = NO_DATA_SAMPLE_PX;
-    canvas.height = NO_DATA_SAMPLE_PX;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return false;
-    ctx.drawImage(img, 0, 0, NO_DATA_SAMPLE_PX, NO_DATA_SAMPLE_PX);
-    return hasNoDataAtPoint(ctx.getImageData(0, 0, NO_DATA_SAMPLE_PX, NO_DATA_SAMPLE_PX).data, NO_DATA_SAMPLE_PX, NO_DATA_SAMPLE_PX, at);
-  } catch {
-    return false;
-  }
+/** The acquisition a tile shows, so a crop not served yet reads as processing rather than failed. */
+interface TileScene {
+  profileId: string;
+  acquiredMs: number;
 }
+
+const acquisitionScene = (acquisition: MatchedAcquisition): TileScene => ({ profileId: acquisition.profileId, acquiredMs: acquisition.startMs });
 
 /**
  * The open lookup's images, painted from `blob:` URLs: archive image URLs carry the point,
@@ -319,7 +328,7 @@ const tileRetries = new WeakMap<HTMLElement, () => void>();
 /** The archive URL of the frame a tile shows; its `img` holds only a `blob:` URL. */
 const tileShownUrls = new WeakMap<HTMLElement, () => string>();
 
-function imageTile(url: string | null, alt: string, sensor: string, size: TileSize, overlays: DomChild[] = [], fallbacks: TileFallbacks | null = null): HTMLElement {
+function imageTile(url: string | null, alt: string, sensor: string, size: TileSize, overlays: DomChild[] = [], fallbacks: TileFallbacks | null = null, scene: TileScene | null = null): HTMLElement {
   const archive = archiveHost(url);
   if (!url || !isAllowedPreviewUrl(url)) {
     return h('div', { className: `ow-tile ow-tile-${size}`, dataset: { state: 'none' } },
@@ -335,10 +344,11 @@ function imageTile(url: string | null, alt: string, sensor: string, size: TileSi
     if (index !== frame && built) fallbacks?.show(index);
     frame = index;
   };
-  const failed = () => {
-    tile.dataset.state = 'failed';
+  const failed = (failure: ArchiveFailure | null = null) => {
+    const processing = scene !== null && isSceneStillProcessing(failure, scene, Date.now());
+    tile.dataset.state = processing ? 'processing' : 'failed';
     replaceChildren(status,
-      t('orbitalWatch.tile.failed', { archive: archive.name.toUpperCase() }),
+      processing ? t('orbitalWatch.tile.processing') : t('orbitalWatch.tile.failed', { archive: archive.name.toUpperCase() }),
       size === 'hero' ? h('button', { type: 'button', className: 'ow-tile-retry', dataset: { action: 'retry-image' } }, t('countryBrief.retryBtn')) : null);
   };
   const noPreview = () => {
@@ -359,7 +369,7 @@ function imageTile(url: string | null, alt: string, sensor: string, size: TileSi
     showFrame(indices[0]!);
     void lookupImages.load(archive.id, indices.map((i) => frames[i]!), Math.max(1, deadline - Date.now())).then((result) => {
       if (token !== attempt) return;
-      if (result.status === 'failed') { if (result.failure.reason !== 'aborted') failed(); return; }
+      if (result.status === 'failed') { if (result.failure.reason !== 'aborted') failed(result.failure); return; }
       showFrame(indices[result.image.index]!);
       img.setAttribute('src', result.image.objectUrl);
     });
@@ -521,6 +531,14 @@ function sectionOf(el: HTMLElement): string | undefined {
   return el.closest<HTMLElement>('[data-section]')?.dataset.section;
 }
 
+/** Ground distance to the track, plus the swath-edge marker when the point is near the footprint edge. */
+function trackCells(pass: PointPass): DomChild[] {
+  return [
+    cell('', t('orbitalWatch.row.distance', { km: formatInt(Math.round(pass.groundDistanceKm)) }), 'ies-distance'),
+    pass.edgeOfSwath ? cell('', t('orbitalWatch.satelliteSites.swathEdge'), 'ies-edge') : null,
+  ];
+}
+
 function orbitAgeCell(pass: PointPass): HTMLElement {
   const stale = pass.orbitAgeDays > STALE_ORBIT_DAYS;
   return cell(t('orbitalWatch.row.orbitAge'), t('orbitalWatch.row.orbitAgeValue', { age: formatAge(pass.orbitAgeDays) }), stale ? 'ies-stale' : '');
@@ -544,6 +562,7 @@ interface ThumbSpec {
   noDataAt?: CropPosition;
   /** Radar backscatter, drawn in greyscale so it never reads as a photo. */
   radar?: boolean;
+  scene?: TileScene;
 }
 
 function thumbSpecs(confirmed: MatchedAcquisition[], latest: MatchedAcquisition | null, evidence: OrbitalEvidence | null): ThumbSpec[] {
@@ -557,6 +576,7 @@ function thumbSpecs(confirmed: MatchedAcquisition[], latest: MatchedAcquisition 
       sensor: sensorName(acquisition.platform),
       view: { kind: 'acquisition', key: acquisition.key },
       radar: isRadar(acquisition),
+      scene: acquisitionScene(acquisition),
     });
   }
   for (const mosaic of evidence?.mosaics ?? []) {
@@ -621,6 +641,7 @@ export class OrbitalWatchPage {
   private readonly expanded = new Set<OperatingGroup>();
   private state: OrbitalWatchState | null = null;
   private context: PointContextState = { kind: 'loading' };
+  private watchedSite: WatchedSiteState = { kind: 'none' };
   private openSeq = 0;
 
   constructor(private readonly callbacks: OrbitalWatchPageCallbacks) {
@@ -628,7 +649,8 @@ export class OrbitalWatchPage {
     this.place = h('h2', { id: titleId, className: 'ies-place cdp-country-name' });
     this.coords = h('span', { className: 'ies-coords' });
     this.zone = h('button', { type: 'button', className: 'ies-chip', dataset: { action: 'zone' } });
-    this.shareButton = h('button', { type: 'button', className: 'ies-chip', dataset: { action: 'share' } });
+    this.shareButton = createShareLinkButton(t('components.countryBrief.shareLink'));
+    this.shareButton.dataset.action = 'share';
     this.handle = h('button', { type: 'button', className: 'ies-handle', dataset: { action: 'height' } });
     this.kicker = h('span', { className: 'ies-kicker' });
     this.changeButton = h('button', { type: 'button', className: 'ies-chip', dataset: { action: 'change' } });
@@ -642,6 +664,8 @@ export class OrbitalWatchPage {
     this.slots = {
       search: h('div', { className: 'ies-slot', dataset: { slot: 'search' }, hidden: true }),
       timeline: h('div', { className: 'ies-slot', dataset: { slot: 'timeline' } }),
+      water: h('div', { className: 'ies-slot', dataset: { slot: 'water' } }),
+      satellites: h('div', { className: 'ies-slot', dataset: { slot: 'satellites' } }),
     };
     this.panel = h('div', { className: 'ies-panel' },
       this.handle,
@@ -682,11 +706,27 @@ export class OrbitalWatchPage {
     this.renderSubline();
   }
 
-  /** Coordinates under a place name (an unnamed point already shows them as its name), then the country. */
+  /** Coordinates under a place name (an unnamed point already shows them as its name), then the country, then "monitored site". */
   private renderSubline(): void {
     const code = this.context.kind === 'loaded' ? this.context.context.countryCode : null;
-    this.coords.textContent = [this.placeName && this.point ? formatCoords(this.point) : null, code ? iso2ToCountryName(code) : null]
-      .filter(Boolean).join(' · ');
+    const named = this.placeName ?? this.siteName();
+    this.coords.textContent = [
+      named && this.point ? formatCoords(this.point) : null,
+      code ? iso2ToCountryName(code) : null,
+      this.watchedSite.kind === 'none' ? null : t('orbitalWatch.site.heading'),
+    ].filter(Boolean).join(' · ');
+  }
+
+  private siteName(): string | null {
+    return this.watchedSite.kind === 'none' ? null : this.watchedSite.site.name;
+  }
+
+  /** The watched site the open point falls on; an unnamed point takes the site's name. */
+  setWatchedSite(state: WatchedSiteState): void {
+    this.watchedSite = state;
+    this.place.textContent = this.placeLabel();
+    this.renderSubline();
+    if (this.state) this.render(this.state);
   }
 
   /** The conflict, fire, unrest and outage rows near the point, shared with the timeline. */
@@ -708,7 +748,7 @@ export class OrbitalWatchPage {
   }
 
   private placeLabel(): string {
-    return this.placeName ?? (this.point ? formatCoords(this.point) : t('orbitalWatch.search.label'));
+    return this.placeName ?? this.siteName() ?? (this.point ? formatCoords(this.point) : t('orbitalWatch.search.label'));
   }
 
   private setHeight(height: SheetHeight): void {
@@ -729,12 +769,13 @@ export class OrbitalWatchPage {
     this.selectedKey = null;
     this.compareKey = null;
     this.context = { kind: 'loading' };
+    this.watchedSite = { kind: 'none' };
     this.place.textContent = this.placeLabel();
     this.renderSubline();
     this.placeZone = point ? placeTimeZone(point) : null;
     this.applyZone();
     this.shareButton.hidden = !this.callbacks.onShare || !point;
-    this.shareButton.textContent = t('orbitalWatch.sheet.share');
+    resetShareLinkButton(this.shareButton, t('components.countryBrief.shareLink'));
     // Fixed labels are set on every open, so a language chosen since the last one shows.
     this.sheet.setAttribute('aria-label', t('orbitalWatch.sheet.heading'));
     this.kicker.textContent = t('orbitalWatch.sheet.heading');
@@ -844,8 +885,8 @@ export class OrbitalWatchPage {
     this.state = state;
     this.sheet.dataset.state = state.kind === 'passes' ? (state.archives.kind === 'answered' ? 'answered' : 'checking') : state.kind;
     const active = document.activeElement as HTMLElement | null;
-    // The timeline slot is the same element after the render, so a mark in it keeps its focus.
-    const inTimeline = active !== null && this.slots.timeline.contains(active);
+    // The timeline and satellites slots are the same elements after the render, so a control in one keeps its focus.
+    const inTimeline = active !== null && (this.slots.timeline.contains(active) || this.slots.satellites.contains(active));
     const focusKey = !inTimeline && this.body.contains(active) ? active?.dataset.key ?? active?.dataset.action ?? null : null;
     // Re-attaching the timeline slot resets its sideways scroll, so carry it over.
     const timelineLeft = this.slots.timeline.scrollLeft;
@@ -866,12 +907,12 @@ export class OrbitalWatchPage {
   private renderState(state: OrbitalWatchState): DomChild[] {
     if (state.kind === 'idle') return [h('p', { className: 'ies-empty' }, t('orbitalWatch.search.idle'))];
     if (state.kind === 'unavailable') {
-      return [h('div', { className: 'ies-empty' }, h('p', null, t('orbitalWatch.status.unavailable')), this.retryButton())];
+      return [h('div', { className: 'ies-empty' }, h('p', null, t('orbitalWatch.status.unavailable')), this.retryButton()), this.siteSection(), this.slots.water];
     }
     if (state.kind === 'computing') {
       return [h('p', { className: 'ies-status', role: 'status' }, state.total > 0
         ? t('orbitalWatch.status.computing', { done: state.done, total: state.total })
-        : t('orbitalWatch.status.catalog'))];
+        : t('orbitalWatch.status.catalog')), this.siteSection()];
     }
     return this.renderSheet(state);
   }
@@ -886,10 +927,13 @@ export class OrbitalWatchPage {
       this.staleBanner(lookup),
       this.evidenceBlock(lookup, archives, summary, evidence),
       this.latestImage(summary, evidence, archives),
+      this.siteSection(),
+      this.slots.water,
       this.slots.timeline,
       this.eventsSection(lookup),
       this.capabilitySection(lookup, passes, isPending),
       this.windowsSection(lookup, passes),
+      this.slots.satellites,
       h('div', { className: 'ies-alert', dataset: { section: 'alert' } },
         h('span', null, t('orbitalWatch.sheet.alert')),
         h('a', { className: 'ies-alert-cta', href: '/pro#pricing', target: '_blank', rel: 'noopener' }, t('orbitalWatch.sheet.alertCta'))),
@@ -959,7 +1003,7 @@ export class OrbitalWatchPage {
         h('select', { className: 'ies-select', 'aria-label': t('orbitalWatch.sheet.compareDate'), dataset: { role: 'compare-date' } },
           ...others.map((acquisition) => h('option', { value: acquisition.key, selected: acquisition.key === this.compareKey }, formatStamp(acquisition.startMs)))))
       : null;
-    const hero = imageTile(latest.imageUrl, alt, sensor, 'hero', [...imageOverlays(), viewButton(view, alt)]);
+    const hero = imageTile(latest.imageUrl, alt, sensor, 'hero', [...imageOverlays(), viewButton(view, alt)], null, acquisitionScene(latest));
     hero.classList.toggle('is-radar', isRadar(latest));
     const newerWithoutPreview = newest && newest !== latest
       ? h('p', { className: 'ies-note' }, t('orbitalWatch.sheet.newestNoPreview', { when: formatStamp(newest.startMs) }))
@@ -976,6 +1020,29 @@ export class OrbitalWatchPage {
           cell(t('orbitalWatch.row.credit'), h('span', { title: credit.full }, credit.short)))),
       compare,
       this.thumbStrip(summary, evidence));
+  }
+
+  /** The site's daily record: its newest image, next pass and when it was checked. No change flag while flags are in shadow. */
+  private siteSection(): DomChild {
+    const state = this.watchedSite;
+    if (state.kind === 'none') return null;
+    const kinds = [...new Set(state.site.origins.map((origin) => t(`orbitalWatch.site.list.${SITE_LIST_KEY[origin.list]}`)))].join(' · ');
+    const name = h('p', { className: 'ies-site-name' }, h('strong', null, state.site.name), ` · ${kinds}`);
+    const title = t('orbitalWatch.site.heading');
+    if (state.kind !== 'loaded') {
+      return section('site', title, name, h('p', { className: 'ies-empty' }, t(state.kind === 'loading' ? 'orbitalWatch.site.loading' : 'orbitalWatch.site.failed')));
+    }
+    const { record } = state;
+    if (record.stale) return section('site', title, name, h('p', { className: 'ies-empty' }, t('orbitalWatch.site.stale')));
+    const image = record.latestImage;
+    const imageMs = image ? Date.parse(image.datetime) : NaN;
+    const pass = record.nextPass;
+    const passMs = pass ? Date.parse(pass.time) : NaN;
+    return section('site', title, name,
+      h('div', { className: 'ies-caption' },
+        cell(t('orbitalWatch.popup.latest'), image && Number.isFinite(imageMs) ? `${formatStamp(imageMs)} · ${sensorName(image.profileId)}` : t('orbitalWatch.popup.noImage')),
+        cell(t('orbitalWatch.popup.nextPass'), pass && passMs > Date.now() ? `${formatStamp(passMs)} · ${pass.satellite}` : t('orbitalWatch.site.noPass')),
+        cell(t('orbitalWatch.site.checked'), formatStamp(record.evaluatedAt))));
   }
 
   /** Every other image of the point; each starts loading only as it nears the viewport. */
@@ -996,7 +1063,7 @@ export class OrbitalWatchPage {
         const fallbacks = spec.fallbacks?.length || spec.noDataAt
           ? { urls: spec.fallbacks ?? [], show, noDataAt: spec.noDataAt }
           : null;
-        const tile = imageTile(spec.url, spec.caption, spec.sensor, 'thumb', [viewButton(spec.view, spec.caption)], fallbacks);
+        const tile = imageTile(spec.url, spec.caption, spec.sensor, 'thumb', [viewButton(spec.view, spec.caption)], fallbacks, spec.scene ?? null);
         tile.classList.toggle('is-radar', !!spec.radar);
         return h('li', { className: 'ies-thumb', dataset: { key: spec.key } }, tile, caption);
       }));
@@ -1037,18 +1104,21 @@ export class OrbitalWatchPage {
 
   private passRow(pass: PointPass, pending: boolean, nowMs: number): HTMLElement {
     const key = passKey(pass);
-    const tier = pending ? t('orbitalWatch.tier.checking') : t(TIER_KEY[pass.timeMs > nowMs ? 'opportunity' : pass.tier.kind]);
+    const notInArchive = !pending && pass.timeMs <= nowMs && pass.tier.kind === 'passed-overhead' && pass.tier.note === 'not-in-archive';
+    const tierLabel = pending ? t('orbitalWatch.tier.checking') : t(TIER_KEY[pass.timeMs > nowMs ? 'opportunity' : pass.tier.kind]);
+    const tier = notInArchive ? `${tierLabel} · ${t('orbitalWatch.tier.notInArchive')}` : tierLabel;
     return h('li', {
       className: 'ies-row',
       tabindex: '0',
       'aria-current': this.selectedKey === key ? 'true' : null,
-      dataset: { key: `pass:${key}`, tier: pending ? 'pending' : pass.tier.kind },
+      dataset: { key: `pass:${key}`, tier: pending ? 'pending' : pass.tier.kind, ...(notInArchive ? { note: 'not-in-archive' } : {}) },
     },
     cell(t('orbitalWatch.row.satellite'), pass.name, 'ies-grow ies-name'),
     cell(t('orbitalWatch.row.tier'), tier, 'ies-tier'),
     cell(t('orbitalWatch.row.time'), formatStamp(pass.timeMs)),
     cell(t('orbitalWatch.row.elevation'), `${Math.round(pass.elevationDeg)}°`),
     cell('', t('orbitalWatch.row.offNadir', { deg: offNadirDeg(pass).toFixed(1) })),
+    ...trackCells(pass),
     orbitAgeCell(pass));
   }
 
@@ -1097,6 +1167,7 @@ export class OrbitalWatchPage {
             cell(t('orbitalWatch.row.satellite'), pass.name, 'ies-grow ies-name'),
             cell(t('orbitalWatch.row.sensor'), t(pass.category === 'open-radar' ? 'orbitalWatch.windows.radar' : 'orbitalWatch.windows.optical')),
             cell(t('orbitalWatch.row.elevation'), `${Math.round(pass.elevationDeg)}°`),
+            ...trackCells(pass),
             orbitAgeCell(pass));
         })));
   }
@@ -1201,7 +1272,8 @@ export class OrbitalWatchPage {
       return;
     }
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
-    const rows = [...this.sheet.querySelectorAll<HTMLElement>('.ies-row')];
+    // A folded row is hidden; the arrows skip it rather than focus what cannot be seen.
+    const rows = [...this.sheet.querySelectorAll<HTMLElement>('.ies-row')].filter((r) => r === row || !r.closest('[hidden]'));
     const next = rows[rows.indexOf(row) + (event.key === 'ArrowDown' ? 1 : -1)];
     if (!next) return;
     event.preventDefault();

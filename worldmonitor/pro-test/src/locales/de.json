@@ -133,7 +133,7 @@
     "deliveryLabel": "Wählen Sie, wie Intelligence Sie findet",
     "supplyChainLab": "Supply-Chain-Stress-Lab",
     "supplyChainLabDesc": "Modellieren Sie einen Kostenschock über Länder und Sektoren. Ranking der Rohstoffvulnerabilität nach Engpass-Abhängigkeit. Verfolgung der Mine-zu-Raffinerie-Konzentration und die SGE–COMEX-Physik-Premium-Divergenz — die Serie, die sich vor der Schlagzeile bewegt.",
-    "roadmapNote": "Auf der Roadmap: Orbitalüberwachung, längere Historie, Premium-Kartenschichten."
+    "roadmapNote": "Auf der Roadmap: längere Verlaufshistorie, Premium-Kartenschichten."
   },
   "apiSection": {
     "apiTier": "API-STUFE",
@@ -202,6 +202,10 @@
     "rowExport": "Datenexport (CSV, JSON, PDF)",
     "rowRedistribution": "Weitergabe an Ihre Kunden",
     "rowSupport": "Support",
+    "rowOrbital": "Satellitenbilder (Orbital Watch)",
+    "orbitalLookup": "Überflugsuche und neueste Bilder",
+    "orbitalAlertsMcp": "Zusätzlich Benachrichtigungen und MCP",
+    "orbitalAlertsMcpApi": "Zusätzlich Benachrichtigungen, MCP und REST-API",
     "licClient": "Kundenarbeit und interne Nutzung",
     "licInternal": "Nur interne Tools",
     "licCustomer": "Kundenseitige Produkte",
