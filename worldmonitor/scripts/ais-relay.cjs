@@ -51,6 +51,7 @@ const {
 const xNewsAccounts = require('./lib/x-news-accounts.cjs');
 const { SAUDI_CIVIL_DEFENSE, MAX_POST_CHARS, publishSaudiCivilDefenseAlerts } = require('./lib/saudi-civil-defense-alerts.cjs');
 const { publishChokepointDisruptionAlerts } = require('./lib/chokepoint-disruption-alerts.cjs');
+const notifyPolicy = require('./lib/notification-publish-policy.cjs');
 // Loaded defensively: the gazetteer validates its data files at require time,
 // and a bad regenerated data file must disable only this feed, not the relay.
 let middleEastStrikes = null;
@@ -85,6 +86,11 @@ const {
   xPostBudgetServiceStatus,
 } = require('./lib/x-post-budget.cjs');
 const { buildClassifyCandidateMap, isStaleDigestReplay } = require('./lib/digest-stale-gate.cjs');
+const { newsStoryKey, newsStoryKeyLoadError, NEWS_STORY_DEDUP_TTL_SECONDS } = require('./lib/news-story-key.cjs');
+if (newsStoryKeyLoadError()) {
+  // Alerts still publish, on the exact-title identity; a repeated headline can alert twice.
+  console.warn('[Notify] News story key unavailable, falling back to exact-title dedup:', newsStoryKeyLoadError().message);
+}
 const {
   buildClassifyDigestUrl,
   classifyDigestTransport,
@@ -116,6 +122,7 @@ const {
   buildDedupMaterial,
   classifySetNxResult,
   recordDedupOutcome,
+  releaseFailOpenFallback,
 } = require('./shared/notification-dedup.cjs');
 const {
   AVIATION_MIN_SERVED_COVERAGE,
@@ -140,7 +147,7 @@ const { pizzintVenuePoint } = require('./shared/pizzint-location.cjs');
 const { getUsEquitySession, isMultiMarketEquityTradingDay } = require('./shared/market-hours.cjs');
 const { mergeLastGoodQuotes, planYahooRefresh, resolveMergedQuotesAsOf } = require('./shared/market-quote-refresh.cjs');
 const { PREVIOUS_SESSION_CHART_QUERY, awaitsSessionOpen, previousSessionClose } = require('./shared/yahoo-closed-session.cjs');
-const { SPARKLINE_HISTORY_QUERY, SPARKLINE_HISTORY_RETRY_SECONDS, buildQuoteSparkline } = require('./shared/quote-sparkline.cjs');
+const { SPARKLINE_HISTORY_QUERY, SPARKLINE_HISTORY_RETRY_SECONDS, buildQuoteSparkline, capQuoteSparklines } = require('./shared/quote-sparkline.cjs');
 const { crudeOilQuoteProvenance } = require('./shared/oil-quote-provenance.cjs');
 // ESM module loaded via require(esm) (Node >= 22.12; relay image is node:24).
 // Same implementation the RPC handler scores with — see the module header for
@@ -664,6 +671,9 @@ function upstashLpush(key, value) {
           resolve(typeof parsed?.result === 'number' && parsed.result > 0);
         } catch { resolve(false); }
       });
+      // A connection dropped mid-body emits close without end. A complete
+      // response has already resolved from end, so this is then a no-op.
+      resp.on('close', () => resolve(false));
     });
     req.on('error', () => resolve(false));
     req.on('timeout', () => { req.destroy(); resolve(false); });
@@ -693,6 +703,8 @@ function upstashSetNx(key, value, ttlSeconds) {
           resolve(classifySetNxResult(parsed?.result));
         } catch { resolve('error'); }
       });
+      // Settles a response cut off mid-body; a no-op after end.
+      resp.on('close', () => resolve('error'));
     });
     req.on('error', () => resolve('error'));
     req.on('timeout', () => { req.destroy(); resolve('error'); });
@@ -799,6 +811,8 @@ function upstashDel(key) {
       resp.on('end', () => {
         try { resolve(JSON.parse(data)?.result === 1); } catch { resolve(false); }
       });
+      // Settles a response cut off mid-body; a no-op after end.
+      resp.on('close', () => resolve(false));
     });
     req.on('error', () => resolve(false));
     req.on('timeout', () => { req.destroy(); resolve(false); });
@@ -950,9 +964,10 @@ function normalizeNotificationCountryCode(raw) {
   return countryNameToIso2(raw) ?? undefined;
 }
 
-function marketAlertCoalesceKey(assetClass, identifier, direction, severity) {
+function marketAlertCoalesceKey(assetClass, identifier, direction, severity, session) {
   const stableIdentifier = String(identifier || 'unknown').trim().toLowerCase();
-  return `market:${assetClass}:${stableIdentifier}:${direction}:${severity}`;
+  const sessionSuffix = session ? `:${session}` : '';
+  return `market:${assetClass}:${stableIdentifier}:${direction}:${severity}${sessionSuffix}`;
 }
 
 function nwsVtec(p) {
@@ -988,7 +1003,56 @@ function marketMoveFields(assetClass, q) {
   };
 }
 
-async function publishNotificationEvent({ eventType, payload, severity, variant, dedupTtl = 1800 }) {
+// Dedup claims this process took, whose queue write failed and whose rollback
+// DEL failed too (key -> expiry ms). Redis still holds the claim although
+// nothing was queued; without this, every later copy reads it as a duplicate
+// and the alert is lost for the claim's whole TTL.
+const unreleasedDedupClaims = new Map();
+const MAX_UNRELEASED_DEDUP_CLAIMS = 1_000;
+
+function holdsUnreleasedDedupClaim(key) {
+  const expiresAt = unreleasedDedupClaims.get(key);
+  if (expiresAt == null) return false;
+  if (expiresAt > Date.now()) return true;
+  unreleasedDedupClaims.delete(key);
+  return false;
+}
+
+function rememberUnreleasedDedupClaim(key, ttlSeconds) {
+  if (unreleasedDedupClaims.size >= MAX_UNRELEASED_DEDUP_CLAIMS) {
+    const now = Date.now();
+    for (const [k, expiresAt] of unreleasedDedupClaims) if (expiresAt <= now) unreleasedDedupClaims.delete(k);
+    if (unreleasedDedupClaims.size >= MAX_UNRELEASED_DEDUP_CLAIMS) {
+      unreleasedDedupClaims.delete(unreleasedDedupClaims.keys().next().value);
+    }
+  }
+  unreleasedDedupClaims.set(key, Date.now() + ttlSeconds * 1000);
+}
+
+// Publishes in flight per dedup key (key -> settled promise of the last one).
+// Callers publish without awaiting, so two same-key publishes race: the second
+// sees the first's claim and stops, and if the first's queue write then fails
+// and rolls the claim back, neither is queued. A claim kept in
+// unreleasedDedupClaims races the other way: both calls take it again and both
+// queue. Run in order, each sees the outcome of the one before it.
+const dedupKeyPublishes = new Map();
+
+function inDedupKeyOrder(key, publish) {
+  const prior = dedupKeyPublishes.get(key) ?? Promise.resolve();
+  const run = prior.then(() => publish());
+  const settled = run.then(() => {}, () => {});
+  dedupKeyPublishes.set(key, settled);
+  settled.then(() => { if (dedupKeyPublishes.get(key) === settled) dedupKeyPublishes.delete(key); });
+  return run;
+}
+
+// Test seam only: wait until no publish is in flight, so a test can assert that
+// an alert was not queued without guessing how long a publish takes.
+async function settleNotificationPublishes() {
+  while (dedupKeyPublishes.size > 0) await Promise.all(dedupKeyPublishes.values());
+}
+
+async function publishNotificationEvent({ eventType, payload, severity, variant, dedupTtl = 1800, storyKey }) {
   try {
     // Include variant in dedup key so each variant can independently publish the same title
     // (e.g. finance and world users both receive an alert for the same headline).
@@ -997,45 +1061,77 @@ async function publishNotificationEvent({ eventType, payload, severity, variant,
     // event collapse at the publisher (queue stays clean) instead of N times
     // per recipient at the relay.
     const variantSuffix = variant ? `:${variant}` : '';
+    // storyKey (news alerts, lib/news-story-key.cjs) replaces the title here
+    // only. Unlike coalesceKey it is not in the payload, so the relay's
+    // per-user dedup still keys on the title, as for browser-submitted alerts.
+    // A story claim is held for a day, so it hashes with SHA-256: distinct
+    // headlines collide on the 32-bit notifySimpleHash and would silence each
+    // other for the whole window.
     const dedupMaterial = buildDedupMaterial(eventType, payload?.title, payload?.coalesceKey);
-    const dedupKey = `wm:notif:scan-dedup:${eventType}${variantSuffix}:${notifySimpleHash(dedupMaterial)}`;
-    const dedupResult = await upstashSetNx(dedupKey, '1', dedupTtl);
-    const dedupDecision = recordDedupOutcome(dedupResult, {
-      surface: 'ais-relay',
-      eventType,
-      severity,
-      fallbackKey: dedupKey,
-      fallbackTtlSeconds: dedupTtl,
-      emitTelemetry: recordNotificationDedupSetNxError,
+    const dedupHash = storyKey
+      ? `story-${crypto.createHash('sha256').update(storyKey).digest('hex').slice(0, 32)}`
+      : notifySimpleHash(dedupMaterial);
+    const dedupKey = `wm:notif:scan-dedup:${eventType}${variantSuffix}:${dedupHash}`;
+    return await inDedupKeyOrder(dedupKey, async () => {
+      let dedupResult = await upstashSetNx(dedupKey, '1', dedupTtl);
+      // The existing claim is ours and was never queued: take it again.
+      if (dedupResult === 'duplicate' && holdsUnreleasedDedupClaim(dedupKey)) dedupResult = 'new';
+      const dedupDecision = recordDedupOutcome(dedupResult, {
+        surface: 'ais-relay',
+        eventType,
+        severity,
+        fallbackKey: dedupKey,
+        fallbackTtlSeconds: dedupTtl,
+        emitTelemetry: recordNotificationDedupSetNxError,
+      });
+      // Returns true once the event is queued or was already queued; callers
+      // that keep their own edge state retry on false.
+      const publishedAt = Date.now();
+      const fanout = API_FANOUT_EVENT_TYPES.has(eventType);
+      // Stable per-story / per-move id for API subscribers (occurrence-events.cjs).
+      // The relay ignores it; it rides along in the queue message unchanged.
+      if (fanout && payload && typeof payload === 'object' && !payload.eventId) {
+        const eventId = occurrenceEventIdFor(eventType, payload, publishedAt);
+        if (eventId) payload = { ...payload, eventId };
+      }
+      const msg = JSON.stringify({ eventType, payload, severity: dedupDecision.severity, ...(variant ? { variant } : {}), publishedAt });
+      if (!dedupDecision.shouldPublish) {
+        if (!dedupDecision.isDuplicate) return false;
+        console.log(`[Notify] Dedup hit — ${eventType}: ${String(payload.title ?? '').slice(0, 60)}`);
+        // A repeat of an alerted story still goes to API webhook subscribers,
+        // on the title identity they had before the story key. Each one filters
+        // by its own importance floor, severity and keywords, so the sighting
+        // that claimed the story may be one a subscriber rejected, and this one
+        // the first it accepts.
+        if (storyKey && fanout) {
+          const titleKey = `wm:notif:scan-dedup:${eventType}${variantSuffix}:${notifySimpleHash(dedupMaterial)}`;
+          const titleClaim = await upstashSetNx(titleKey, '1', 1800);
+          if (titleClaim !== 'duplicate' && titleClaim !== 'disabled') teeApiFanout(eventType, msg);
+        }
+        return true;
+      }
+      const ok = await upstashLpush('wm:events:queue', msg);
+      if (ok) {
+        unreleasedDedupClaims.delete(dedupKey);
+        if (fanout) teeApiFanout(eventType, msg);
+        console.log(`[Notify] Queued ${dedupDecision.severity} event: ${eventType} — ${String(payload.title ?? '').slice(0, 60)}`);
+        return true;
+      } else {
+        // Rollback the dedup key so the next poll cycle can retry — avoids silent
+        // suppression for the full dedupTtl when a transient LPUSH fails.
+        console.warn(`[Notify] LPUSH failed for ${eventType} — rolling back dedup key`);
+        // Awaited so a publish queued behind this one (inDedupKeyOrder)
+        // claims after the rollback, not before it.
+        const released = await upstashDel(dedupKey).catch(() => false);
+        // false also covers an absent key, which costs at most one re-claim.
+        if (released) unreleasedDedupClaims.delete(dedupKey);
+        else rememberUnreleasedDedupClaim(dedupKey, dedupTtl);
+        // During a SET NX outage the claim is an in-process reservation; drop
+        // it too, or it suppresses the story for the rest of its TTL.
+        if (dedupDecision.action === 'fail_open') releaseFailOpenFallback(dedupKey);
+        return false;
+      }
     });
-    // Returns true once the event is queued or was already queued; callers
-    // that keep their own edge state retry on false.
-    if (!dedupDecision.shouldPublish) {
-      if (!dedupDecision.isDuplicate) return false;
-      console.log(`[Notify] Dedup hit — ${eventType}: ${String(payload.title ?? '').slice(0, 60)}`);
-      return true;
-    }
-    const publishedAt = Date.now();
-    const fanout = API_FANOUT_EVENT_TYPES.has(eventType);
-    // Stable per-story / per-move id for API subscribers (occurrence-events.cjs).
-    // The relay ignores it; it rides along in the queue message unchanged.
-    if (fanout && payload && typeof payload === 'object' && !payload.eventId) {
-      const eventId = occurrenceEventIdFor(eventType, payload, publishedAt);
-      if (eventId) payload = { ...payload, eventId };
-    }
-    const msg = JSON.stringify({ eventType, payload, severity: dedupDecision.severity, ...(variant ? { variant } : {}), publishedAt });
-    const ok = await upstashLpush('wm:events:queue', msg);
-    if (ok) {
-      if (fanout) teeApiFanout(eventType, msg);
-      console.log(`[Notify] Queued ${dedupDecision.severity} event: ${eventType} — ${String(payload.title ?? '').slice(0, 60)}`);
-      return true;
-    } else {
-      // Rollback the dedup key so the next poll cycle can retry — avoids silent
-      // suppression for the full dedupTtl when a transient LPUSH fails.
-      console.warn(`[Notify] LPUSH failed for ${eventType} — rolling back dedup key`);
-      upstashDel(dedupKey).catch(() => {});
-      return false;
-    }
   } catch (e) {
     console.warn(`[Notify] publishNotificationEvent error (${eventType}):`, e?.message || e);
     return false;
@@ -3766,7 +3862,7 @@ function fetchFinnhubQuoteDirect(symbol, apiKey) {
         try {
           const data = JSON.parse(body);
           if (data.c === 0 && data.h === 0 && data.l === 0) return resolve(null);
-          resolve({ price: data.c, changePercent: data.dp });
+          resolve({ price: data.c, changePercent: data.dp, lastTradeAt: data.t });
         } catch { resolve(null); }
       });
     });
@@ -3821,6 +3917,8 @@ async function writeChinaCountryStockIndex() {
 async function seedMarketQuotes() {
   const previousPayloadPromise = envelopeRead('market:stocks-bootstrap:v1');
   const freshQuotes = [];
+  // Last trade (unix seconds) per fresh quote: a move's session key (#10873).
+  const lastTradeAtBySymbol = new Map();
   const finnhubSymbols = MARKET_SYMBOLS.filter((s) => !YAHOO_ONLY.has(s));
   const yahooSymbols = MARKET_SYMBOLS.filter((s) => YAHOO_ONLY.has(s));
 
@@ -3830,7 +3928,10 @@ async function seedMarketQuotes() {
       const r = results[i];
       const symbol = finnhubSymbols[i];
       const meta = MARKET_META.get(symbol);
-      if (r) freshQuotes.push({ symbol, name: meta?.name || symbol, display: meta?.display || symbol, price: r.price, change: r.changePercent, sparkline: [] });
+      if (r) {
+        freshQuotes.push({ symbol, name: meta?.name || symbol, display: meta?.display || symbol, price: r.price, change: r.changePercent, sparkline: [] });
+        lastTradeAtBySymbol.set(symbol, r.lastTradeAt);
+      }
     }
   }
 
@@ -3853,7 +3954,10 @@ async function seedMarketQuotes() {
     if (freshQuotes.some((q) => q.symbol === s)) continue;
     const yahoo = await fetchYahooChartDirect(s);
     const meta = MARKET_META.get(s);
-    if (yahoo) freshQuotes.push({ symbol: s, name: meta?.name || s, display: meta?.display || s, price: yahoo.price, change: yahoo.change, sparkline: yahoo.sparkline });
+    if (yahoo) {
+      freshQuotes.push({ symbol: s, name: meta?.name || s, display: meta?.display || s, price: yahoo.price, change: yahoo.change, sparkline: yahoo.sparkline });
+      lastTradeAtBySymbol.set(s, yahoo.lastTradeAt);
+    }
     await sleep(150);
   }
 
@@ -3864,7 +3968,7 @@ async function seedMarketQuotes() {
 
   const previousPayload = await previousPayloadPromise;
   const previousQuotes = Array.isArray(previousPayload?.quotes) ? previousPayload.quotes : [];
-  const quotes = mergeLastGoodQuotes(MARKET_SYMBOLS, freshQuotes, previousQuotes);
+  const quotes = capQuoteSparklines(mergeLastGoodQuotes(MARKET_SYMBOLS, freshQuotes, previousQuotes));
   const retainedCount = quotes.length - freshQuotes.length;
   const yahooSuccessCount = freshQuotes.length - freshCountBeforeYahoo;
   const coveredByYahoo = finnhubSymbols.every((s) => quotes.some((q) => q.symbol === s));
@@ -3894,22 +3998,26 @@ async function seedMarketQuotes() {
   }
   _lastEquityQuoteCount = quotes.length;
   console.log(`[Market] Seeded ${quotes.length}/${MARKET_SYMBOLS.length} quotes (${freshQuotes.length} fresh, ${retainedCount} retained; Yahoo ${yahooSuccessCount}/${allYahoo.length}, cadence ${MARKET_YAHOO_REFRESH_INTERVAL_MS / 60000}min; redis: ${ok && ok2 && ok3 ? 'OK' : 'PARTIAL'})`);
-  const movingStocks = quotes.filter(q => Math.abs(q.change ?? 0) >= 5).sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+  // Fresh quotes only (#10873): a retained quote is a move already published
+  // when it was fresh, and without a trade time its session key would roll daily.
+  const movingStocks = quotes.filter(q => lastTradeAtBySymbol.has(q.symbol) && Math.abs(q.change ?? 0) >= 5).sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
   for (const q of movingStocks.slice(0, 3)) {
     const pct = Math.round(q.change);
     const dir = q.change < 0 ? 'decline' : 'surge';
-    const severity = Math.abs(q.change) >= 10 ? 'critical' : 'high';
+    // A single stock is at most high; only an index move is critical (#10873).
+    const severity = notifyPolicy.marketMoveSeverity({ assetClass: 'equity', symbol: q.symbol, changePct: q.change });
+    if (!severity) continue;
     publishNotificationEvent({
       eventType: 'market_alert',
       payload: {
         title: `${q.symbol}: ${pct > 0 ? '+' : ''}${pct}% ${dir}`,
         source: 'Equity Market',
-        coalesceKey: marketAlertCoalesceKey('equity', q.symbol, dir, severity),
+        coalesceKey: marketAlertCoalesceKey('equity', q.symbol, dir, severity, notifyPolicy.marketMoveSessionKey('equity', lastTradeAtBySymbol.get(q.symbol))),
         ...marketMoveFields('equity', q),
       },
       severity,
       variant: undefined,
-      dedupTtl: 3600,
+      dedupTtl: notifyPolicy.marketMoveDedupTtlSeconds('equity'),
     }).catch(e => console.warn('[Notify] Market stock publish error:', e?.message));
   }
   return quotes.length;
@@ -3918,7 +4026,9 @@ async function seedMarketQuotes() {
 async function seedCommodityQuotes() {
   const quotes = [];
   const missing = [];
-  const toQuote = async (symbol, meta, yahoo) => ({
+  // Last trade (unix seconds) per quote: a move's session key (#10873).
+  const lastTradeAtBySymbol = new Map();
+  const toQuote = async (symbol, meta, yahoo) => (lastTradeAtBySymbol.set(symbol, yahoo.lastTradeAt), {
     symbol, name: meta.name, display: meta.display, price: yahoo.price, change: yahoo.change,
     ...(await _commoditySparkline(symbol, yahoo)),
     ...crudeOilQuoteProvenance(symbol, 'Yahoo Finance', 'futures', yahoo.lastTradeAt * 1000),
@@ -3967,18 +4077,20 @@ async function seedCommodityQuotes() {
   for (const q of movingCommodities.slice(0, 3)) {
     const pct = Math.round(q.change);
     const dir = q.change < 0 ? 'decline' : 'surge';
-    const severity = Math.abs(q.change) >= 10 ? 'critical' : 'high';
+    // VIX swings 10%+ routinely, so it is never critical (#10873).
+    const severity = notifyPolicy.marketMoveSeverity({ assetClass: 'commodity', symbol: q.symbol, changePct: q.change });
+    if (!severity) continue;
     publishNotificationEvent({
       eventType: 'market_alert',
       payload: {
         title: `${q.name || q.symbol}: ${pct > 0 ? '+' : ''}${pct}% ${dir}`,
         source: 'Commodity Market',
-        coalesceKey: marketAlertCoalesceKey('commodity', q.symbol || q.name, dir, severity),
+        coalesceKey: marketAlertCoalesceKey('commodity', q.symbol || q.name, dir, severity, notifyPolicy.marketMoveSessionKey('commodity', lastTradeAtBySymbol.get(q.symbol))),
         ...marketMoveFields('commodity', q),
       },
       severity,
       variant: undefined,
-      dedupTtl: 3600,
+      dedupTtl: notifyPolicy.marketMoveDedupTtlSeconds('commodity'),
     }).catch(e => console.warn('[Notify] Commodity publish error:', e?.message));
   }
   return quotes.length;
@@ -4310,7 +4422,8 @@ async function seedCryptoQuotes() {
   for (const q of movingCrypto.slice(0, 3)) {
     const pct = Math.round(q.change);
     const dir = q.change < 0 ? 'decline' : 'surge';
-    const severity = Math.abs(q.change) >= 20 ? 'critical' : 'high';
+    const severity = notifyPolicy.marketMoveSeverity({ assetClass: 'crypto', symbol: q.symbol, changePct: q.change });
+    if (!severity) continue;
     publishNotificationEvent({
       eventType: 'market_alert',
       payload: {
@@ -4321,7 +4434,7 @@ async function seedCryptoQuotes() {
       },
       severity,
       variant: undefined,
-      dedupTtl: 3600,
+      dedupTtl: notifyPolicy.marketMoveDedupTtlSeconds('crypto'),
     }).catch(e => console.warn('[Notify] Crypto publish error:', e?.message));
   }
   return quotes.length;
@@ -4924,7 +5037,9 @@ async function seedCyberThreats() {
       publishNotificationEvent({
         eventType: 'cyber_threat',
         payload: { title: `${typeLabel}: ${t.indicator?.slice(0, 50)}${familyTag}`, source: t.source || 'Cyber Intel', ...(countryCode ? { countryCode } : {}) },
-        severity: t.severity === 'critical' ? 'critical' : 'high',
+        // One indicator (an IP, a URL) is never a realtime-critical event; the
+        // feed's own 'critical' becomes high (#10873, #3936).
+        severity: 'high',
         variant: undefined,
         dedupTtl: 43200,
       }).catch(err => console.warn('[Notify] Cyber publish error:', err?.message));
@@ -5276,6 +5391,12 @@ function countriesNamedInText(lower) {
 function threatSummaryCountries(text) {
   const affected = matchCountryNamesInText(text);
   if (affected.length > 0) return affected;
+  return countriesNamedInHeadline(text);
+}
+
+// Every country a raw headline names, after US/UK expansion, diacritic folding
+// and dropping a trailing outlet credit.
+function countriesNamedInHeadline(text) {
   // Uppercase US/UK are the countries; lowercase "us" stays the pronoun.
   let lower = text.replace(/\bU\.S\.(?:A\.)?/g, 'United States ').replace(/\bU\.K\./g, 'United Kingdom ')
     .replace(/\bUS\b/g, 'United States').replace(/\bUK\b/g, 'United Kingdom')
@@ -5628,6 +5749,13 @@ async function seedClassifyForVariant(variant, seenTitles) {
             entityCorroborationCount: 0,
           },
         );
+        const titleCountryCodes = matchCountryNamesInText(chunk[idx]);
+        // The one country the title names anywhere, not the affected target
+        // countryCodes keeps ("Russia attacks Ukraine" names two).
+        const primaryCountryCode = notifyPolicy.primaryNewsCountryCode(countriesNamedInHeadline(chunk[idx]));
+        // One alert per story per day, not per title string: a second
+        // publisher carrying an alerted headline is the same story.
+        const storyKey = newsStoryKey(chunk[idx], { severity: level, importanceScore });
         publishNotificationEvent({
           eventType: 'rss_alert',
           payload: {
@@ -5642,10 +5770,14 @@ async function seedClassifyForVariant(variant, seenTitles) {
             // rss_alert permissive-unattributed, so a singular field here would
             // start silencing country-scoped Slack rules.
             category,
-            countryCodes: matchCountryNamesInText(chunk[idx]),
+            countryCodes: titleCountryCodes,
+            // The one country the headline names, read by the relay's tier
+            // gate (#10873). Deliberately not the singular field the relay scopes on (see above).
+            ...(primaryCountryCode ? { primaryCountryCode } : {}),
           },
           severity: level,
           variant,
+          ...(storyKey ? { storyKey, dedupTtl: NEWS_STORY_DEDUP_TTL_SECONDS } : {}),
         }).catch(e => console.warn('[Notify] Classify publish error:', e?.message));
       }
     }
@@ -7553,18 +7685,22 @@ async function seedWeatherAlerts() {
     // are unit-testable without booting the relay.
     const distinctFamilyAlerts = selectWeatherNotificationAlerts(alerts);
     for (const a of distinctFamilyAlerts) {
-      // The SAME family key the selector partitioned by. Publishing a narrower
+      // The SAME family key the selector partitioned by, plus the severity
+      // band so an upgrade to Extreme is not swallowed by the earlier Severe
+      // alert's lifetime-long dedup (#10873). Publishing a narrower
       // key (VTEC only) let publishNotificationEvent fall back to its global
       // `weather_alert:<title>` dedup hash for every VTEC-less SWIC/ECCC
       // alert, so two countries sharing a generic WMO title ("Heavy rain",
       // "Forestfire") collided on SET NX and only the first survived —
       // recreating the #7243 starvation one layer below the selector.
-      const coalesceKey = weatherAlertFamilyKey(a);
+      const coalesceKey = notifyPolicy.weatherAlertCoalesceKey(weatherAlertFamilyKey(a), a.severity);
       const countryCode = weatherAlertNotifyCountryCode(a);
       publishNotificationEvent({
         eventType: 'weather_alert',
         payload: {
-          title: a.headline || a.event || 'Weather alert',
+          // What · where · until (#10873): a bare WMO "Wind" or "CAP Alert"
+          // named neither the place nor the country.
+          title: notifyPolicy.weatherAlertNotifyTitle(a),
           source: weatherAlertNotifySource(a),
           ...(countryCode ? { countryCode } : {}),
           ...(coalesceKey ? { coalesceKey } : {}),
@@ -7572,6 +7708,9 @@ async function seedWeatherAlerts() {
         },
         severity: a.severity === 'Extreme' ? 'critical' : 'high',
         variant: undefined,
+        // Until the alert expires: the 30-minute default re-sent an active
+        // alert on every seed tick.
+        dedupTtl: notifyPolicy.weatherAlertDedupTtlSeconds(a),
       }).catch(e => console.warn('[Notify] Weather publish error:', e?.message));
     }
   } catch (e) {
@@ -8283,17 +8422,10 @@ async function seedCorridorRisk() {
     await upstashSet('seed-meta:supply_chain:corridorrisk', { fetchedAt: Date.now(), recordCount: Object.keys(result).length }, 604800);
     console.log(`[CorridorRisk] Seeded ${Object.keys(result).length} corridors (redis: ${ok ? 'OK' : 'FAIL'}) in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
     seedTransitSummaries().catch(e => console.warn('[TransitSummary] Post-CorridorRisk seed error:', e?.message || e));
-    for (const [corridorId, c] of Object.entries(result)) {
-      if (c.riskScore < 50) continue;
-      const label = corridorId.replace(/_/g, ' ').replace(/\b\w/g, ch => ch.toUpperCase());
-      publishNotificationEvent({
-        eventType: 'corridor_risk',
-        payload: { title: `${label}: risk score ${c.riskScore}`, source: 'Corridor Risk' },
-        severity: c.riskScore >= 70 ? 'critical' : 'high',
-        variant: undefined,
-        dedupTtl: 3600,
-      }).catch(err => console.warn('[Notify] CorridorRisk publish error:', err?.message));
-    }
+    // No corridor_risk alert: the feed's score sits at its 85 ceiling with
+    // 100% disruption on every corridor, so a band crossing carried no news
+    // and paged every subscriber for all five corridors. chokepoint_disruption
+    // (#9217) alerts on measured transits instead.
   } catch (e) {
     console.warn('[CorridorRisk] Seed error:', e?.message || e);
   } finally {
@@ -8445,14 +8577,11 @@ async function seedShippingStress() {
     const ok = await envelopeWrite(SHIPPING_STRESS_REDIS_KEY, payload, SHIPPING_STRESS_TTL, { recordCount: results.length, sourceVersion: 'shipping-stress' });
     await upstashSet('seed-meta:supply_chain:shipping_stress', { fetchedAt: Date.now(), recordCount: results.length }, 604800);
     console.log(`[ShippingStress] Seeded ${results.length} carriers score=${stressScore}/${stressLevel} (redis: ${ok ? 'OK' : 'FAIL'}) in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
-    if (stressScore >= 75) {
-      publishNotificationEvent({
-        eventType: 'shipping_stress',
-        payload: { title: `Global shipping stress: score ${stressScore}/100 (${stressLevel})`, source: 'Shipping Index' },
-        severity: stressScore >= 90 ? 'critical' : 'high',
-        variant: undefined,
-        dedupTtl: 7200,
-      }).catch(err => console.warn('[Notify] ShippingStress publish error:', err?.message));
+    // Keyed on the band for a day (#10873), not on the title's live score.
+    const stressNotification = notifyPolicy.shippingStressNotification(stressScore, stressLevel);
+    if (stressNotification) {
+      publishNotificationEvent({ ...stressNotification, variant: undefined })
+        .catch(err => console.warn('[Notify] ShippingStress publish error:', err?.message));
     }
   } catch (e) {
     console.warn('[ShippingStress] Seed error:', e?.message || e, '— extending TTL, retrying in 20min');
@@ -13572,8 +13701,9 @@ async function handleRelayRequest(req, res) {
     }, JSON.stringify(getRelayRollingMetrics()));
   } else if (pathname === '/__test/seed-classify' && RELAY_TEST_MODE) {
     // Test-only seam, same contract as /__test/seed-theater-posture: run one
-    // classify cycle on request.
+    // classify cycle on request, and answer once its alert publishes settle.
     await seedClassify();
+    await settleNotificationPublishes();
     return sendCompressed(req, res, 200, {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-store',

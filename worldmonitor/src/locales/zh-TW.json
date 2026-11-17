@@ -629,7 +629,8 @@
         "techevent": "科技活動",
         "techhq": "科技總部",
         "accelerator": "加速器",
-        "flight": "航班"
+        "flight": "航班",
+        "alert": "警報"
       },
       "flightOnGround": "地面停靠",
       "flightAirborne": "FL{{fl}} · {{kts}} 節",
@@ -637,7 +638,9 @@
       "flightMilitaryOnGround": "軍用 · {{type}} · 地面停靠",
       "flightSearchHint": "按 Enter 或點選檢視即時位置",
       "flightNotFound": "未找到 {{callsign}} 的即時位置",
-      "addPanel": "新增"
+      "addPanel": "新增",
+      "sentAlerts": "傳送給您的警報",
+      "sentAlertTime": "傳送於 {{time}}"
     },
     "signal": {
       "title": "情報發現",
@@ -4246,6 +4249,21 @@
       "yellowWarning": "黃色預警",
       "orangeWarning": "橙色預警",
       "redWarning": "紅色預警"
+    },
+    "displacement": {
+      "event": "事件",
+      "cause": "原因",
+      "date": "日期",
+      "operation": "行動",
+      "reportDate": "報告日期",
+      "measure": "衡量指標",
+      "kinds": {
+        "outflow": "外流",
+        "return": "返回",
+        "arrival": "抵達",
+        "death": "死亡",
+        "encounter": "邊境遭遇"
+      }
     }
   },
   "signals": {

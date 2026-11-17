@@ -153,6 +153,8 @@ const MAP = [
   [/:\/api\/intelligence\/v1\/classify-event$/,           { cap: 'news.classification' }],
   [/:\/api\/news\/v1\/list-media-perspective$/,          { cap: 'news.media_perspective' }],
   [/:\/api\/news\/v1\/list-news-pool$/,                   { cap: 'news.pool' }],
+  // Delivered-alert history behind the dashboard search: part of notifications, no label of its own.
+  [/:\/api\/news\/v1\/list-sent-alerts$/,                 { cap: 'notifications.channels' }],
   [/:\/api\/intelligence\/v1\/deduct-situation$/,         { cap: 'intel.deduction' }],
   [/:\/api\/intelligence\/v1\/(search-intel-history|get-intel-timeline|get-similar-events)$/, { cap: 'intel.memory' }],
   // get-country-coverage (#7526) is the agent-facing sibling of the country
@@ -341,7 +343,7 @@ const SITE_BASELINE = {
   "api/mcp/auth.ts::tier": 1,
   "api/mcp/skill-extension/generated.ts::tier": 1,
   "api/me/entitlement.ts::isCallerPremium": 1,
-  "api/notification-channels.ts::tier": 1,
+  "api/notification-channels.ts::tier": 2,
   "api/v2/shipping/webhooks/[subscriberId].ts::resolvePremiumCallerIdentity": 1,
   "api/v2/shipping/webhooks/[subscriberId]/[action].ts::resolvePremiumCallerIdentity": 1,
   "api/widget-agent.ts::tier": 2,
@@ -359,7 +361,6 @@ const SITE_BASELINE = {
   "convex/http.ts::mcpAccess": 1,
   "convex/http.ts::tier": 3,
   "convex/mcpProTokens.ts::tier": 1,
-  "convex/notificationChannels.ts::tier": 1,
   "convex/payments/billing.ts::tier": 1,
   "convex/teamDashboards.ts::tabFocus": 2,
   "server/_shared/country-history-access.ts::tier": 1,

@@ -701,7 +701,8 @@
         "techevent": "Technológiai Esemény",
         "techhq": "Technológiai Központ",
         "accelerator": "Akcelerátor",
-        "flight": "Járat"
+        "flight": "Járat",
+        "alert": "Értesítés"
       },
       "flightOnGround": "Földön",
       "flightAirborne": "FL{{fl}} · {{kts}} csomó",
@@ -709,7 +710,9 @@
       "flightMilitaryOnGround": "Katonai · {{type}} · földön",
       "flightSearchHint": "Nyomj Enter-t vagy kattints az élő pozíció megjelenítéséhez",
       "flightNotFound": "Nincs elérhető élő pozíció a {{callsign}} járathoz",
-      "addPanel": "Hozzáadás"
+      "addPanel": "Hozzáadás",
+      "sentAlerts": "Önnek küldött értesítések",
+      "sentAlertTime": "Elküldve: {{time}}"
     },
     "signal": {
       "title": "INTELLIGENCIA TALÁLAT",
@@ -4337,6 +4340,21 @@
       "yellowWarning": "Sárga figyelmeztetés",
       "orangeWarning": "Narancs figyelmeztetés",
       "redWarning": "Piros figyelmeztetés"
+    },
+    "displacement": {
+      "event": "Esemény",
+      "cause": "Ok",
+      "date": "Dátum",
+      "operation": "Művelet",
+      "reportDate": "Jelentés dátuma",
+      "measure": "Mérőszám",
+      "kinds": {
+        "outflow": "Kiáramlás",
+        "return": "Visszatérők",
+        "arrival": "Érkezők",
+        "death": "Halálesetek",
+        "encounter": "Határon rögzített esetek"
+      }
     }
   },
   "signals": {

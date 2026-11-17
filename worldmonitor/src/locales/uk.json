@@ -708,14 +708,17 @@
         "techevent": "Технологічна подія",
         "techhq": "Офіс технологічної компанії",
         "accelerator": "Акселератор",
-        "flight": "Рейс"
+        "flight": "Рейс",
+        "alert": "Сповіщення"
       },
       "flightOnGround": "На землі",
       "flightAirborne": "FL{{fl}} · {{kts}} кн",
       "flightMilitary": "Військовий · {{type}} · FL{{fl}}",
       "flightMilitaryOnGround": "Військовий · {{type}} · на землі",
       "flightSearchHint": "Натисніть Enter або клацніть, щоб перевірити живу позицію",
-      "flightNotFound": "Живу позицію для {{callsign}} не знайдено"
+      "flightNotFound": "Живу позицію для {{callsign}} не знайдено",
+      "sentAlerts": "Сповіщення, надіслані вам",
+      "sentAlertTime": "Надіслано {{time}}"
     },
     "signal": {
       "title": "РОЗВІДУВАЛЬНА ЗНАХІДКА",
@@ -4381,6 +4384,21 @@
       "yellowWarning": "Жовтий рівень небезпеки",
       "orangeWarning": "Помаранчевий рівень небезпеки",
       "redWarning": "Червоний рівень небезпеки"
+    },
+    "displacement": {
+      "event": "Подія",
+      "cause": "Причина",
+      "date": "Дата",
+      "operation": "Операція",
+      "reportDate": "Дата звіту",
+      "measure": "Показник",
+      "kinds": {
+        "outflow": "Виїзд",
+        "return": "Повернення",
+        "arrival": "Прибуття",
+        "death": "Загибель",
+        "encounter": "Зафіксовані випадки"
+      }
     }
   },
   "signals": {

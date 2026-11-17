@@ -4,8 +4,8 @@ import type { AirportDelayAlert, PositionSample } from '@/services/aviation';
 import type { Earthquake } from '@/services/earthquakes';
 import type { WeatherAlert } from '@/services/weather';
 import type { CrossBorderPoint } from '@/services/displacement';
-import { renderDisplacementDetails, type DisplacementMarker } from './displacement-marker';
-import { renderCrossBorderDetails } from './cross-border-marker';
+import { renderDisplacementPopup, type DisplacementMarker } from './displacement-marker';
+import { renderCrossBorderPopup } from './cross-border-marker';
 import type { RadiationObservation } from '@/services/radiation';
 import { UNDERSEA_CABLES } from '@/config/geo-map';
 import type { StartupHub, Accelerator, TechHQ, CloudRegion } from '@/config/tech-geo';
@@ -37,7 +37,6 @@ import {
 } from './reservoir-levels-view';
 import { reservoirCard } from './reservoir-card';
 import { fillWaterExtentRow, renderWaterExtentRow, WATER_UNAVAILABLE } from './water-card';
-import { loadReservoirWaterExtent } from '@/services/orbital/object-imagery';
 import { fetchHotspotContext, formatArticleDate, extractDomain, type GdeltArticle } from '@/services/gdelt-intel';
 import { getWingbitsLiveFlight } from '@/services/wingbits';
 import { isFeatureAvailable } from '@/services/runtime-config';
@@ -1029,11 +1028,9 @@ export class MapPopup {
       case 'news':
         return this.renderNewsPopup(data.data as NewsPopupData);
       case 'displacement':
-        return `<div class="popup-header"><span class="popup-title">${t('panels.displacement')}</span><button class="popup-close" aria-label="${t('common.close')}">×</button></div>`
-          + `<div class="popup-body">${renderDisplacementDetails(data.data as DisplacementMarker)}</div>`;
+        return renderDisplacementPopup(data.data as DisplacementMarker);
       case 'crossBorder':
-        return `<div class="popup-header"><span class="popup-title">${t('components.displacement.crossBorder')}</span><button class="popup-close" aria-label="${t('common.close')}">×</button></div>`
-          + `<div class="popup-body">${renderCrossBorderDetails(data.data as CrossBorderPoint)}</div>`;
+        return renderCrossBorderPopup(data.data as CrossBorderPoint);
       case 'radiation':
         return this.renderRadiationPopup(data.data as RadiationObservation);
       case 'reservoirLevel':
@@ -2460,7 +2457,7 @@ ${isFeatureAvailable('wingbitsEnrichment') ? `<div class="wingbits-live-section"
     }
     const scan = this.reservoirScan;
     if (waterExtent && scan) {
-      void loadReservoirWaterExtent(waterExtent.dataset.wlWaterExtent!, scan.signal).catch(() => WATER_UNAVAILABLE).then((extent) => {
+      void import('@/services/orbital/object-imagery').then(({ loadReservoirWaterExtent }) => loadReservoirWaterExtent(waterExtent.dataset.wlWaterExtent!, scan.signal)).catch(() => WATER_UNAVAILABLE).then((extent) => {
         if (scan.signal.aborted || !waterExtent.isConnected) return;
         fillWaterExtentRow(waterExtent, extent, { t, locale, nowMs: Date.now() });
         this.clampPopupToViewport();

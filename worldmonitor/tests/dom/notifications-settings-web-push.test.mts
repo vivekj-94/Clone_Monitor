@@ -51,6 +51,13 @@ vi.mock('@/services/clerk', () => ({
 
 vi.mock('@/services/entitlements', () => ({
   hasTier: () => true,
+  getEntitlementState: () => ({ features: { tier: 1 } }),
+  onEntitlementChange: () => () => {},
+  getEntitlementVerificationStatus: () => 'ready',
+  onEntitlementVerificationChange: (cb: (status: string) => void) => {
+    cb('ready');
+    return () => {};
+  },
 }));
 
 vi.mock('@/services/market-watchlist', () => ({
@@ -484,6 +491,23 @@ describe('notification Settings browser push', () => {
       expect(webPushRow(container).dataset.webPushState).toBe('available');
     });
     expect(webPushRow(container).querySelector('#usConnectWebPush')).not.toBeNull();
+  });
+
+  it.each(['denied', 'unsupported'] as const)('preserves the disable explanation when push becomes %s', async state => {
+    const container = await mount({ channels: [{ channelType: 'web_push', verified: false, linkedAt: 1,
+      deliveryFailure: { count: 10, firstFailedAt: 1, lastError: 'HTTP 503', disabledAt: 2 } }], alertRules: [] });
+    pushState.subscribeToPush.mockImplementation(async () => {
+      pushState.supported = state !== 'unsupported';
+      pushState.permission = state;
+      throw new Error('browser state changed');
+    });
+    container.querySelector<HTMLButtonElement>('#usConnectWebPush')!.click();
+    await vi.waitFor(() => { expect(webPushRow(container).dataset.webPushState).toBe(state); });
+    const row = webPushRow(container);
+    expect(row.textContent).toContain('Disabled after repeated delivery failures');
+    expect(row.textContent).not.toContain('Native notifications on this device.');
+    expect(row.querySelector('#usConnectWebPush')).toBeNull();
+    expect(channelMocks.saveAlertRules).not.toHaveBeenCalled();
   });
 
   it('shows unsupported guidance when support disappears during the subscribe', async () => {

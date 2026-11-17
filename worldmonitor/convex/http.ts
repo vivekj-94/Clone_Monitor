@@ -3,6 +3,7 @@ import type { Infer } from "convex/values";
 import { httpAction, type ActionCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { lookupVerifiedAccountEmail, requireVerifiedAccountEmail } from "./lib/notificationEmail";
+import { isDeliveryError } from "./lib/notificationDelivery";
 import { timingSafeEqualStrings } from "./lib/svixVerify";
 import { TOUCH_DEBOUNCE_MS } from "./apiKeys";
 import { briefOnlyUserIds, type BriefRuleFlags } from "./alertRules";
@@ -15,6 +16,7 @@ import { webhookHandler } from "./payments/webhookHandlers";
 import { resendWebhookHandler } from "./resendWebhookHandler";
 import { clerkWebhookHandler } from "./accountDeletion/clerkWebhook";
 import { channelTypeValidator, USER_PREFS_WRITE_RATE_LIMIT } from "./constants";
+import { ALERT_CAPABILITY_VIOLATION_CODES, ALERT_UPGRADE_URL } from "../shared/alert-capabilities";
 import { isPreferenceVariant } from "../shared/cloud-preferences-contract";
 import { normalizeAcquisitionSource } from "../shared/acquisition-source";
 import { verifyDunningPortalToken } from "./lib/identitySigning";
@@ -146,6 +148,31 @@ function parseConvexErrorData(err: unknown): unknown {
   } catch {
     return raw;
   }
+}
+
+/**
+ * Alert-ladder capability denial (#4273) → 402 with the structured upsell
+ * payload (`error` code, message, upgradeUrl, and the limit or value that
+ * tripped). The error is the marketing surface: the client and agents route
+ * on the code and render the named rung.
+ */
+const ALERT_CAPABILITY_CODES = new Set<string>(ALERT_CAPABILITY_VIOLATION_CODES);
+
+function alertCapabilityDenialResponse(err: unknown): Response | null {
+  const code = extractConvexErrorCode(err);
+  if (!code || !ALERT_CAPABILITY_CODES.has(code)) return null;
+  const parsed = parseConvexErrorData(err);
+  const data = (parsed && typeof parsed === "object") ? parsed as Record<string, unknown> : {};
+  // COUNTRY_SCOPE is a 400, not a 402: a free caller fixes it by choosing
+  // countries, no payment required (upgradeUrl rides along as the alternative).
+  const status = code === "ALERT_COUNTRY_SCOPE_REQUIRED" ? 400 : 402;
+  return new Response(JSON.stringify({
+    error: code,
+    message: typeof data.message === "string" ? data.message : "",
+    upgradeUrl: typeof data.upgradeUrl === "string" ? data.upgradeUrl : ALERT_UPGRADE_URL,
+    ...(typeof data.limit === "number" ? { limit: data.limit } : {}),
+    ...(typeof data.value === "string" ? { value: data.value } : {}),
+  }), { status, headers: { "Content-Type": "application/json" } });
 }
 
 function extractConvexErrorCode(err: unknown): string | null {
@@ -993,6 +1020,35 @@ function isChannelType(value: unknown): value is Infer<typeof channelTypeValidat
 }
 
 http.route({
+  path: "/relay/delivery-result",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const unauthorized = await authorizeTenantRelay(request, ["delivery"]);
+    if (unauthorized) return unauthorized;
+    const body = await parseJsonObjectBody<Record<string, unknown>>(request);
+    const inputs = body && Array.isArray(body.results) ? body.results : [body];
+    if (inputs.length === 0 || inputs.length > 100) {
+      return Response.json({ error: "INVALID_DELIVERY_RESULT" }, { status: 400 });
+    }
+    const results = [];
+    for (const input of inputs) {
+      const delivery = input?.delivery;
+      if (!input || typeof input.userId !== "string" || !input.userId || !isChannelType(input.channelType)
+        || !delivery || typeof delivery.channelId !== "string" || !delivery.channelId
+        || typeof delivery.linkedAt !== "number" || !Number.isFinite(delivery.linkedAt)
+        || (delivery.sequence !== undefined && (!Number.isSafeInteger(delivery.sequence) || delivery.sequence < 1))
+        || (delivery.error !== null && !isDeliveryError(delivery.error))) {
+        return Response.json({ error: "INVALID_DELIVERY_RESULT" }, { status: 400 });
+      }
+      results.push({ userId: input.userId, channelType: input.channelType,
+        delivery: { channelId: delivery.channelId, linkedAt: delivery.linkedAt, sequence: delivery.sequence, error: delivery.error } });
+    }
+    await ctx.runMutation(internal.notificationChannels.recordDeliveryResult, { results });
+    return Response.json({ ok: true });
+  }),
+});
+
+http.route({
   path: "/relay/deactivate",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
@@ -1130,7 +1186,7 @@ http.route({
     const unauthorized = await authorizeTenantRelay(request, ["delivery"]);
     if (unauthorized) return unauthorized;
 
-    const body = await parseJsonObjectBody<{ userId?: string }>(request);
+    const body = await parseJsonObjectBody<{ userId?: string; deliveryChannels?: unknown }>(request);
     if (!body) {
       return new Response(JSON.stringify({ error: "INVALID_JSON" }), {
         status: 400,
@@ -1145,10 +1201,16 @@ http.route({
       });
     }
 
-    const channels: Array<{ channelType?: string; email?: string }> =
-      await ctx.runQuery((internal as any).notificationChannels.getChannelsByUserId, {
-        userId: body.userId,
-      }) ?? [];
+    const deliveryChannels = body.deliveryChannels;
+    if (deliveryChannels !== undefined && (!Array.isArray(deliveryChannels)
+      || deliveryChannels.length > CHANNEL_TYPES.size || !deliveryChannels.every(isChannelType))) {
+      return Response.json({ error: "INVALID_DELIVERY_CHANNELS" }, { status: 400 });
+    }
+    const channels = deliveryChannels === undefined
+      ? await ctx.runQuery(internal.notificationChannels.getChannelsByUserId, { userId: body.userId })
+      : await ctx.runMutation(internal.notificationChannels.beginChannelDeliveries, {
+        userId: body.userId, channelTypes: deliveryChannels,
+      });
 
     // Delivery workers send alert and digest mail to whatever this returns.
     // Drop email channels whose address bounced, complained or was suppressed
@@ -1231,6 +1293,7 @@ http.route({
       orbitalSites?: string[];
       reservoirAlert?: unknown;
       scheduleWelcome?: boolean;
+      seedCountriesFromFollowed?: boolean;
     }>(request);
     if (!body) {
       return new Response(JSON.stringify({ error: "INVALID_JSON" }), {
@@ -1381,6 +1444,7 @@ http.route({
         try {
           await ctx.runMutation((internal as any).alertRules.setAlertRulesForUser, {
             userId,
+            enforceEntitlement: true,
             variant: body.variant,
             enabled: body.enabled,
             eventTypes: body.eventTypes as string[],
@@ -1419,6 +1483,8 @@ http.route({
           if (code === "TICKERS_LIMIT_EXCEEDED" || code === "COUNTRIES_LIMIT_EXCEEDED" || code === "CHOKEPOINTS_INVALID") {
             return new Response(JSON.stringify({ error: code }), { status: 400, headers: { "Content-Type": "application/json" } });
           }
+          const capability = alertCapabilityDenialResponse(err);
+          if (capability) return capability;
           const validation = alertRuleValidationResponse(err, ["INCOMPATIBLE_DELIVERY"]);
           if (validation) return validation;
           if (code === "PRO_REQUIRED") {
@@ -1440,6 +1506,7 @@ http.route({
         try {
           await ctx.runMutation((internal as any).alertRules.setQuietHoursForUser, {
             userId,
+            enforceEntitlement: true,
             variant: body.variant,
             quietHoursEnabled: body.quietHoursEnabled,
             quietHoursStart: body.quietHoursStart,
@@ -1449,6 +1516,8 @@ http.route({
             countries: Array.isArray(body.countries) ? (body.countries as string[]) : undefined,
           });
         } catch (err: unknown) {
+          const capability = alertCapabilityDenialResponse(err);
+          if (capability) return capability;
           const validation = alertRuleValidationResponse(err, ["COUNTRIES_LIMIT_EXCEEDED"]);
           if (validation) return validation;
           throw err;
@@ -1467,6 +1536,7 @@ http.route({
         try {
           await ctx.runMutation((internal as any).alertRules.setDigestSettingsForUser, {
             userId,
+            enforceEntitlement: true,
             variant: body.variant,
             digestMode: body.digestMode as "realtime" | "daily" | "twice_daily" | "weekly",
             digestHour: typeof body.digestHour === "number" ? body.digestHour : undefined,
@@ -1474,6 +1544,8 @@ http.route({
             countries: Array.isArray(body.countries) ? (body.countries as string[]) : undefined,
           });
         } catch (err: unknown) {
+          const capability = alertCapabilityDenialResponse(err);
+          if (capability) return capability;
           const validation = alertRuleValidationResponse(err, ["COUNTRIES_LIMIT_EXCEEDED", "INCOMPATIBLE_DELIVERY"]);
           if (validation) return validation;
           throw err;
@@ -1531,6 +1603,7 @@ http.route({
             orbitalSites: Array.isArray(body.orbitalSites) ? (body.orbitalSites as string[]) : undefined,
             // Reservoir level alert; the mutation validates the shape and gates it to Pro.
             reservoirAlert: body.reservoirAlert as ReservoirAlertBody | undefined,
+            seedCountriesFromFollowed: body.seedCountriesFromFollowed === true ? true : undefined,
           });
         } catch (err: unknown) {
           // Translate structured ConvexError codes into machine-readable HTTP
@@ -1552,6 +1625,8 @@ http.route({
             "INCOMPATIBLE_DELIVERY", "TICKERS_LIMIT_EXCEEDED", "COUNTRIES_LIMIT_EXCEEDED", "CHOKEPOINTS_INVALID",
           ]);
           if (validation) return validation;
+          const capability = alertCapabilityDenialResponse(err);
+          if (capability) return capability;
           if (code === "PRO_REQUIRED") {
             // 402 Payment Required — the canonical HTTP status for paywall-gated
             // content. Client reads `error: "PRO_REQUIRED"` to route to the
@@ -1569,6 +1644,8 @@ http.route({
       if (code === "EMAIL_OWNERSHIP_REQUIRED" || code === "PRO_REQUIRED") {
         return new Response(JSON.stringify({ error: code }), { status: code === "PRO_REQUIRED" ? 402 : 400, headers: { "Content-Type": "application/json" } });
       }
+      const capability = alertCapabilityDenialResponse(err);
+      if (capability) return capability;
       console.error('[notification-channels] Operation failed', err);
       return new Response(JSON.stringify({ error: 'Operation failed' }), { status: 500, headers: { "Content-Type": "application/json" } });
     }

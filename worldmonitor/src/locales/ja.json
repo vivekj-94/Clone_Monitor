@@ -629,7 +629,8 @@
         "techevent": "テックイベント",
         "techhq": "テック本社",
         "accelerator": "アクセラレーター",
-        "flight": "フライト"
+        "flight": "フライト",
+        "alert": "アラート"
       },
       "flightOnGround": "地上",
       "flightAirborne": "FL{{fl}} · {{kts}} ノット",
@@ -637,7 +638,9 @@
       "flightMilitaryOnGround": "軍用機 · {{type}} · 地上",
       "flightSearchHint": "Enterキーを押すか、クリックしてライブ位置を検索",
       "flightNotFound": "{{callsign}} のライブ位置が見つかりません",
-      "addPanel": "追加"
+      "addPanel": "追加",
+      "sentAlerts": "あなたに送信されたアラート",
+      "sentAlertTime": "{{time}}に送信"
     },
     "signal": {
       "title": "インテリジェンス所見",
@@ -4246,6 +4249,21 @@
       "yellowWarning": "黄色警報",
       "orangeWarning": "オレンジ警報",
       "redWarning": "赤色警報"
+    },
+    "displacement": {
+      "event": "事象",
+      "cause": "原因",
+      "date": "日付",
+      "operation": "オペレーション",
+      "reportDate": "報告日",
+      "measure": "指標",
+      "kinds": {
+        "outflow": "流出",
+        "return": "帰還",
+        "arrival": "到着",
+        "death": "死亡",
+        "encounter": "遭遇"
+      }
     }
   },
   "signals": {

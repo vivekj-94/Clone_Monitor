@@ -243,7 +243,8 @@
         "techevent": "Evento de tecnologia",
         "techhq": "Sede de tecnologia",
         "accelerator": "Aceleradora",
-        "flight": "Voo"
+        "flight": "Voo",
+        "alert": "Alerta"
       },
       "placeholderTech": "Pesquisar ou digitar um comando...",
       "placeholderFinance": "Pesquisar ou digitar um comando...",
@@ -257,7 +258,9 @@
       "flightMilitaryOnGround": "Militar · {{type}} · em solo",
       "flightSearchHint": "Pressione Enter ou clique para consultar posição ao vivo",
       "flightNotFound": "Nenhuma posição ao vivo encontrada para {{callsign}}",
-      "addPanel": "Adicionar"
+      "addPanel": "Adicionar",
+      "sentAlerts": "Alertas enviados para você",
+      "sentAlertTime": "Enviado {{time}}"
     },
     "signal": {
       "source": "Source",
@@ -3904,6 +3907,21 @@
       "yellowWarning": "Aviso amarelo",
       "orangeWarning": "Aviso laranja",
       "redWarning": "Aviso vermelho"
+    },
+    "displacement": {
+      "event": "Evento",
+      "cause": "Causa",
+      "date": "Data",
+      "operation": "Operação",
+      "reportDate": "Data do relatório",
+      "measure": "Medida",
+      "kinds": {
+        "outflow": "Saídas",
+        "return": "Retornos",
+        "arrival": "Chegadas",
+        "death": "Mortes",
+        "encounter": "Registos na fronteira"
+      }
     }
   },
   "signals": {

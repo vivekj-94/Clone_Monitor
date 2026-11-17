@@ -629,7 +629,8 @@
         "techevent": "Événement Tech",
         "techhq": "Siège Tech",
         "accelerator": "Accélérateur",
-        "flight": "Vol"
+        "flight": "Vol",
+        "alert": "Alerte"
       },
       "placeholderTech": "Rechercher ou saisir une commande...",
       "placeholderFinance": "Rechercher ou saisir une commande...",
@@ -643,7 +644,9 @@
       "flightMilitaryOnGround": "Militaire · {{type}} · au sol",
       "flightSearchHint": "Appuyez sur Entrée ou cliquez pour consulter la position en direct",
       "flightNotFound": "Aucune position en direct trouvée pour {{callsign}}",
-      "addPanel": "Ajouter"
+      "addPanel": "Ajouter",
+      "sentAlerts": "Alertes qui vous ont été envoyées",
+      "sentAlertTime": "Envoyée {{time}}"
     },
     "signal": {
       "title": "DÉCOUVERTE RENSEIGNEMENT",
@@ -4290,6 +4293,21 @@
       "yellowWarning": "Vigilance jaune",
       "orangeWarning": "Vigilance orange",
       "redWarning": "Vigilance rouge"
+    },
+    "displacement": {
+      "event": "Événement",
+      "cause": "Cause",
+      "date": "Date",
+      "operation": "Opération",
+      "reportDate": "Date du rapport",
+      "measure": "Mesure",
+      "kinds": {
+        "outflow": "Départs",
+        "return": "Retours",
+        "arrival": "Arrivées",
+        "death": "Décès",
+        "encounter": "Rencontres à la frontière"
+      }
     }
   },
   "signals": {
