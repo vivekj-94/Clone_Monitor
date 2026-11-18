@@ -20,6 +20,7 @@
 *Could not find public function for 'accountDeletion/sideEffects:beginExternalAttempt'*
 *Could not find public function for 'accountDeletion/sideEffects:recordExternalFailure'*
 *Could not find public function for 'accountDeletion/sideEffects:runExternalErase'*
+*Could not find public function for 'accountDeletion/sideEffects:sweepBriefEnvelopes'*
 *Could not find public function for 'agentFeedback:findRetry'*
 *Could not find public function for 'agentFeedback:getFeedbackDigestText'*
 *Could not find public function for 'agentFeedback:getForTriage'*
@@ -316,4 +317,5 @@
 *Could not find public function for 'telegramPairingTokens:cleanupExpired'*
 *Could not find public function for 'userPreferences:getPreferencesByUserId'*
 *Could not find public function for 'userPreferences:pruneStaleWriteRateLimits'*
+*Could not find public function for 'users:getBriefLanguageForUser'*
 *Could not find public function for 'users:recordTermsAcceptance'*

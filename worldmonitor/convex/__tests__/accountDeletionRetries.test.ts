@@ -33,7 +33,8 @@ function isRedisPipelineUrl(urlLike: string): boolean {
     return false;
   }
 }
-function success(input: RequestInfo | URL): Promise<Response> {
+function success(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  if (String(init?.body).startsWith('["SCAN",')) return Promise.resolve(Response.json({ result: ["0", []] }));
   const url = String(input);
   if (isClerkApiUrl(url)) return Promise.resolve(new Response(null, { status: 204 }));
   return Promise.resolve(Response.json(isRedisPipelineUrl(url) ? [{ result: 1 }] : { result: null }));
@@ -86,8 +87,8 @@ describe("external account deletion retry policy", () => {
   );
 
   test.each([401, 403])("permanent Clerk HTTP %i fails without retries", async (status) => {
-    fetchMock.mockImplementation((input) => isClerkApiUrl(String(input))
-      ? Promise.resolve(new Response(null, { status })) : success(input));
+    fetchMock.mockImplementation((input, init) => isClerkApiUrl(String(input))
+      ? Promise.resolve(new Response(null, { status })) : success(input, init));
     const { t, deletionId, row } = await setup();
     expect(await t.action(internal.accountDeletion.sideEffects.runExternalErase, { deletionId }))
       .toEqual({ status: "failed" });
@@ -118,8 +119,8 @@ describe("external account deletion retry policy", () => {
   });
 
   test("persistent transient failures back off and stop after five attempts", async () => {
-    fetchMock.mockImplementation((input) => isClerkApiUrl(String(input))
-      ? Promise.resolve(new Response(null, { status: 503 })) : success(input));
+    fetchMock.mockImplementation((input, init) => isClerkApiUrl(String(input))
+      ? Promise.resolve(new Response(null, { status: 503 })) : success(input, init));
     const { t, deletionId, row } = await setup();
     const startedAt = Date.now();
     await t.action(internal.accountDeletion.sideEffects.runExternalErase, { deletionId });
@@ -178,7 +179,7 @@ describe("external account deletion retry policy", () => {
       .filter(([input]) => isRedisPipelineUrl(String(input)))
       .map(([, init]) => JSON.parse(String(init?.body ?? "[]")) as string[][]);
     // One pipeline for the whole revocation set, not one fetch per token.
-    const withSets = pipelines.filter((commands) => commands.some((c) => c[0] === "SET"));
+    const withSets = pipelines.filter((commands) => commands.some((c) => c[0] === "SET" && c[1].startsWith("pro-mcp-token-neg:")));
     expect(withSets).toHaveLength(1);
     expect(withSets[0]?.filter((c) => c[0] === "SET").map((c) => c[1])).toEqual([
       "wm:notif:sent-erased:v1:user_retry",
@@ -225,9 +226,9 @@ describe("external account deletion retry policy", () => {
   });
 
   test.each(["/get/", "/pipeline"])("Redis HTTP 200 error on %s cannot complete deletion", async (operation) => {
-    fetchMock.mockImplementation((input) => String(input).includes(operation)
+    fetchMock.mockImplementation((input, init) => String(input).includes(operation)
       ? Promise.resolve(Response.json(operation === "/pipeline" ? [{ error: "ERR denied" }] : { error: "ERR denied" }))
-      : success(input));
+      : success(input, init));
     const { t, deletionId, row } = await setup();
     await t.run((ctx) => ctx.db.patch(deletionId, { mcpTokenIds: ["token_1"] }));
     expect(await t.action(internal.accountDeletion.sideEffects.runExternalErase, { deletionId }))
