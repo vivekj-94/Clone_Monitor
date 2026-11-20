@@ -396,7 +396,7 @@ describe('shipped desktop Node coverage (#5909, #9906)', () => {
         mkdirSync(bundledDir, { recursive: true });
         mkdirSync(toolsDir);
         writeFileSync(resolve(bundledDir, 'node'), '#!/bin/sh\necho shipped-node "$@"\n', { mode: 0o755 });
-        writeFileSync(resolve(toolsDir, 'npm'), `#!/bin/sh\n[ "$*" = 'run test:sidecar' ] || exit 99\nnode\nexit ${exitCode}\n`, { mode: 0o755 });
+        writeFileSync(resolve(toolsDir, 'npm'), `#!/bin/sh\n[ "$*" = 'run test:sidecar:desktop' ] || exit 99\nnode\nexit ${exitCode}\n`, { mode: 0o755 });
         const result = spawnSync('bash', ['-e', '-c', shippedTest.run], {
           cwd: dir, encoding: 'utf8', env: { ...process.env, PATH: `${toolsDir}:${process.env.PATH}` },
         });
@@ -490,7 +490,6 @@ const REQUIRED_CI_SMOKE_SPECS = [
   'e2e/map-overlay-marker-budget.spec.ts',
   'e2e/mobile-displacement.spec.ts',
   'e2e/map-distance.spec.ts',
-  'e2e/mcp-market-built.spec.ts',
   'e2e/live-panel-layout-8276.spec.ts',
   'e2e/panel-grid-no-overlap.spec.ts',
   'e2e/panel-table-overflow.spec.ts',
@@ -3204,6 +3203,32 @@ describe('docker-publish conditions', () => {
     );
 
   const dockerPublish = YAML.parse(read(resolve(workflowsDir, 'docker-publish.yml')));
+  it('checks snapshot freshness before any Docker build can use its cache', () => {
+    const steps = dockerPublish.jobs.docker.steps;
+    const firstBuild = steps.findIndex((step: { uses?: string }) => step.uses?.startsWith('docker/build-push-action@'));
+    for (const command of ['node scripts/check-crawlable-live-pulse.mjs', 'node scripts/github-stars-snapshot.mjs']) {
+      const gate = steps.findIndex((step: { run?: string }) => step.run === command);
+      assert.ok(gate >= 0 && gate < firstBuild, `${command} must run before the first Docker build`);
+      assert.equal(steps[gate].if, undefined);
+      assert.equal(steps[gate]['continue-on-error'], undefined);
+    }
+  });
+
+  it('checks snapshot freshness before the self-hosted app image builds', () => {
+    const selfHosted = YAML.parse(read(resolve(workflowsDir, 'docker-publish-self-hosted.yml')));
+    const job = Object.values(selfHosted.jobs).find((candidate: any) =>
+      candidate.strategy?.matrix?.include?.some((leg: { dockerfile?: string }) => leg.dockerfile === 'Dockerfile'),
+    ) as { steps: Array<{ run?: string; uses?: string; if?: string; 'continue-on-error'?: unknown }> };
+    assert.ok(job, 'docker-publish-self-hosted.yml must build the root Dockerfile');
+    const firstBuild = job.steps.findIndex((step) => step.uses?.startsWith('docker/build-push-action@'));
+    for (const command of ['node scripts/check-crawlable-live-pulse.mjs', 'node scripts/github-stars-snapshot.mjs']) {
+      const gate = job.steps.findIndex((step) => step.run === command);
+      assert.ok(gate >= 0 && gate < firstBuild, `${command} must run before the first Docker build`);
+      assert.equal(job.steps[gate].if, "matrix.image == 'worldmonitor-selfhosted'");
+      assert.equal(job.steps[gate]['continue-on-error'], undefined);
+    }
+  });
+
   const tagEnableExpressions = () => {
     const metaStep = dockerPublish.jobs.docker.steps.find(
       (step: { id?: string }) => step.id === 'meta',
@@ -3642,6 +3667,9 @@ describe('variant-smoke-pro-webmcp runs the /pro gates and the WebMCP smoke on s
     const specs = readdirSync(resolve(root, 'e2e')).filter((name) => /^plugin-.*\.spec\.ts$/.test(name)).map((name) => `e2e/${name}`);
     assert.ok(specs.length > 0);
     const parts = (job.strategy.matrix.part as string[]).filter((part) => part.startsWith('plugin-'));
+    const pluginViews = shellArgvTokens(packageScripts['test:e2e:plugin-views']);
+    assert.ok(pluginViews.includes('e2e/mcp-market-built.spec.ts'));
+    assert.ok(pluginViews.includes('WM_E2E_PLUGIN_BUILT=1'));
     const covered = parts.flatMap((part) => {
       const script = packageScripts[`test:e2e:${part}`];
       assert.ok(script, `package.json must define test:e2e:${part}`);
