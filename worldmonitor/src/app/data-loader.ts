@@ -117,7 +117,7 @@ import { mlWorker } from '@/services/ml-worker';
 import { clusterNewsHybrid, clusterNewsWithWorkerFallback } from '@/services/clustering';
 import { ingestProtests, ingestFlights, ingestVessels, ingestEarthquakes, detectGeoConvergence, geoConvergenceToSignal } from '@/services/geo-convergence';
 import { consumeServerAnomalies, fetchLiveAnomalies } from '@/services/temporal-baseline';
-import { fetchAllFires, flattenFires, computeRegionStats, toMapFires } from '@/services/wildfires';
+import { fetchAllFires, flattenFires, summarizeFires, toMapFires } from '@/services/wildfires';
 import type { TheaterPostureSummary } from '@/services/military-surge';
 import { fetchCachedTheaterPosture } from '@/services/cached-theater-posture';
 import { ingestConflictsForCountryData, ingestDisplacementForCountryData, ingestClimateForCountryData, ingestGpsJammingForCountryData, isInLearningMode, type CountryScore } from '@/services/country-instability';
@@ -171,7 +171,6 @@ import type { StockAnalysisPanel } from '@/components/StockAnalysisPanel';
 import type { DigestCoverageSummary } from '@/components/StatusPanel';
 import type { StockBacktestPanel } from '@/components/StockBacktestPanel';
 import type { PredictionPanel } from '@/components/PredictionPanel';
-import type { InsightsPanel } from '@/components/InsightsPanel';
 import type { StrategicPosturePanel } from '@/components/StrategicPosturePanel';
 
 import type { EconomicPanel } from '@/components/EconomicPanel';
@@ -680,9 +679,11 @@ export class DataLoaderManager implements AppModule {
     if (transition.render === 'cached' && cached) {
       this.callPanel('cii', 'renderFromCached', cached);
       this.applyCiiScoresToMap(cached.cii.map(toCountryScore));
+      this.callPanel('strategic-posture', 'refreshInstabilityNotes');
     } else if (transition.render === 'unavailable') {
       this.callPanel('cii', 'renderUnavailable');
       this.applyCiiScoresToMap([]);
+      this.callPanel('strategic-posture', 'refreshInstabilityNotes');
     }
 
     if (transition.refreshBrief) this.callbacks.refreshOpenCountryBrief();
@@ -4188,10 +4189,17 @@ export class DataLoaderManager implements AppModule {
     }
   }
 
-  async loadUkmtoIncidents(): Promise<void> {
+  async loadUkmtoIncidents(signal?: AbortSignal): Promise<void> {
+    if (signal?.aborted) return;
     if (SITE_VARIANT !== 'full' && !this.ctx.panelSettings['ukmto-incidents']?.enabled) return;
-    const snapshot = await fetchUkmtoIncidents();
-    if (this.ctx.isDestroyed) return;
+    let snapshot;
+    try {
+      snapshot = await fetchUkmtoIncidents(signal);
+    } catch (error) {
+      if (signal?.aborted || (error instanceof DOMException && error.name === 'AbortError')) return;
+      throw error;
+    }
+    if (this.ctx.isDestroyed || signal?.aborted) return;
     this.callPanel('ukmto-incidents', 'setData', snapshot);
     this.ctx.map?.setUkmtoSnapshot(snapshot);
   }
@@ -4376,8 +4384,6 @@ export class DataLoaderManager implements AppModule {
       this.ctx.map?.setMilitaryVessels(vessels, vesselClusters);
       this.ctx.map?.updateMilitaryForEscalation(flights, vessels);
       this.loadCachedPosturesForBanner();
-      const insightsPanel = this.ctx.panels['insights'] as InsightsPanel | undefined;
-      insightsPanel?.setMilitaryFlights(flights);
       const hasData = flights.length > 0 || vessels.length > 0;
       this.ctx.map?.setLayerReady('military', hasData);
       const militaryCount = flights.length + vessels.length;
@@ -4427,8 +4433,6 @@ export class DataLoaderManager implements AppModule {
       }
 
       this.loadCachedPosturesForBanner();
-      const insightsPanel = this.ctx.panels['insights'] as InsightsPanel | undefined;
-      insightsPanel?.setMilitaryFlights(flightData.flights);
 
       const hasData = flightData.flights.length > 0 || vesselData.vessels.length > 0;
       this.ctx.map?.setLayerReady('military', hasData);
@@ -4607,17 +4611,18 @@ export class DataLoaderManager implements AppModule {
     if (signal?.aborted) return;
     const procurementPanel = this.ctx.panels['global-procurement'] as GlobalProcurementPanel | undefined;
     if (!procurementPanel) return;
+    const isScopedFilterRequest = filters !== undefined && signal !== undefined;
     if (
       filters === undefined
-      && signal === undefined
       && this.activeGlobalTenderScopedGeneration !== null
     ) return;
     const requestGeneration = ++this.globalTenderGeneration;
-    this.activeGlobalTenderScopedGeneration = signal ? requestGeneration : null;
+    this.activeGlobalTenderScopedGeneration = isScopedFilterRequest ? requestGeneration : null;
     const previousGlobalTenderFilters = { ...this.globalTenderFilters };
     const requestFilters = filters ?? this.globalTenderFilters;
     this.globalTenderFilters = { ...requestFilters, cursor: '' };
     let canceledFiltersRestored = false;
+    let markedLoading = false;
     const releaseScopedRequest = () => {
       if (this.activeGlobalTenderScopedGeneration === requestGeneration) {
         this.activeGlobalTenderScopedGeneration = null;
@@ -4632,10 +4637,11 @@ export class DataLoaderManager implements AppModule {
       canceledFiltersRestored = true;
       this.globalTenderFilters = previousGlobalTenderFilters;
     };
-    signal?.addEventListener('abort', () => {
+    const onAbort = () => {
       restoreCanceledFilters();
       releaseScopedRequest();
-    }, { once: true });
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
     const isCanceledOrStale = () => {
       restoreCanceledFilters();
       return signal?.aborted === true || requestGeneration !== this.globalTenderGeneration;
@@ -4652,6 +4658,7 @@ export class DataLoaderManager implements AppModule {
       }
       if (isCanceledOrStale()) return;
       procurementPanel.setLoading(true, append);
+      markedLoading = true;
       try {
         const { fetchGlobalTenders } = await import('@/services/global-tenders');
         if (isCanceledOrStale()) return;
@@ -4660,10 +4667,12 @@ export class DataLoaderManager implements AppModule {
         if (!hasPremiumAccess()) {
           if (isCanceledOrStale()) return;
           procurementPanel.clear();
+          markedLoading = false;
           return;
         }
         if (isCanceledOrStale()) return;
         procurementPanel.update(data, append);
+        markedLoading = false;
         if (isCanceledOrStale()) return;
         this.ctx.statusPanel?.updateApi('Global Procurement', {
           status: !data.dataAvailable ? 'error' : ['partial', 'stale'].includes(data.availability) ? 'warning' : 'ok',
@@ -4673,11 +4682,22 @@ export class DataLoaderManager implements AppModule {
         console.warn('[App] Global tenders failed:', error);
         if (isCanceledOrStale()) return;
         procurementPanel.showUnavailable();
+        markedLoading = false;
         if (isCanceledOrStale()) return;
         this.ctx.statusPanel?.updateApi('Global Procurement', { status: 'error' });
       }
     } finally {
+      signal?.removeEventListener('abort', onAbort);
       releaseScopedRequest();
+      if (
+        markedLoading
+        && !isScopedFilterRequest
+        && signal?.aborted === true
+        && requestGeneration === this.globalTenderGeneration
+        && !this.ctx.isDestroyed
+      ) {
+        procurementPanel.setLoading(false);
+      }
     }
   }
 
@@ -5077,7 +5097,7 @@ export class DataLoaderManager implements AppModule {
       if (fireResult.skipped) {
         this.ctx.intelligenceCache.satelliteFires = [];
         this.ctx.map?.setFires([]);
-        (this.ctx.panels['satellite-fires'] as SatelliteFiresPanel)?.update([], 0);
+        (this.ctx.panels['satellite-fires'] as SatelliteFiresPanel)?.update(summarizeFires({}), 0);
         await runSignalAggregator(this.ctx.statusPanel, 'satellite fires', (aggregator) => aggregator.ingestSatelliteFires([]));
         dataFreshness.recordError('firms', fireResult.reason ?? 'no_data');
         // en.json carries panels.satelliteFires as a flat title string, so the
@@ -5089,7 +5109,6 @@ export class DataLoaderManager implements AppModule {
       const { regions, totalCount } = fireResult;
       if (totalCount > 0) {
         const flat = flattenFires(regions);
-        const stats = computeRegionStats(regions);
         const satelliteFires = flat.map(f => ({
           lat: f.location?.latitude ?? 0,
           lon: f.location?.longitude ?? 0,
@@ -5104,12 +5123,12 @@ export class DataLoaderManager implements AppModule {
 
         this.ctx.map?.setFires(toMapFires(flat));
 
-        (this.ctx.panels['satellite-fires'] as SatelliteFiresPanel)?.update(stats, totalCount);
+        (this.ctx.panels['satellite-fires'] as SatelliteFiresPanel)?.update(summarizeFires(regions), totalCount);
 
         dataFreshness.recordUpdate('firms', totalCount);
       } else {
         this.ctx.intelligenceCache.satelliteFires = [];
-        (this.ctx.panels['satellite-fires'] as SatelliteFiresPanel)?.update([], 0);
+        (this.ctx.panels['satellite-fires'] as SatelliteFiresPanel)?.update(summarizeFires({}), 0);
       }
       this.ctx.statusPanel?.updateApi('FIRMS', { status: 'ok' });
     } catch (e) {
@@ -5427,18 +5446,20 @@ export class DataLoaderManager implements AppModule {
     }
   }
 
-  async loadTelegramIntel(): Promise<void> {
+  async loadTelegramIntel(signal?: AbortSignal): Promise<void> {
+    if (signal?.aborted) return;
     if (isDesktopRuntime() && !hasPremiumAccess()) return;
     const generation = getTelegramIntelGeneration();
     const isCurrent = () => !this.ctx.isDestroyed
+      && !signal?.aborted
       && generation === getTelegramIntelGeneration()
       && (!isDesktopRuntime() || hasPremiumAccess());
     try {
-      const result = await fetchTelegramFeed();
+      const result = await fetchTelegramFeed(50, signal);
       if (!isCurrent()) return;
       this.callPanel('telegram-intel', 'setData', result, generation);
     } catch (error) {
-      if (!isCurrent()) return;
+      if (!isCurrent() || (error instanceof DOMException && error.name === 'AbortError')) return;
       console.error('[App] Telegram intel fetch failed:', error);
       this.callPanel('telegram-intel', 'setData', {
         source: 'telegram', enabled: false, count: 0, updatedAt: null, items: [],

@@ -5007,6 +5007,28 @@ body.live-news-fullscreen-active .panels-grid > *:not(.live-news-fullscreen) {
   transform: translateX(-50%) translateY(0);
 }
 
+/* A toast that carries a link (blocked new tab): it takes taps only while
+   shown, so a fading notice never swallows a click meant for the page. */
+.toast-notification--action {
+  /* Sized to its text, not to the half viewport right of `left: 50%`. */
+  width: max-content;
+  max-width: min(560px, calc(100vw - 32px));
+  box-sizing: border-box;
+}
+
+.toast-notification--action.visible {
+  pointer-events: auto;
+}
+
+.toast-notification-link {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  /* A long hostname wraps inside the toast instead of running off a phone screen. */
+  overflow-wrap: break-word;
+}
+
 .wm-copy {
   position: fixed;
   /* Above the trip assessment and embed dialogs (10020) and the trip toast
@@ -7932,6 +7954,14 @@ body.playback-mode .status-dot {
 }
 
 /* Heatmap */
+.heatmap-period {
+  padding: 4px 4px 0;
+  font-size: calc(9px * var(--wm-panel-effective-scale, 1));
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .heatmap {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -23142,6 +23172,7 @@ body.has-breaking-alert .panels-grid {
   display: flex;
   gap: 6px;
   flex: 1;
+  min-width: 0;
 }
 
 .posture-chip {
@@ -23152,6 +23183,8 @@ body.has-breaking-alert .panels-grid {
   display: flex;
   align-items: center;
   gap: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .posture-chip.air {
@@ -23162,6 +23195,19 @@ body.has-breaking-alert .panels-grid {
 .posture-chip.naval {
   background: rgba(100, 220, 180, 0.15);
   color: rgba(100, 220, 180, 0.9);
+}
+
+/* Context, not a level: outlined and muted so it never reads as a badge. */
+.posture-chip.instability {
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: help;
+  /* The one chip that gives way in a narrow panel; the full text is in its title. */
+  display: block;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Expanded theater with inline forces */
@@ -27183,6 +27229,16 @@ body.map-width-resizing {
 .gb-priciest { background: rgba(239,68,68,0.12);  color: var(--red-text, #f87171); }
 /* Muted grey drops below 4.5:1 on the green tint in dark; the local price takes the cell's colour. */
 .gb-cheapest .gb-local, .gb-priciest .gb-local { color: inherit; }
+
+.gb-observed {
+  display: block;
+  font-size: calc(0.6rem * var(--wm-panel-effective-scale, 1));
+  color: var(--text-dim);
+  white-space: normal;
+}
+
+.gb-observed-stale { font-style: italic; }
+.gb-cheapest .gb-observed, .gb-priciest .gb-observed { color: inherit; }
 
 .gb-total-row td { font-weight: 600; background: var(--overlay-subtle); }
 .gb-total { font-size: calc(0.8rem * var(--wm-panel-effective-scale, 1)); }
