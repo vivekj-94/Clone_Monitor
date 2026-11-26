@@ -1621,7 +1621,8 @@
         "hoursAgo": "Vor {{count}}h",
         "daysAgo": "Vor {{count}}d"
       },
-      "hideFindings": "Erkenntnisse ausblenden"
+      "hideFindings": "Erkenntnisse ausblenden",
+      "breakingAlertsNotSaved": "Speichern fehlgeschlagen. Erlauben Sie Websitedaten für diese Website oder geben Sie Browserspeicher frei und versuchen Sie es dann erneut."
     },
     "satelliteFires": {
       "region": "Region",
@@ -5788,7 +5789,8 @@
           "seatCap": "Alle 4 Plätze sind belegt. Entfernen Sie zuerst einen Platz.",
           "ownerDomain": "Ihre Konto-E-Mail muss eine Unternehmensdomäne sein, um Teamkollegen einzuladen.",
           "self": "Sie können sich nicht selbst einladen.",
-          "inviteeDomain": "Die E-Mail des Eingeladenen muss eine Unternehmensdomäne sein."
+          "inviteeDomain": "Die E-Mail des Eingeladenen muss eine Unternehmensdomäne sein.",
+          "rateLimited": "Sie haben das Maximum von 20 Einladungen innerhalb eines rollierenden 24-Stunden-Zeitraums erreicht. Bitte warten Sie, bevor Sie weitere Teammitglieder einladen."
         }
       },
       "enterpriseSeats": {

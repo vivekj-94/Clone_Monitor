@@ -2096,7 +2096,8 @@
         "minutesAgo": "{{count}}p ezelőtt",
         "hoursAgo": "{{count}}ó ezelőtt",
         "daysAgo": "{{count}}n ezelőtt"
-      }
+      },
+      "breakingAlertsNotSaved": "Nem sikerült menteni. Engedélyezze az adattárolást erre a webhelyre, vagy szabadítson fel böngészőtárolót, majd próbálja újra."
     },
     "countryTimeline": {
       "now": "most",
@@ -5788,7 +5789,8 @@
           "seatCap": "Mind a 4 hely használatban van. Előbb távolítson el egy helyet.",
           "ownerDomain": "Munkatársak meghívásához a fiókja e-mail-címének vállalati tartományból kell származnia.",
           "self": "Nem hívhatja meg saját magát.",
-          "inviteeDomain": "A meghívott személy e-mail-címének vállalati tartományból kell származnia."
+          "inviteeDomain": "A meghívott személy e-mail-címének vállalati tartományból kell származnia.",
+          "rateLimited": "Elérte a gördülő 24 órás időablakban küldhető legfeljebb 20 meghívó korlátját. Kérjük, várjon, mielőtt további munkatársakat hívna meg."
         }
       },
       "enterpriseSeats": {

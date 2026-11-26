@@ -2106,7 +2106,8 @@
         "minutesAgo": "{{count}}m prije",
         "hoursAgo": "{{count}}h prije",
         "daysAgo": "{{count}}d prije"
-      }
+      },
+      "breakingAlertsNotSaved": "Nije moguće spremiti. Omogućite pohranu podataka stranice za ovu stranicu ili oslobodite memoriju preglednika, zatim pokušajte ponovno."
     },
     "countryTimeline": {
       "now": "sada",
@@ -5835,7 +5836,8 @@
           "seatCap": "Sva 4 mjesta su iskorištena. Prvo uklonite jedno mjesto.",
           "ownerDomain": "Vaša e-mail adresa računa mora biti iz poslovne domene da biste mogli pozivati članove tima.",
           "self": "Ne možete pozvati sami sebe.",
-          "inviteeDomain": "E-mail adresa pozvanog mora biti iz poslovne domene."
+          "inviteeDomain": "E-mail adresa pozvanog mora biti iz poslovne domene.",
+          "rateLimited": "Poslali ste najviše dopuštenih 20 pozivnica unutar kliznog 24-satnog razdoblja. Pričekajte prije nego što pozovete još suradnika."
         }
       },
       "enterpriseSeats": {

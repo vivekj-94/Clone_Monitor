@@ -18556,6 +18556,15 @@ button.popup-link {
   color: var(--text-dim);
 }
 
+.popup-toggle-error {
+  padding: 6px 12px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: calc(11px * var(--wm-panel-effective-scale, 1));
+  line-height: 1.4;
+  text-align: left;
+  color: var(--semantic-critical-text, var(--semantic-critical));
+}
+
 .popup-toggle-switch {
   position: relative;
   width: 32px;
@@ -27313,6 +27322,15 @@ body.map-width-resizing {
   color: var(--yellow, #eab308);
   border-color: color-mix(in srgb, var(--yellow, #eab308) 40%, transparent);
   background: color-mix(in srgb, var(--yellow, #eab308) 12%, transparent);
+}
+.credibility-score-badge.band-unknown {
+  color: var(--text-dim);
+  border-color: var(--border);
+}
+.item-feed-label {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-dim);
 }
 .credibility-score-badge.band-low {
   color: var(--red, #f87171);

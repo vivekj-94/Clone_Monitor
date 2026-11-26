@@ -408,12 +408,32 @@ function translateCity(city) {
 const OREF_DATA_DIR = process.env.OREF_DATA_DIR || '';
 const OREF_LOCAL_FILE = (() => {
   if (!OREF_DATA_DIR) return '';
+  const fs = require('fs');
+  const historyPath = path.join(OREF_DATA_DIR, 'oref-history.json');
+  // A missing path or a non-directory only disables the optional history file,
+  // as before. Permission failures on a configured volume are fatal (below).
+  let stat;
+  try { stat = fs.statSync(OREF_DATA_DIR); } catch { console.warn(`[Relay] OREF_DATA_DIR does not exist: ${OREF_DATA_DIR}`); return ''; }
+  if (!stat.isDirectory()) { console.warn(`[Relay] OREF_DATA_DIR is not a directory: ${OREF_DATA_DIR}`); return ''; }
   try {
-    const stat = require('fs').statSync(OREF_DATA_DIR);
-    if (!stat.isDirectory()) { console.warn(`[Relay] OREF_DATA_DIR is not a directory: ${OREF_DATA_DIR}`); return ''; }
-  } catch { console.warn(`[Relay] OREF_DATA_DIR does not exist: ${OREF_DATA_DIR}`); return ''; }
+    fs.accessSync(OREF_DATA_DIR, fs.constants.R_OK | fs.constants.W_OK | fs.constants.X_OK);
+    for (const [file, access] of [
+      [historyPath, fs.constants.R_OK],
+      [historyPath + '.tmp', fs.constants.W_OK],
+    ]) {
+      try {
+        fs.accessSync(file, access);
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+      }
+    }
+  } catch (error) {
+    console.error(`[Relay] FATAL: cannot use OREF_DATA_DIR ${OREF_DATA_DIR}: ${error.message}`);
+    console.error('[Relay] Give the relay runtime user access to the mounted directory and its OREF history files. The container runs as UID 1000 and GID 1000.');
+    process.exit(1);
+  }
   console.log(`[Relay] OREF local persistence: ${OREF_DATA_DIR}`);
-  return path.join(OREF_DATA_DIR, 'oref-history.json');
+  return historyPath;
 })();
 const RELAY_OREF_RATE_LIMIT_MAX = Number.isFinite(Number(process.env.RELAY_OREF_RATE_LIMIT_MAX))
   ? Number(process.env.RELAY_OREF_RATE_LIMIT_MAX) : 600;
@@ -5179,10 +5199,13 @@ const RELAY_RECENCY_MS = 15 * 60 * 1000; // 15 min — matches client-side recen
 // ── Importance score parity with digest ──────────────────────────────────────
 // Source-tier data loaded via requireShared('source-tiers.json'), which resolves
 // to either repo-root shared/ OR scripts/shared/ depending on packaging root.
+// The same tables, in the same order, as SOURCE_TIERS in
+// server/_shared/source-tiers.ts: the digest serves an originPublisher by its
+// tier there, and the relay must score it on that tier (#10977).
 const RELAY_SOURCE_TIERS = {
   ...requireShared('source-tiers.json'),
+  ...requireShared('telegram-source-tiers.json'),
   ...requireShared('x-account-source-tiers.json'),
-  [SAUDI_CIVIL_DEFENSE.name]: SAUDI_CIVIL_DEFENSE.tier,
 };
 const {
   createExplicitTierFourSourceSet,
@@ -5906,8 +5929,8 @@ async function seedClassifyForVariant(variant, seenTitles) {
 
   // One publish path for a fresh label and a cached one (#10976).
   // observed: the publisher families the coverage history holds for the title
-  // (#10977). crossWording: the families other wordings added, checked only
-  // when a label is fresh.
+  // (#10977). crossWording: the families other wordings added, checked when a
+  // label is fresh and kept on the label for its cached republish.
   const publishAlert = (title, level, category, { cached = false, observed, crossWording } = {}) => {
     const meta = allTitles.get(title) ?? {
       source: variant,
@@ -5995,7 +6018,8 @@ async function seedClassifyForVariant(variant, seenTitles) {
       eventType: 'rss_alert',
       payload: {
         title,
-        source: meta.source,
+        // The publisher's name, not the tier key it was scored on.
+        source: meta.sourceLabel || meta.source,
         link: meta.link,
         publishedAt: meta.publishedAt,
         importanceScore,
@@ -6042,7 +6066,12 @@ async function seedClassifyForVariant(variant, seenTitles) {
     const level = parsed?.level;
     if (!CLASSIFY_VALID_LEVELS.includes(level)) { countUnlabelled(titleArr[i]); continue; }
     if (level === 'critical' || level === 'high') {
-      publishAlert(titleArr[i], level, parsed.category ?? null, { cached: true, observed: cachedObserved.get(titleArr[i]) });
+      const families = Array.isArray(parsed.corroboratedBy) ? parsed.corroboratedBy.filter((f) => typeof f === 'string' && f) : [];
+      publishAlert(titleArr[i], level, parsed.category ?? null, {
+        cached: true,
+        observed: cachedObserved.get(titleArr[i]),
+        crossWording: families.length ? { families } : undefined,
+      });
     }
     if (!inSummary(titleArr[i]) || seenTitles.has(titleArr[i])) continue;
     seenTitles.add(titleArr[i]);
@@ -6099,7 +6128,10 @@ async function seedClassifyForVariant(variant, seenTitles) {
       const category = CLASSIFY_VALID_CATEGORIES.includes(entry?.c) ? entry.c : null;
       if (!level || !category) continue;
       classifiedSet.add(idx);
-      await upstashSet(classifyKeyFor(chunk[idx]), { level, category, timestamp: Date.now() }, CLASSIFY_CACHE_TTL);
+      // The judged families ride on the label, so its cached republish scores
+      // as this one does without asking the judge again.
+      const corroboratedBy = level === 'critical' ? crossWording.get(chunk[idx])?.families : undefined;
+      await upstashSet(classifyKeyFor(chunk[idx]), { level, category, timestamp: Date.now(), ...(corroboratedBy ? { corroboratedBy } : {}) }, CLASSIFY_CACHE_TTL);
       classified++;
       labelled.push({ title: chunk[idx], level });
       for (const title of copiesOf(chunk[idx])) {
@@ -8395,6 +8427,13 @@ const TECH_EVENTS_BOOTSTRAP_KEY = 'research:tech-events-bootstrap:v1';
 const TECH_EVENTS_ICS_URL = 'https://www.techmeme.com/newsy_events.ics';
 const TECH_EVENTS_RSS_URL = 'https://dev.events/rss.xml';
 
+// All-day DTEND is exclusive (RFC 5545), so the event's last day is the day before it.
+function inclusiveIcsEndDate(startDate, dtend) {
+  if (!dtend || dtend <= startDate) return startDate;
+  const lastDay = new Date(Date.UTC(Number(dtend.slice(0, 4)), Number(dtend.slice(4, 6)) - 1, Number(dtend.slice(6, 8)) - 1));
+  return lastDay.toISOString().slice(0, 10).replace(/-/g, '');
+}
+
 function techEventsParseICS(icsText) {
   const events = [];
   const blocks = icsText.split('BEGIN:VEVENT').slice(1);
@@ -8409,7 +8448,7 @@ function techEventsParseICS(icsText) {
     const summary = summaryMatch[1].trim();
     const location = locationMatch ? locationMatch[1].trim() : '';
     const startDate = dtstartMatch[1];
-    const endDate = dtendMatch ? dtendMatch[1] : startDate;
+    const endDate = inclusiveIcsEndDate(startDate, dtendMatch?.[1]);
     let type = 'other';
     if (summary.startsWith('Earnings:')) type = 'earnings';
     else if (summary.startsWith('IPO')) type = 'ipo';

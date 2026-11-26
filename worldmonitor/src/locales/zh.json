@@ -1940,7 +1940,8 @@
         "minutesAgo": "{{count}}分钟前",
         "hoursAgo": "{{count}}小时前",
         "daysAgo": "{{count}}天前"
-      }
+      },
+      "breakingAlertsNotSaved": "无法保存。请允许此网站保存数据或清理浏览器存储空间，然后重试。"
     },
     "countryTimeline": {
       "now": "现在",
@@ -5751,7 +5752,8 @@
           "seatCap": "4 个席位已全部使用。请先移除一个席位。",
           "ownerDomain": "您的账户邮箱必须是企业域名才能邀请团队成员。",
           "self": "您无法邀请自己。",
-          "inviteeDomain": "被邀请人的邮箱必须是企业域名。"
+          "inviteeDomain": "被邀请人的邮箱必须是企业域名。",
+          "rateLimited": "您已在滚动 24 小时内达到最多 20 封邀请的上限。请稍候再邀请更多团队成员。"
         }
       },
       "enterpriseSeats": {

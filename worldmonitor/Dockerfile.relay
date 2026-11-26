@@ -84,6 +84,7 @@ COPY scripts/lib/brief-dedup-jaccard.mjs ./scripts/lib/brief-dedup-jaccard.mjs
 COPY scripts/lib/_upstash-pipeline.mjs ./scripts/lib/_upstash-pipeline.mjs
 COPY scripts/lib/llm-chain.cjs ./scripts/lib/llm-chain.cjs
 COPY scripts/shared/publisher-families.js ./scripts/shared/publisher-families.js
+COPY scripts/shared/publisher-name.js ./scripts/shared/publisher-name.js
 # Publisher-link relay gate required by digest-stale-gate.cjs (#8398):
 # relay-emitted rss_alert events must not carry off-publisher links.
 COPY scripts/lib/publisher-link-relay-gate.cjs ./scripts/lib/publisher-link-relay-gate.cjs
@@ -250,5 +251,7 @@ EXPOSE 3004
 # a public (unauthenticated) route in ais-relay.cjs.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://127.0.0.1:3004/health >/dev/null 2>&1 || exit 1
+
+USER node
 
 CMD ["node", "scripts/ais-relay.cjs"]

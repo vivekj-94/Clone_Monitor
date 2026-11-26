@@ -291,6 +291,9 @@ const EXCLUDED_FROM_MCP = new Map([
   ['economic:food-prices:foagmilk:v1', 'source cache read by GetFoodPrices, which has no MCP tool yet; it serves dated local market prices and context (#10146).'],
   ['economic:food-prices:csblv:v1', 'source cache read by GetFoodPrices, which has no MCP tool yet; it serves dated local market prices and context (#10146).'],
   ['economic:food-prices:makstat:v1', 'source cache read by GetFoodPrices, which has no MCP tool yet; it serves dated local market prices and context (#10146).'],
+  ['economic:food-prices:odepa:v1', 'source cache read by GetFoodPrices, which has no MCP tool yet; it serves dated local market prices and context (#11153).'],
+  ['economic:food-prices:statcan:v1', 'source cache read by GetFoodPrices, which has no MCP tool yet; it serves dated local market prices and context (#10837).'],
+  ['economic:food-prices:ibge:v1', 'source cache read by GetFoodPrices, which has no MCP tool yet; it serves dated local market prices and context (#10837).'],
   ['seed-meta:trade:monthly-sitc-my',
     'operational: meta-only health probe for the DOSM Malaysia monthly SITC trade history (~0.5 MB since 1990). GetMonthlySitcTrade serves the data; no MCP tool reads it yet.'],
   ['seed-meta:economic:world-cpi-imf',
@@ -467,7 +470,7 @@ const EXCLUDED_FROM_MCP = new Map([
   // (could be a follow-up tool).
   ['energy:spine:v1:_countries',
     'deferred: per-country energy spine index; covered indirectly via get_energy_intelligence headline aggregates. Future expanded per-country energy tool would expose this.'],
-  ...['pgcb', 'petrobangla', 'niso', 'eskom', 'cammesa', 'gse', 'ons', 'anp', 'evn', 'korem', 'coes', 'iccc', 'fccc', 'mem', 'qatarenergy', 'erb', 'npa', 'sonabhy', 'zera', 'doe', 'anptl', 'creg', 'ursea'].map(id => [
+  ...['pgcb', 'petrobangla', 'niso', 'eskom', 'cammesa', 'gse', 'ons', 'anp', 'evn', 'korem', 'coes', 'iccc', 'fccc', 'mem', 'qatarenergy', 'erb', 'npa', 'sonabhy', 'zera', 'doe', 'anptl', 'creg', 'ursea', 'fuelwatch', 'searg', 'oil111', 'ems', 'nosbih', 'mepso'].map(id => [
     `energy:regional:${id}:v1`,
     'deferred: country-specific regional observations exposed by get-country-energy-profile; the MCP energy tool provides headline aggregates. A future per-country energy tool can expose these series.',
   ]),

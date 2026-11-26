@@ -1578,7 +1578,8 @@
       },
       "breakingAlerts": "Pilne alerty",
       "popupAlerts": "Wyświetlaj nowe alerty w okienku",
-      "hideFindings": "Ukryj wyniki"
+      "hideFindings": "Ukryj wyniki",
+      "breakingAlertsNotSaved": "Nie można zapisać. Zezwól na przechowywanie danych witryny dla tej strony lub zwolnij pamięć przeglądarki, a następnie spróbuj ponownie."
     },
     "satelliteFires": {
       "region": "Region",
@@ -5862,7 +5863,8 @@
           "seatCap": "Wszystkie 4 miejsca są używane. Najpierw usuń miejsce.",
           "ownerDomain": "Adres e-mail Twojego konta musi być z domeny firmowej, aby zapraszać kolegów.",
           "self": "Nie możesz zaprosić siebie.",
-          "inviteeDomain": "Adres e-mail osoby zaproszonej musi być z domeny firmowej."
+          "inviteeDomain": "Adres e-mail osoby zaproszonej musi być z domeny firmowej.",
+          "rateLimited": "Wysłano maksymalną liczbę 20 zaproszeń w kroczącym oknie 24 godzin. Poczekaj, zanim zaprosisz kolejnych współpracowników."
         }
       },
       "enterpriseSeats": {

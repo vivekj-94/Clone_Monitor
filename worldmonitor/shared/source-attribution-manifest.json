@@ -2001,6 +2001,20 @@
       ]
     },
     {
+      "host": "apisidra.ibge.gov.br",
+      "provider": "sidra.ibge.gov.br",
+      "kind": "structured",
+      "observed": true,
+      "license": "Provider terms for this upstream API/dataset; verify before redistribution",
+      "attribution": "Credit apisidra.ibge.gov.br and link to the original upstream API/dataset.",
+      "status": "terms-review",
+      "references": [
+        {
+          "path": "scripts/lib/food-prices-adapters/ibge.mjs"
+        }
+      ]
+    },
+    {
       "host": "apnews.com",
       "provider": "apnews.com",
       "kind": "feed",
@@ -2011,6 +2025,20 @@
       "references": [
         {
           "path": "shared/news-catalog.json"
+        }
+      ]
+    },
+    {
+      "host": "apps.bea.gov",
+      "provider": "U.S. Bureau of Economic Analysis (BEA)",
+      "kind": "structured",
+      "observed": true,
+      "license": "U.S. government public-domain release schedule",
+      "attribution": "U.S. Bureau of Economic Analysis news release schedule.",
+      "status": "reviewed",
+      "references": [
+        {
+          "path": "scripts/seed-economic-calendar.mjs"
         }
       ]
     },
@@ -2241,6 +2269,20 @@
       "license": "Publisher terms apply; verify before redistribution.",
       "attribution": "Asia-Plus — headlines and publisher links.",
       "status": "excluded"
+    },
+    {
+      "host": "assets.applytosupply.digitalmarketplace.service.gov.uk",
+      "provider": "assets.applytosupply.digitalmarketplace.service.gov.uk",
+      "kind": "structured",
+      "observed": true,
+      "license": "Excluded: first-party, control-plane, UI, or rendering transport",
+      "attribution": "Excluded from the external-provider count: not an ingested upstream dataset.",
+      "status": "excluded",
+      "references": [
+        {
+          "path": "scripts/comparison-shortlist.mjs"
+        }
+      ]
     },
     {
       "host": "astanatimes.com",
@@ -2887,6 +2929,20 @@
       "references": [
         {
           "path": "scripts/lib/bc-emergency-info.mjs"
+        }
+      ]
+    },
+    {
+      "host": "catalogue.data.wa.gov.au",
+      "provider": "catalogue.data.wa.gov.au",
+      "kind": "structured",
+      "observed": true,
+      "license": "CC-BY-4.0 (FuelWatch Historic Fuel Prices dataset licence on catalogue.data.wa.gov.au, read 2026-11-26; the monthly CSVs are served from warsydprdstafuelwatch.blob.core.windows.net)",
+      "attribution": "Credit FuelWatch, Government of Western Australia, FuelWatch Historic Fuel Prices, and link to https://catalogue.data.wa.gov.au/dataset/fuelwatch-historic-fuel-prices; medians across stations and USD conversions are derived values.",
+      "status": "reviewed",
+      "references": [
+        {
+          "path": "scripts/shared/regional-energy-feeds.json"
         }
       ]
     },
@@ -4241,6 +4297,34 @@
         },
         {
           "path": "scripts/seed-aviation.mjs"
+        }
+      ]
+    },
+    {
+      "host": "datos.energia.gob.ar",
+      "provider": "datos.energia.gob.ar",
+      "kind": "structured",
+      "observed": true,
+      "license": "CC-BY-4.0 (dataset licence on datos.gob.ar/dataset/precios-en-surtidor, read 2026-11-26)",
+      "attribution": "Credit Secretaría de Energía de la Nación (Argentina), Precios en surtidor - Resolución 314/2016, and link to https://datos.energia.gob.ar/dataset/1c181390-5045-475e-94dc-410429be4b17; medians across stations and USD conversions are derived values.",
+      "status": "reviewed",
+      "references": [
+        {
+          "path": "scripts/shared/regional-energy-feeds.json"
+        }
+      ]
+    },
+    {
+      "host": "datos.odepa.gob.cl",
+      "provider": "datos.odepa.gob.cl",
+      "kind": "structured",
+      "observed": true,
+      "license": "Creative Commons Attribution (CKAN dataset license_id cc-by, read 2026-11-23)",
+      "attribution": "Credit the Oficina de Estudios y Políticas Agrarias (ODEPA), Ministry of Agriculture of Chile, and link the consumer prices dataset on datos.odepa.gob.cl.",
+      "status": "reviewed",
+      "references": [
+        {
+          "path": "scripts/lib/food-prices-adapters/odepa.mjs"
         }
       ]
     },
@@ -10106,15 +10190,10 @@
       "host": "news.ycombinator.com",
       "provider": "news.ycombinator.com",
       "kind": "feed",
-      "observed": true,
+      "observed": false,
       "license": "Provider terms for this feed publisher; verify before redistribution",
       "attribution": "Credit news.ycombinator.com and link to the original feed publisher.",
-      "status": "terms-review",
-      "references": [
-        {
-          "path": "shared/news-catalog.json"
-        }
-      ]
+      "status": "excluded"
     },
     {
       "host": "newsbook.com.mt",
@@ -11864,7 +11943,7 @@
       "status": "terms-review",
       "references": [
         {
-          "path": "scripts/seed-climate-news.mjs"
+          "path": "scripts/_climate-news-helpers.mjs"
         }
       ]
     },
@@ -12946,6 +13025,20 @@
       "references": [
         {
           "path": "shared/news-catalog.json"
+        }
+      ]
+    },
+    {
+      "host": "sidra.ibge.gov.br",
+      "provider": "sidra.ibge.gov.br",
+      "kind": "structured",
+      "observed": true,
+      "license": "Provider terms for this upstream API/dataset; verify before redistribution",
+      "attribution": "Credit sidra.ibge.gov.br and link to the original upstream API/dataset.",
+      "status": "terms-review",
+      "references": [
+        {
+          "path": "scripts/lib/food-prices-adapters/ibge.mjs"
         }
       ]
     },
@@ -14910,6 +15003,23 @@
       ]
     },
     {
+      "host": "transparency.ems.rs",
+      "provider": "transparency.ems.rs",
+      "kind": "structured",
+      "observed": true,
+      "license": "All rights reserved (AD Elektromreža Srbije site footer); reuse cleared by the WorldMonitor owner on 2026-11-26",
+      "attribution": "Credit Elektromreža Srbije (EMS) transparency platform and link to https://transparency.ems.rs/; hour placement in UTC is derived.",
+      "status": "reviewed",
+      "references": [
+        {
+          "path": "scripts/lib/regional-energy-feeds.mjs"
+        },
+        {
+          "path": "scripts/shared/regional-energy-feeds.json"
+        }
+      ]
+    },
+    {
       "host": "travel.state.gov",
       "provider": "travel.state.gov",
       "kind": "structured",
@@ -16471,15 +16581,10 @@
       "host": "www.applytosupply.digitalmarketplace.service.gov.uk",
       "provider": "www.applytosupply.digitalmarketplace.service.gov.uk",
       "kind": "structured",
-      "observed": true,
+      "observed": false,
       "license": "Excluded: first-party, control-plane, UI, or rendering transport",
       "attribution": "Excluded from the external-provider count: not an ingested upstream dataset.",
-      "status": "excluded",
-      "references": [
-        {
-          "path": "scripts/comparison-shortlist.mjs"
-        }
-      ]
+      "status": "excluded"
     },
     {
       "host": "www.aripaev.ee",
@@ -19784,6 +19889,20 @@
       ]
     },
     {
+      "host": "www.mepso.com.mk",
+      "provider": "www.mepso.com.mk",
+      "kind": "structured",
+      "observed": true,
+      "license": "All rights reserved (MEPSO site footer); reuse cleared by the WorldMonitor owner on 2026-11-26",
+      "attribution": "Credit MEPSO, the North Macedonia transmission system operator, daily information report, and link to https://www.mepso.com.mk/; net cross-border flow is derived.",
+      "status": "reviewed",
+      "references": [
+        {
+          "path": "scripts/shared/regional-energy-feeds.json"
+        }
+      ]
+    },
+    {
       "host": "www.meydan.tv",
       "provider": "www.meydan.tv",
       "kind": "feed",
@@ -20250,6 +20369,23 @@
       "references": [
         {
           "path": "shared/news-catalog.json"
+        }
+      ]
+    },
+    {
+      "host": "www.nosbih.ba",
+      "provider": "www.nosbih.ba",
+      "kind": "structured",
+      "observed": true,
+      "license": "Copyright footer of the Independent System Operator in Bosnia and Herzegovina, no data licence; reuse cleared by the WorldMonitor owner on 2026-11-26",
+      "attribution": "Credit NOS BiH (Independent System Operator in Bosnia and Herzegovina) and link to https://www.nosbih.ba/en/ees/graf-potrosnje/; hour placement in UTC is derived.",
+      "status": "reviewed",
+      "references": [
+        {
+          "path": "scripts/lib/regional-energy-feeds.mjs"
+        },
+        {
+          "path": "scripts/shared/regional-energy-feeds.json"
         }
       ]
     },
@@ -23029,6 +23165,9 @@
       "status": "reviewed",
       "references": [
         {
+          "path": "scripts/lib/food-prices-adapters/statcan.mjs"
+        },
+        {
           "path": "scripts/lib/statcan-wds.mjs"
         },
         {
@@ -23044,12 +23183,15 @@
       "provider": "www2.moeaea.gov.tw",
       "kind": "structured",
       "observed": true,
-      "license": "Public Taiwan MOEA Energy Administration oil111 survey; reuse licence unconfirmed",
-      "attribution": "Credit Taiwan MOEA Energy Administration oil111; weekly survey averages in TWD per litre.",
-      "status": "terms-review",
+      "license": "Taiwan government website open data declaration (www2.moeaea.gov.tw/oil111/opendataannouncement, read 2026-11-26): free, non-exclusive, irrevocable reuse including adaptation and redistribution, with attribution",
+      "attribution": "Credit Taiwan MOEA Energy Administration, oil111 fuel price information system (https://www2.moeaea.gov.tw/oil111/); national and county means are survey averages, and USD conversions are derived values.",
+      "status": "reviewed",
       "references": [
         {
           "path": "scripts/seed-fuel-prices.mjs"
+        },
+        {
+          "path": "scripts/shared/regional-energy-feeds.json"
         }
       ]
     },
