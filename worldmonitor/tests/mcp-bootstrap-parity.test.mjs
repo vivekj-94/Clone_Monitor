@@ -470,7 +470,7 @@ const EXCLUDED_FROM_MCP = new Map([
   // (could be a follow-up tool).
   ['energy:spine:v1:_countries',
     'deferred: per-country energy spine index; covered indirectly via get_energy_intelligence headline aggregates. Future expanded per-country energy tool would expose this.'],
-  ...['pgcb', 'petrobangla', 'niso', 'eskom', 'cammesa', 'gse', 'ons', 'anp', 'evn', 'korem', 'coes', 'iccc', 'fccc', 'mem', 'qatarenergy', 'erb', 'npa', 'sonabhy', 'zera', 'doe', 'anptl', 'creg', 'ursea', 'fuelwatch', 'searg', 'oil111', 'ems', 'nosbih', 'mepso'].map(id => [
+  ...['pgcb', 'petrobangla', 'niso', 'eskom', 'cammesa', 'gse', 'ons', 'anp', 'evn', 'korem', 'coes', 'iccc', 'fccc', 'mem', 'qatarenergy', 'erb', 'npa', 'sonabhy', 'zera', 'doe', 'anptl', 'creg', 'ursea', 'fuelwatch', 'oil111', 'ems', 'nosbih', 'mepso'].map(id => [
     `energy:regional:${id}:v1`,
     'deferred: country-specific regional observations exposed by get-country-energy-profile; the MCP energy tool provides headline aggregates. A future per-country energy tool can expose these series.',
   ]),
@@ -504,6 +504,8 @@ const EXCLUDED_FROM_MCP = new Map([
     'operational: relay loop heartbeat — covered by /api/health, not a user-facing data slice for MCP.'],
   ['relay:heartbeat:news-digest-warm',
     'operational: relay digest warm-cycle heartbeat — covered by /api/health, not a user-facing data slice for MCP (#9766).'],
+  ['news:cross-wording-health:v1',
+    'operational: the relay cross-wording matcher outcomes over the last hour — covered by /api/health, not a user-facing data slice for MCP (#11426).'],
   ['bundle:heartbeat:static-ref',
     'operational: seed-bundle-static-ref tick-execution heartbeat — covered by /api/health, not a user-facing data slice for MCP (#6691).'],
   ['bundle:heartbeat:static-ref-heavy',

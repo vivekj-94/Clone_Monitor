@@ -18,6 +18,7 @@ import { resendWebhookHandler } from "./resendWebhookHandler";
 import { clerkWebhookHandler } from "./accountDeletion/clerkWebhook";
 import { channelTypeValidator, USER_PREFS_WRITE_RATE_LIMIT } from "./constants";
 import { ALERT_CAPABILITY_VIOLATION_CODES, ALERT_UPGRADE_URL } from "../shared/alert-capabilities";
+import { isRuleEnabledIntent, type RuleSaveResult } from "../shared/alert-rule-shape";
 import { isPreferenceVariant } from "../shared/cloud-preferences-contract";
 import { normalizeAcquisitionSource } from "../shared/acquisition-source";
 import { briefL10nDeliverableLanguages } from "../shared/ui-languages";
@@ -1273,6 +1274,7 @@ http.route({
       email?: string;
       variant?: string;
       enabled?: boolean;
+      enabledIntent?: unknown;
       eventTypes?: string[];
       sensitivity?: string;
       channels?: string[];
@@ -1432,6 +1434,7 @@ http.route({
         if (
           typeof body.variant !== "string" || !body.variant ||
           typeof body.enabled !== "boolean" ||
+          (body.enabledIntent !== undefined && !isRuleEnabledIntent(body.enabledIntent)) ||
           !Array.isArray(body.eventTypes) ||
           !Array.isArray(body.channels) ||
           (body.sensitivity !== undefined && !VALID_SENSITIVITY.has(body.sensitivity as string)) ||
@@ -1443,12 +1446,14 @@ http.route({
         ) {
           return new Response(JSON.stringify({ error: "MISSING_REQUIRED_FIELDS" }), { status: 400, headers: { "Content-Type": "application/json" } });
         }
+        let saved: RuleSaveResult;
         try {
-          await ctx.runMutation((internal as any).alertRules.setAlertRulesForUser, {
+          saved = await ctx.runMutation((internal as any).alertRules.setAlertRulesForUser, {
             userId,
             enforceEntitlement: true,
             variant: body.variant,
             enabled: body.enabled,
+            enabledIntent: body.enabledIntent,
             eventTypes: body.eventTypes as string[],
             // Pass body.sensitivity through unchanged (may be undefined).
             // setAlertRulesForUser now accepts optional sensitivity and uses
@@ -1494,7 +1499,7 @@ http.route({
           }
           throw err;
         }
-        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ ok: true, ...saved }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
 
       if (action === "set-quiet-hours") {
@@ -1587,11 +1592,16 @@ http.route({
         if (body.reservoirAlert !== undefined && !isReservoirAlertBody(body.reservoirAlert)) {
           return new Response(JSON.stringify({ error: "RESERVOIR_ALERT_INVALID" }), { status: 400, headers: { "Content-Type": "application/json" } });
         }
+        if (body.enabledIntent !== undefined && !isRuleEnabledIntent(body.enabledIntent)) {
+          return new Response(JSON.stringify({ error: "ENABLED_INTENT_INVALID" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        }
+        let saved: RuleSaveResult;
         try {
-          await ctx.runMutation((internal as any).alertRules.setNotificationConfigForUser, {
+          saved = await ctx.runMutation((internal as any).alertRules.setNotificationConfigForUser, {
             userId,
             variant: body.variant,
             enabled: typeof body.enabled === "boolean" ? body.enabled : undefined,
+            enabledIntent: body.enabledIntent,
             eventTypes: Array.isArray(body.eventTypes) ? (body.eventTypes as string[]) : undefined,
             sensitivity: body.sensitivity as "all" | "high" | "critical" | undefined,
             channels: Array.isArray(body.channels) ? (body.channels as Array<"telegram" | "slack" | "email" | "discord" | "teams" | "webhook" | "web_push">) : undefined,
@@ -1637,7 +1647,7 @@ http.route({
           }
           throw err;
         }
-        return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ ok: true, ...saved }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
 
       return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers: { "Content-Type": "application/json" } });
@@ -2333,6 +2343,7 @@ http.route({
       discountCode?: string;
       referralCode?: string;
       attributionSource?: string;
+      checkoutChannel?: unknown;
       acquisition?: unknown;
       bypassPendingGuard?: boolean;
     }>(request);
@@ -2362,6 +2373,7 @@ http.route({
           discountCode: body.discountCode,
           referralCode: body.referralCode,
           attributionSource: body.attributionSource,
+          ...(body.checkoutChannel === "mcp" ? { checkoutChannel: "mcp" as const } : {}),
           acquisition: normalizeAcquisitionSource(body.acquisition) ?? undefined,
           bypassPendingGuard: body.bypassPendingGuard,
         },
@@ -2489,8 +2501,10 @@ http.route({
   }),
 });
 
-// Pro → Pro Business in-place upgrade for /pro (the dashboard calls the
-// public action directly). The edge handler has already verified the Clerk JWT.
+// In-place plan changes for /pro (the dashboard calls the public actions
+// directly). The edge handlers have already verified the Clerk JWT. Each plan
+// change has its own route, so an edge deployment never reaches a Convex
+// deployment that predates the change it relays: that route answers 404.
 const PRO_BUSINESS_UPGRADE_REFUSALS = new Set([
   "NO_UPGRADEABLE_PRO",
   "ALREADY_PRO_BUSINESS",
@@ -2498,7 +2512,30 @@ const PRO_BUSINESS_UPGRADE_REFUSALS = new Set([
   "UPGRADE_IN_PROGRESS",
   "UPGRADE_RATE_LIMITED",
   "ACCOUNT_DELETION_IN_PROGRESS",
+  // Pro Monthly → Pro Yearly.
+  "ALREADY_PRO_ANNUAL",
+  "PROMO_ENDED",
+  "PROMO_CODE_REJECTED",
+  // The re-checked charge is above the one the user accepted; nothing changed.
+  "CHARGE_CHANGED",
 ]);
+
+/** Runs one plan change and maps its typed refusals for the edge route. */
+async function planChangeRelayResponse(label: string, run: () => Promise<unknown>): Promise<Response> {
+  try {
+    return Response.json(await run(), { status: 200 });
+  } catch (err) {
+    const code = extractConvexErrorCode(err);
+    if (code && PRO_BUSINESS_UPGRADE_REFUSALS.has(code)) {
+      return Response.json({ error: code }, { status: 409 });
+    }
+    if (code === "DODO_PLAN_CHANGE_ERROR") {
+      return Response.json({ error: code }, { status: 502 });
+    }
+    console.error(`[${label}] Operation failed`, err);
+    return Response.json({ error: "Operation failed" }, { status: 500 });
+  }
+}
 
 http.route({
   path: "/relay/pro-business-upgrade",
@@ -2507,31 +2544,87 @@ http.route({
     const unauthorized = await authorizeTenantRelay(request, ["gateway"]);
     if (unauthorized) return unauthorized;
 
-    const body = await parseJsonObjectBody<{ userId?: unknown; confirm?: unknown }>(request);
+    const body = await parseJsonObjectBody<{ userId?: unknown; confirm?: unknown; kind?: unknown }>(request);
     if (!body) {
       return Response.json({ error: "INVALID_JSON" }, { status: 400 });
     }
     if (typeof body.userId !== "string" || body.userId.length === 0 || typeof body.confirm !== "boolean") {
       return Response.json({ error: "MISSING_FIELDS", required: ["userId", "confirm"] }, { status: 400 });
     }
-
-    try {
-      const result = await ctx.runAction(
-        internal.payments.billing.internalUpgradeToProBusiness,
-        { userId: body.userId, confirm: body.confirm },
-      );
-      return Response.json(result, { status: 200 });
-    } catch (err) {
-      const code = extractConvexErrorCode(err);
-      if (code && PRO_BUSINESS_UPGRADE_REFUSALS.has(code)) {
-        return Response.json({ error: code }, { status: 409 });
-      }
-      if (code === "DODO_PLAN_CHANGE_ERROR") {
-        return Response.json({ error: code }, { status: 502 });
-      }
-      console.error("[pro-business-upgrade] Operation failed", err);
-      return Response.json({ error: "Operation failed" }, { status: 500 });
+    // Pro → Pro Business only. A Pro Yearly request belongs on
+    // /relay/pro-annual-switch; it is refused here, never run as this upgrade.
+    if (body.kind !== undefined && body.kind !== "pro_business") {
+      return Response.json({ error: "INVALID_KIND" }, { status: 400 });
     }
+    const userId = body.userId;
+    const confirm = body.confirm;
+    return planChangeRelayResponse("pro-business-upgrade", () => ctx.runAction(
+      internal.payments.billing.internalUpgradeToProBusiness,
+      { userId, confirm },
+    ));
+  }),
+});
+
+http.route({
+  path: "/relay/pro-annual-switch",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const unauthorized = await authorizeTenantRelay(request, ["gateway"]);
+    if (unauthorized) return unauthorized;
+
+    const body = await parseJsonObjectBody<{
+      userId?: unknown;
+      confirm?: unknown;
+      discounted?: unknown;
+      acceptedChargeAmount?: unknown;
+      acceptedChargeCurrency?: unknown;
+      listPrice?: unknown;
+    }>(request);
+    if (!body) {
+      return Response.json({ error: "INVALID_JSON" }, { status: 400 });
+    }
+    if (typeof body.userId !== "string" || body.userId.length === 0 || typeof body.confirm !== "boolean") {
+      return Response.json({ error: "MISSING_FIELDS", required: ["userId", "confirm"] }, { status: 400 });
+    }
+    if (body.discounted !== undefined && typeof body.discounted !== "boolean") {
+      return Response.json({ error: "INVALID_DISCOUNTED" }, { status: 400 });
+    }
+    // A confirm names the quote it accepts (see runPlanChange).
+    if (body.confirm && body.discounted === undefined) {
+      return Response.json({ error: "MISSING_FIELDS", required: ["discounted"] }, { status: 400 });
+    }
+    // Optional pair: the quote's immediate charge the user accepted, in minor units.
+    const namesCharge = body.acceptedChargeAmount !== undefined || body.acceptedChargeCurrency !== undefined;
+    if (
+      namesCharge &&
+      (typeof body.acceptedChargeAmount !== "number" ||
+        !Number.isSafeInteger(body.acceptedChargeAmount) ||
+        body.acceptedChargeAmount < 0 ||
+        typeof body.acceptedChargeCurrency !== "string" ||
+        !/^[A-Z]{3}$/.test(body.acceptedChargeCurrency))
+    ) {
+      return Response.json({ error: "INVALID_ACCEPTED_CHARGE" }, { status: 400 });
+    }
+    if (body.listPrice !== undefined && typeof body.listPrice !== "boolean") {
+      return Response.json({ error: "INVALID_LIST_PRICE" }, { status: 400 });
+    }
+
+    const args = {
+      userId: body.userId,
+      confirm: body.confirm,
+      ...(typeof body.discounted === "boolean" ? { discounted: body.discounted } : {}),
+      ...(namesCharge
+        ? {
+          acceptedChargeAmount: body.acceptedChargeAmount as number,
+          acceptedChargeCurrency: body.acceptedChargeCurrency as string,
+        }
+        : {}),
+      ...(typeof body.listPrice === "boolean" ? { listPrice: body.listPrice } : {}),
+    };
+    return planChangeRelayResponse("pro-annual-switch", () => ctx.runAction(
+      internal.payments.billing.internalSwitchToProAnnual,
+      args,
+    ));
   }),
 });
 

@@ -2211,7 +2211,9 @@
     },
     "climateNews": {
       "infoTooltip": "<strong>Klimaatnieuws</strong> Laatste milieu- en klimaatintelligentie van Carbon Brief, UNEP, NASA, The Guardian en andere betrouwbare bronnen. Elke 30 minuten bijgewerkt.",
-      "loadError": "Klimaatnieuws tijdelijk niet beschikbaar"
+      "loadError": "Klimaatnieuws tijdelijk niet beschikbaar",
+      "restoreOriginal": "Oorspronkelijke tekst herstellen",
+      "translate": "Vertalen"
     },
     "liquidityShifts": {
       "title": "Liquiditeitsshifts",
@@ -2246,7 +2248,13 @@
       "headline": "Dagelijkse AI-briefings per e-mail of Slack",
       "tagline": "plus WM Analyst, waarschuwingsregels en MCP voor Claude",
       "cta": "Upgrade naar Pro →",
-      "dismiss": "Verwijderen"
+      "dismiss": "Verwijderen",
+      "promoBadge": "Black Friday",
+      "promoHeadline": "{{savings}}% korting op Pro voor je eerste jaar",
+      "promoTagline": "{{perMonth}} per maand in plaats van {{monthly}}, jaarlijks gefactureerd. Opzeggen op elk moment. Eindigt {{date}}.",
+      "promoHeadlineYearlyOnly": "{{percent}}% korting op Pro Jaarlijks voor je eerste jaar",
+      "promoTaglineYearlyOnly": "Je kunt altijd annuleren. Eindigt {{date}}.",
+      "promoCta": "Pak de aanbieding"
     },
     "billingState": {
       "onHoldDesc": "Betaling mislukt. Werk je betaalmethode bij om premium toegang te herstellen.",
@@ -5110,7 +5118,8 @@
     "current": "Bron gecontroleerd",
     "reportedClaims": "Meldingen van de uitgever. Beweringen worden mogelijk nog onderzocht.",
     "occurred": "Incident",
-    "reported": "Gepubliceerd"
+    "reported": "Gepubliceerd",
+    "listed": "Vermeld"
   },
   "panelVariants": {
     "finance": {
@@ -5828,6 +5837,36 @@
           "tooMany": "Nodig maximaal 10 personen tegelijk uit.",
           "rateLimited": "U hebt het maximum aantal uitnodigingen per dag verzonden. Probeer het morgen opnieuw."
         }
+      },
+      "switchYearly": {
+        "entryLabel": "Overstappen naar jaarlijks",
+        "offerLine": "Black Friday: {{perMonth}} per maand in plaats van {{monthly}}, jaarlijks gefactureerd. Dat is {{percent}}% minder dan maandelijks betalen in uw eerste jaar. Wordt verlengd voor {{renewal}} per jaar. Op elk moment opzegbaar.",
+        "title": "Overstappen naar Pro Jaarlijks",
+        "confirm": "Nu overstappen",
+        "dismiss": "Nu niet",
+        "previewMoves": "Uw Pro Maandelijks-abonnement wordt nu omgezet naar Pro Jaarlijks.",
+        "previewChargeOffer": "U betaalt vandaag {{charge}}: uw eerste jaar met {{percent}}% korting, minus het ongebruikte deel van deze maand.",
+        "previewCharge": "U betaalt vandaag {{charge}}, minus het ongebruikte deel van deze maand.",
+        "previewRestart": "Uw factureringsperiode begint vandaag opnieuw.",
+        "renewsPriceDate": "Op {{date}} wordt het verlengd voor {{price}} per jaar, plus eventuele belasting.",
+        "renewsPrice": "Het wordt verlengd voor {{price}} per jaar, plus eventuele belasting.",
+        "renewsListDate": "Op {{date}} wordt het verlengd tegen de prijs van Pro Jaarlijks.",
+        "renewsList": "Het wordt verlengd tegen de prijs van Pro Jaarlijks.",
+        "previewTerms": "Zegt u vóór die tijd op, dan wordt u niets meer in rekening gebracht. Als de betaling mislukt, blijft u op Pro Maandelijks.",
+        "offerNotApplied": "Dit aanbod is niet beschikbaar voor deze overstap. Hier is de prijs zonder het aanbod.",
+        "quoteChanged": "Het aanbod is niet meer beschikbaar en uw plan is niet gewijzigd. Hier is de prijs zonder het aanbod.",
+        "chargeChanged": "De prijs is gewijzigd sinds uw offerte en uw plan is niet gewijzigd. Hier is de nieuwe prijs.",
+        "successTitle": "Overgestapt naar Pro Jaarlijks",
+        "successBody": "Uw plan wordt gewijzigd zodra de betaling is bevestigd, meestal binnen een minuut.",
+        "done": "Gereed",
+        "cancelScheduledTitle": "Hervat eerst Pro Maandelijks",
+        "cancelScheduledBody": "Voor uw Pro Maandelijks-abonnement is annulering gepland aan het einde van deze periode. Hervat het eerst in de factureringsportal en stap daarna over naar Pro Jaarlijks.",
+        "openPortal": "Factureringsportal openen",
+        "failedTitle": "Overstap niet bevestigd",
+        "failedBody": "We konden de overstap niet bevestigen. Controleer uw plan in de factureringsportal voordat u het opnieuw probeert, of e-mail support@worldmonitor.app.",
+        "accountChangedTitle": "Account gewijzigd",
+        "accountChangedBody": "U bent na deze offerte van account gewisseld. Start de overstap opnieuw vanuit het account dat u naar Pro Jaarlijks wilt overzetten.",
+        "unavailable": "We kunnen de prijs van de overstap nu niet berekenen. Probeer het over een paar minuten opnieuw, of e-mail support@worldmonitor.app."
       }
     },
     "keywords": {

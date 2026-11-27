@@ -77,6 +77,7 @@ function assertInformsOnly(error, label) {
   assert.equal('checkoutTool' in error.data, false, `${label}: no checkout tool`);
   assert.doesNotMatch(error.data.nextStep, SELLING, `${label}: nextStep`);
   assert.doesNotMatch(error.message, SELLING, `${label}: message`);
+  assert.doesNotMatch(JSON.stringify(error), /\$\d|pro_monthly_mcp/, `${label}: no price or MCP-only plan`);
 }
 
 describe('ChatGPT host detection', () => {
@@ -206,6 +207,7 @@ describe('denials sent to ChatGPT inform without selling', () => {
     // The same request from Claude keeps the #9144 hint.
     const claude = await invoke(fixture().deps, callBody(SUBSCRIPTION_TOOL.name, {}), 'Claude-User');
     assert.equal(claude.body.error.data.checkoutTool, 'start_upgrade');
+    assert.match(claude.body.error.data.nextStep, /pro_monthly_mcp/);
   });
 
   it('quota-exceeded keeps its documented message and limit', async () => {
@@ -241,6 +243,12 @@ describe('denials sent to ChatGPT inform without selling', () => {
     // The clause that stops an OAuth retry loop survives the rewrite.
     assert.match(lapsed.error.message, /Re-authenticating will not help/);
     assert.match(lapsed.error.data.nextStep, /re-authenticating will not restore access/);
+
+    const paused = await (await chatgpt(getMcpBillingVerificationDenial({ billingStatus: 'payment_failed' }, {}, 1))).json();
+    assert.equal(paused.error.data.reason, 'payment-failed');
+    assertInformsOnly(paused.error, 'payment-failed');
+    assert.doesNotMatch(JSON.stringify(paused.error), /https?:\/\//, 'payment-failed: no billing portal link');
+    assert.match(paused.error.data.nextStep, /paused until the payment method is updated/);
   });
 
   it('leaves non-denial responses byte-identical', async () => {

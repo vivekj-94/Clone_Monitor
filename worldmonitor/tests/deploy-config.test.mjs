@@ -2006,6 +2006,19 @@ describe('welcome landing page routing', () => {
     }
   });
 
+  it('sends /chatgpt to the ChatGPT plugin listing with a temporary redirect', () => {
+    const listing = 'https://chatgpt.com/plugins/plugin_asdk_app_6ae6004c179c81918401363068a661ba';
+    for (const host of ['www.worldmonitor.app', 'worldmonitor.app']) {
+      for (const path of ['/chatgpt', '/chatgpt/']) {
+        const redirect = firstRedirectFor({ host, path });
+        assert.ok(redirect, `expected a redirect for ${host}${path}`);
+        assert.equal(redirect.destination, listing);
+        // Temporary: OpenAI assigns the listing ID, so a cached 308 would outlive a re-listing.
+        assert.equal(redirect.permanent, false);
+      }
+    }
+  });
+
   it('redirects bare /docs to the docs home permanently, with or without a trailing slash', () => {
     for (const source of ['/docs', '/docs/']) {
       const docsRedirect = vercelConfig.redirects.find((r) => r.source === source);
@@ -3957,6 +3970,20 @@ describe('agent readiness: api-catalog + openapi build', () => {
     assert.equal(rewrites[cardIdx].destination, '/.well-known/mcp/docs-server-card.json');
     assert.equal(getHeaderValueForSource('/docs/mcp/server-card', 'Content-Type'), 'application/json; charset=utf-8');
     assert.equal(getHeaderValueForSource('/docs/mcp/server-card', 'Access-Control-Allow-Origin'), '*');
+  });
+
+  it('publishes the product server card at <server URL>/server-card', () => {
+    // The server-card extension's per-server location. Scanners that reach the
+    // transport on www (orank probes the scanned origin's /mcp) look here, and
+    // the card they find names the canonical apex transport.
+    const rewrite = vercelConfig.rewrites.find((r) => r.source === '/mcp/server-card');
+    assert.ok(rewrite, 'missing /mcp/server-card rewrite');
+    assert.equal(rewrite.destination, '/.well-known/mcp/server-card.json');
+    assert.equal(getHeaderValueForSource('/mcp/server-card', 'Content-Type'), 'application/json; charset=utf-8');
+    assert.equal(getHeaderValueForSource('/mcp/server-card', 'Access-Control-Allow-Origin'), '*');
+    assert.equal(getHeaderValueForSource('/mcp/server-card', 'Cache-Control'), 'public, max-age=3600');
+    const card = JSON.parse(readFileSync(resolve(__dirname, '../public/.well-known/mcp/server-card.json'), 'utf-8'));
+    assert.deepEqual(card.remotes.map((r) => r.url), ['https://worldmonitor.app/mcp']);
   });
 
   it('the api host root has its own context object', () => {
